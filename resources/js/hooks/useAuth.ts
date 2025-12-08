@@ -1,13 +1,13 @@
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        /**
+/**
  * useAuth Hook
  *
  * Custom React hook for authentication with react-hook-form
+ * Now uses global AuthContext to prevent redundant API calls
  */
 
-import { authApi } from '@/api/authApi';
-import type { LoginCredentials, RegisterData, User } from '@/types/auth';
+import { AuthContext } from '@/contexts/AuthContext';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useCallback, useEffect, useState } from 'react';
+import { useContext } from 'react';
 import { useForm, UseFormReturn } from 'react-hook-form';
 import { z } from 'zod';
 
@@ -17,7 +17,7 @@ const loginSchema = z.object({
     password: z.string().min(1, 'Mot de passe requis'),
     remember: z.boolean().optional(),
 });
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                
+
 const registerSchema = z
     .object({
         name: z.string().min(2, 'Le nom doit contenir au moins 2 caractères'),
@@ -41,95 +41,16 @@ export type RegisterFormValues = z.infer<typeof registerSchema>;
 
 /**
  * Hook for authentication state and operations
+ * Uses global AuthContext to share state across all components
  */
 export function useAuth() {
-    const [user, setUser] = useState<User | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    const context = useContext(AuthContext);
 
-    // Check authentication status on mount
-    useEffect(() => {
-        const checkAuth = async () => {
-            if (authApi.isAuthenticated()) {
-                try {
-                    const userData = await authApi.getUser();
-                    setUser(userData);
-                    setIsAuthenticated(true);
-                } catch (err) {
-                    // Token invalid, clear it
-                    localStorage.removeItem('auth_token');
-                    setIsAuthenticated(false);
-                }
-            }
-            setIsLoading(false);
-        };
+    if (context === undefined) {
+        throw new Error('useAuth must be used within an AuthProvider');
+    }
 
-        checkAuth();
-    }, []);
-
-    const login = async (credentials: LoginCredentials): Promise<void> => {
-        try {
-            setError(null);
-            const response = await authApi.login(credentials);
-            setUser(response.user);
-            setIsAuthenticated(true);
-        } catch (err) {
-            const errorMessage =
-                err instanceof Error ? err.message : 'Erreur de connexion';
-            setError(errorMessage);
-            throw new Error(errorMessage);
-        }
-    };
-
-    const register = async (data: RegisterData): Promise<void> => {
-        try {
-            setError(null);
-            const response = await authApi.register(data);
-            setUser(response.user);
-            setIsAuthenticated(true);
-        } catch (err) {
-            const errorMessage =
-                err instanceof Error ? err.message : "Erreur d'inscription";
-            setError(errorMessage);
-            throw new Error(errorMessage);
-        }
-    };
-
-    const logout = async (): Promise<void> => {
-        try {
-            await authApi.logout();
-        } catch (err) {
-            console.error('Logout error:', err);
-        } finally {
-            setUser(null);
-            setIsAuthenticated(false);
-            // Redirect to login page
-            window.location.href = '/login';
-        }
-    };
-
-    const refreshUser = useCallback(async () => {
-        if (authApi.isAuthenticated()) {
-            try {
-                const userData = await authApi.getUser();
-                setUser(userData);
-            } catch (err) {
-                console.error('Failed to refresh user:', err);
-            }
-        }
-    }, []);
-
-    return {
-        user,
-        isLoading,
-        isAuthenticated,
-        error,
-        login,
-        register,
-        logout,
-        refreshUser,
-    };
+    return context;
 }
 
 /**

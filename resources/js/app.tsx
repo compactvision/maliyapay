@@ -6,6 +6,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { AuthGuard } from './components/auth/AuthGuard';
 import { GuestGuard } from './components/auth/GuestGuard';
+import { AuthProvider } from './contexts/AuthContext';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
@@ -47,7 +48,9 @@ createInertiaApp({
 
         root.render(
             <StrictMode>
-                <App {...props} />
+                <AuthProvider>
+                    <App {...props} />
+                </AuthProvider>
             </StrictMode>,
         );
     },

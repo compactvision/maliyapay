@@ -6,6 +6,7 @@
 
 import { useAuth } from '@/hooks/useAuth';
 import { useEffect } from 'react';
+import { SplashScreen } from '../ui/splash-screen';
 
 interface GuestGuardProps {
     children: React.ReactNode;
@@ -21,14 +22,7 @@ export function GuestGuard({ children }: GuestGuardProps) {
     }, [isAuthenticated, isLoading]);
 
     if (isLoading) {
-        return (
-            <div className="flex min-h-screen items-center justify-center">
-                <div className="text-center">
-                    <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
-                    <p className="text-muted-foreground">Chargement...</p>
-                </div>
-            </div>
-        );
+        return <SplashScreen />;
     }
 
     if (isAuthenticated) {
