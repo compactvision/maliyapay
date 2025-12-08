@@ -24,6 +24,7 @@ use App\Modules\Category\Presentation\Resources\CategoryResource;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Response;
 use Ramsey\Uuid\Uuid;
+use Ramsey\Uuid\UuidInterface;
 
 /**
  * CategoryController
@@ -44,12 +45,28 @@ class CategoryController extends Controller
     }
 
     /**
+     * Convert user ID to UUID (for compatibility)
+     */
+    private function getUserIdAsUuid(): UuidInterface
+    {
+        $userId = auth()->id();
+        
+        // If already a UUID string, use it
+        if (is_string($userId) && Uuid::isValid($userId)) {
+            return Uuid::fromString($userId);
+        }
+        
+        // Convert integer to UUID v5 (deterministic)
+        return Uuid::uuid5(Uuid::NAMESPACE_OID, (string)$userId);
+    }
+
+    /**
      * Get all categories for the authenticated user
      */
     public function index(): JsonResponse
     {
         try {
-            $userId = Uuid::fromString(auth()->id());
+            $userId = $this->getUserIdAsUuid();
             $query = new GetAllCategoriesQuery($userId);
             $categories = $this->getAllHandler->handle($query);
 
@@ -69,7 +86,7 @@ class CategoryController extends Controller
     {
         try {
             $categoryId = Uuid::fromString($id);
-            $userId = Uuid::fromString(auth()->id());
+            $userId = $this->getUserIdAsUuid();
             $query = new GetCategoryByIdQuery($categoryId, $userId);
             $category = $this->getByIdHandler->handle($query);
 
@@ -94,7 +111,7 @@ class CategoryController extends Controller
     public function byType(string $type): JsonResponse
     {
         try {
-            $userId = Uuid::fromString(auth()->id());
+            $userId = $this->getUserIdAsUuid();
             $query = new GetCategoriesByTypeQuery($type, $userId);
             $categories = $this->getByTypeHandler->handle($query);
 
@@ -123,7 +140,7 @@ class CategoryController extends Controller
                 name: $request->input('name'),
                 type: $request->input('type'),
                 color: $request->input('color'),
-                userId: Uuid::fromString(auth()->id())
+                userId: $this->getUserIdAsUuid()
             );
 
             $category = $this->createHandler->handle($command);
@@ -156,7 +173,7 @@ class CategoryController extends Controller
                 name: $request->input('name'),
                 type: $request->input('type'),
                 color: $request->input('color'),
-                userId: Uuid::fromString(auth()->id())
+                userId: $this->getUserIdAsUuid()
             );
 
             $category = $this->updateHandler->handle($command);
@@ -183,7 +200,7 @@ class CategoryController extends Controller
         try {
             $command = new DeleteCategoryCommand(
                 id: Uuid::fromString($id),
-                userId: Uuid::fromString(auth()->id())
+                userId: $this->getUserIdAsUuid()
             );
 
             $this->deleteHandler->handle($command);

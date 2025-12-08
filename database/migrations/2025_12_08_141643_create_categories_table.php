@@ -16,15 +16,9 @@ return new class extends Migration
             $table->string('name', 100);
             $table->enum('type', ['income', 'expense']);
             $table->string('color', 7); // Hex color code
-            $table->uuid('user_id');
+            $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->timestamps();
             $table->softDeletes();
-
-            // Foreign key
-            $table->foreign('user_id')
-                ->references('id')
-                ->on('users')
-                ->onDelete('cascade');
 
             // Indexes for performance
             $table->index('user_id');
