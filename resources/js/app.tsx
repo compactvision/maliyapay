@@ -21,23 +21,26 @@ createInertiaApp({
         const Component = page.default;
         const isAuthPage = name === 'auth' || name === 'auth/register';
 
+        // Return new object with wrapped component (can't modify page.default directly)
         if (isAuthPage) {
             // Wrap auth pages with GuestGuard
-            page.default = (props: any) => (
-                <GuestGuard>
-                    <Component {...props} />
-                </GuestGuard>
-            );
+            return {
+                default: (props: any) => (
+                    <GuestGuard>
+                        <Component {...props} />
+                    </GuestGuard>
+                ),
+            };
         } else {
             // Wrap all other pages with AuthGuard
-            page.default = (props: any) => (
-                <AuthGuard>
-                    <Component {...props} />
-                </AuthGuard>
-            );
+            return {
+                default: (props: any) => (
+                    <AuthGuard>
+                        <Component {...props} />
+                    </AuthGuard>
+                ),
+            };
         }
-
-        return page;
     },
     setup({ el, App, props }) {
         const root = createRoot(el);
