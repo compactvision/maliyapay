@@ -102,20 +102,20 @@ const cn = (...classes: (string | undefined | null | false)[]) =>
 
 // --- Données de navigation ---
 const mainNavItems = [
-    { title: 'Tableau de bord', url: '/dashboard', icon: LayoutDashboard },
-    { title: 'Transactions', url: '/transactions', icon: ArrowUpDown },
-    { title: 'Comptes', url: '/accounts', icon: Wallet },
-    { title: 'Catégories', url: '/categories', icon: Tags },
-    { title: 'Budgets', url: '/budgets', icon: PiggyBank },
-    { title: 'Statistiques', url: '/statistics', icon: BarChart3 },
-    { title: 'Tâches', url: '/todos', icon: CheckSquare },
+    { title: 'Tableau de bord', url: '/', icon: LayoutDashboard },
+    { title: 'Transactions', url: '/transaction', icon: ArrowUpDown },
+    { title: 'Comptes', url: '/account', icon: Wallet },
+    { title: 'Catégories', url: '/category', icon: Tags },
+    { title: 'Budgets', url: '/budget', icon: PiggyBank },
+    { title: 'Statistiques', url: '/statistic', icon: BarChart3 },
+    { title: 'Tâches', url: '/task', icon: CheckSquare },
 ];
 
 const mobileNavItems = [
-    { title: 'Accueil', url: '/dashboard', icon: LayoutDashboard },
-    { title: 'Transactions', url: '/transactions', icon: ArrowUpDown },
-    { title: 'Comptes', url: '/accounts', icon: Wallet },
-    { title: 'Activité', url: '/statistics', icon: BarChart3 },
+    { title: 'Accueil', url: '/', icon: LayoutDashboard },
+    { title: 'Transactions', url: '/transaction', icon: ArrowUpDown },
+    { title: 'Comptes', url: '/account', icon: Wallet },
+    { title: 'Activité', url: '/statistic', icon: BarChart3 },
 ];
 
 // --- Composant Toggle pour le Thème ---
@@ -179,9 +179,10 @@ export const DesktopSidebar = () => {
                                 href={item.url}
                                 className={cn(
                                     'group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-gray-600 transition-all duration-200 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white',
-                                    // --- MODIFICATION ICI ---
-                                    // Ajout d'un effet hover pour la page active
-                                    currentUrl.startsWith(item.url) &&
+                                    // Active state: exact match for home, startsWith for others
+                                    (item.url === '/'
+                                        ? currentUrl === '/'
+                                        : currentUrl.startsWith(item.url)) &&
                                         'bg-gray-100 text-gray-900 hover:bg-gray-200 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600',
                                 )}
                             >
@@ -333,7 +334,11 @@ export const MobileBottomNavbar = () => {
                         href={item.url}
                         className={cn(
                             'group flex flex-1 flex-col items-center justify-center gap-1 py-2 text-xs font-medium transition-all duration-200',
-                            currentUrl.startsWith(item.url)
+                            (
+                                item.url === '/'
+                                    ? currentUrl === '/'
+                                    : currentUrl.startsWith(item.url)
+                            )
                                 ? 'text-blue-600 dark:text-blue-400'
                                 : 'text-gray-600 dark:text-gray-400',
                         )}
@@ -341,7 +346,10 @@ export const MobileBottomNavbar = () => {
                         <item.icon
                             className={cn(
                                 'h-5 w-5 transition-transform duration-200 group-hover:scale-110',
-                                currentUrl.startsWith(item.url) && 'scale-110',
+                                (item.url === '/'
+                                    ? currentUrl === '/'
+                                    : currentUrl.startsWith(item.url)) &&
+                                    'scale-110',
                             )}
                         />
                         <span>{item.title}</span>
@@ -466,7 +474,7 @@ export const DesktopHeaderProfile = () => {
 
                 {/* Dropdown Menu */}
                 {isDropdownOpen && (
-                    <div className="absolute right-0 top-full z-50 mt-2 w-56 rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800">
+                    <div className="absolute top-full right-0 z-50 mt-2 w-56 rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800">
                         <div className="p-2">
                             <Link
                                 href="/profile"

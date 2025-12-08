@@ -44,12 +44,11 @@ function AppLayoutContent({ children }: { children: ReactNode }) {
                     <DesktopHeaderProfile />
                 </header>
 
-                {/* --- MODIFICATION ICI --- */}
                 {/* Le conteneur du contenu est maintenant centré avec une belle marge */}
                 <div
                     className={`flex-1 pt-14 pb-16 transition-all duration-300 lg:pt-0 lg:pb-0 ${sidebarIsOpen ? 'lg:pl-64' : 'lg:pl-16'}`}
                 >
-                    <div className="mx-auto w-full max-w-7xl p-4 sm:p-6 lg:p-8">
+                    <div className="mx-auto w-full max-w-9xl p-4 sm:p-6 lg:p-8">
                         {children}
                     </div>
                 </div>
