@@ -1,4 +1,4 @@
-/**
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        /**
  * useAuth Hook
  *
  * Custom React hook for authentication with react-hook-form
@@ -17,7 +17,7 @@ const loginSchema = z.object({
     password: z.string().min(1, 'Mot de passe requis'),
     remember: z.boolean().optional(),
 });
-
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                
 const registerSchema = z
     .object({
         name: z.string().min(2, 'Le nom doit contenir au moins 2 caractères'),

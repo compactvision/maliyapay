@@ -24,14 +24,21 @@ const api = axios.create({
     withCredentials: true,
 });
 
-// Add CSRF token to requests
+// Add CSRF token and auth token to requests
 api.interceptors.request.use((config) => {
-    const token = document
+    const csrfToken = document
         .querySelector('meta[name="csrf-token"]')
         ?.getAttribute('content');
-    if (token) {
-        config.headers['X-CSRF-TOKEN'] = token;
+    if (csrfToken) {
+        config.headers['X-CSRF-TOKEN'] = csrfToken;
     }
+
+    // Add auth token if exists
+    const authToken = localStorage.getItem('auth_token');
+    if (authToken) {
+        config.headers['Authorization'] = `Bearer ${authToken}`;
+    }
+
     return config;
 });
 
