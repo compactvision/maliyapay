@@ -17,7 +17,9 @@ class PageController extends Controller
      */
     public function dashboard(): Response
     {
-        return Inertia::render('dashboard');
+        return Inertia::render('dashboard', [
+            'requiresAuth' => true,
+        ]);
     }
 
     /**
@@ -25,7 +27,9 @@ class PageController extends Controller
      */
     public function account(): Response
     {
-        return Inertia::render('account');
+        return Inertia::render('account', [
+            'requiresAuth' => true,
+        ]);
     }
 
     /**
@@ -33,7 +37,9 @@ class PageController extends Controller
      */
     public function transaction(): Response
     {
-        return Inertia::render('transaction');
+        return Inertia::render('transaction', [
+            'requiresAuth' => true,
+        ]);
     }
 
     /**
@@ -41,7 +47,9 @@ class PageController extends Controller
      */
     public function category(): Response
     {
-        return Inertia::render('category');
+        return Inertia::render('category', [
+            'requiresAuth' => true,
+        ]);
     }
 
     /**
@@ -49,7 +57,9 @@ class PageController extends Controller
      */
     public function budget(): Response
     {
-        return Inertia::render('budget');
+        return Inertia::render('budget', [
+            'requiresAuth' => true,
+        ]);
     }
 
     /**
@@ -57,7 +67,9 @@ class PageController extends Controller
      */
     public function statistic(): Response
     {
-        return Inertia::render('statistic');
+        return Inertia::render('statistic', [
+            'requiresAuth' => true,
+        ]);
     }
 
     /**
@@ -65,7 +77,9 @@ class PageController extends Controller
      */
     public function task(): Response
     {
-        return Inertia::render('task');
+        return Inertia::render('task', [
+            'requiresAuth' => true,
+        ]);
     }
 
     /**
@@ -73,6 +87,8 @@ class PageController extends Controller
      */
     public function auth(): Response
     {
-        return Inertia::render('auth');
+        return Inertia::render('auth', [
+            'requiresAuth' => false,
+        ]);
     }
 }
