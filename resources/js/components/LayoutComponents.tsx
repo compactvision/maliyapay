@@ -1,6 +1,7 @@
 // resources/js/Components/LayoutComponents.tsx
 
-import { Link, router, usePage } from '@inertiajs/react';
+import { useAuth } from '@/hooks/useAuth';
+import { Link, usePage } from '@inertiajs/react';
 import {
     ArrowUpDown,
     BarChart3,
@@ -232,6 +233,7 @@ export const MobileTopBar = () => {
 // --- Composant pour le Menu de Droite (Right Menu) (CORRIGÉ) ---
 export const RightMenu = () => {
     const { rightMenuIsOpen, closeRightMenu } = useLayout();
+    const { logout } = useAuth();
     const { props } = usePage();
     // On accède à l'utilisateur de manière sécurisée avec `?.`
     const user = props.auth?.user as User | undefined;
@@ -302,20 +304,13 @@ export const RightMenu = () => {
                     </div>
                 </nav>
                 <div className="border-t border-gray-200 p-4 dark:border-gray-700">
-                    <form
-                        onSubmit={(e) => {
-                            e.preventDefault();
-                            router.post('/logout');
-                        }}
+                    <button
+                        onClick={() => logout()}
+                        className="flex w-full items-center justify-center gap-2 rounded-lg bg-red-500 px-4 py-2 font-medium text-white shadow transition-colors hover:bg-red-600"
                     >
-                        <button
-                            type="submit"
-                            className="flex w-full items-center justify-center gap-2 rounded-lg bg-red-500 px-4 py-2 font-medium text-white shadow transition-colors hover:bg-red-600"
-                        >
-                            <LogOut className="h-5 w-5" />
-                            Déconnexion
-                        </button>
-                    </form>
+                        <LogOut className="h-5 w-5" />
+                        Déconnexion
+                    </button>
                 </div>
             </div>
         </>
@@ -392,6 +387,7 @@ export const SidebarTrigger = () => {
 export const DesktopHeaderProfile = () => {
     const [isDropdownOpen, setIsDropdownOpen] = React.useState(false);
     const { isDarkMode, toggleTheme } = useLayout();
+    const { logout } = useAuth();
     const { props } = usePage();
     const user = props.auth?.user as User | undefined;
 
@@ -494,20 +490,13 @@ export const DesktopHeaderProfile = () => {
                             </Link>
                         </div>
                         <div className="border-t border-gray-200 p-2 dark:border-gray-700">
-                            <form
-                                onSubmit={(e) => {
-                                    e.preventDefault();
-                                    router.post('/logout');
-                                }}
+                            <button
+                                onClick={() => logout()}
+                                className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-red-600 transition-colors hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
                             >
-                                <button
-                                    type="submit"
-                                    className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-red-600 transition-colors hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
-                                >
-                                    <LogOut className="h-4 w-4" />
-                                    Déconnexion
-                                </button>
-                            </form>
+                                <LogOut className="h-4 w-4" />
+                                Déconnexion
+                            </button>
                         </div>
                     </div>
                 )}

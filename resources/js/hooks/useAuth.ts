@@ -104,6 +104,8 @@ export function useAuth() {
         } finally {
             setUser(null);
             setIsAuthenticated(false);
+            // Redirect to login page
+            window.location.href = '/login';
         }
     };
 
