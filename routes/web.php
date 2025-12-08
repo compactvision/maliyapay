@@ -18,7 +18,7 @@ Route::get('/transaction', function () {
 
 Route::get('/category', function () {
     return Inertia::render('category');
-})->name('category');
+})->name('category')->middleware('auth');
 
 Route::get('/budget', function () {
     return Inertia::render('budget');
