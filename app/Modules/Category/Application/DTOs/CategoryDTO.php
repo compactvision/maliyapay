@@ -37,7 +37,7 @@ final class CategoryDTO
             name: $category->name()->value(),
             type: $category->type()->value(),
             color: $category->color()->value(),
-            userId: $category->userId()->toString(),
+            userId: $category->userId(),
             createdAt: $category->createdAt(),
             updatedAt: $category->updatedAt(),
             deletedAt: $category->deletedAt()

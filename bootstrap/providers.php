@@ -5,4 +5,5 @@ return [
     App\Providers\FortifyServiceProvider::class,
     App\Modules\Category\CategoryServiceProvider::class,
     App\Modules\Identity\IdentityServiceProvider::class,
+    App\Modules\Budget\BudgetServiceProvider::class,
 ];

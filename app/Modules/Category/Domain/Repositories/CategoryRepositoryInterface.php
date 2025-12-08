@@ -19,26 +19,26 @@ interface CategoryRepositoryInterface
     /**
      * Find a category by ID for a specific user
      */
-    public function findById(UuidInterface $id, UuidInterface $userId): ?Category;
+    public function findById(UuidInterface $id, string $userId): ?Category;
 
     /**
      * Find all categories for a user
      * 
      * @return Category[]
      */
-    public function findAllByUser(UuidInterface $userId): array;
+    public function findAllByUser(string $userId): array;
 
     /**
      * Find categories by type for a user
      * 
      * @return Category[]
      */
-    public function findByType(CategoryType $type, UuidInterface $userId): array;
+    public function findByType(CategoryType $type, string $userId): array;
 
     /**
      * Check if a category name already exists for a user
      */
-    public function existsByName(string $name, UuidInterface $userId, ?UuidInterface $excludeId = null): bool;
+    public function existsByName(string $name, string $userId, ?UuidInterface $excludeId = null): bool;
 
     /**
      * Save a category
@@ -53,10 +53,10 @@ interface CategoryRepositoryInterface
     /**
      * Count categories for a user
      */
-    public function countByUser(UuidInterface $userId): int;
+    public function countByUser(string $userId): int;
 
     /**
      * Count categories by type for a user
      */
-    public function countByType(CategoryType $type, UuidInterface $userId): int;
+    public function countByType(CategoryType $type, string $userId): int;
 }

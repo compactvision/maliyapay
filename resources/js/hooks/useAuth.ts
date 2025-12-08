@@ -36,8 +36,32 @@ const registerSchema = z
         path: ['password_confirmation'],
     });
 
+const forgotPasswordSchema = z.object({
+    email: z.string().email('Email invalide'),
+});
+
+const resetPasswordSchema = z
+    .object({
+        token: z.string(),
+        email: z.string().email('Email invalide'),
+        password: z
+            .string()
+            .min(8, 'Le mot de passe doit contenir au moins 8 caractères')
+            .regex(
+                /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/,
+                'Le mot de passe doit contenir une majuscule, une minuscule et un chiffre',
+            ),
+        password_confirmation: z.string(),
+    })
+    .refine((data) => data.password === data.password_confirmation, {
+        message: 'Les mots de passe ne correspondent pas',
+        path: ['password_confirmation'],
+    });
+
 export type LoginFormValues = z.infer<typeof loginSchema>;
 export type RegisterFormValues = z.infer<typeof registerSchema>;
+export type ForgotPasswordFormValues = z.infer<typeof forgotPasswordSchema>;
+export type ResetPasswordFormValues = z.infer<typeof resetPasswordSchema>;
 
 /**
  * Hook for authentication state and operations
@@ -76,6 +100,36 @@ export function useRegisterForm(): UseFormReturn<RegisterFormValues> {
         defaultValues: {
             name: '',
             email: '',
+            password: '',
+            password_confirmation: '',
+        },
+    });
+}
+
+/**
+ * Hook for forgot password form
+ */
+export function useForgotPasswordForm(): UseFormReturn<ForgotPasswordFormValues> {
+    return useForm<ForgotPasswordFormValues>({
+        resolver: zodResolver(forgotPasswordSchema),
+        defaultValues: {
+            email: '',
+        },
+    });
+}
+
+/**
+ * Hook for reset password form
+ */
+export function useResetPasswordForm(
+    token: string,
+    email: string,
+): UseFormReturn<ResetPasswordFormValues> {
+    return useForm<ResetPasswordFormValues>({
+        resolver: zodResolver(resetPasswordSchema),
+        defaultValues: {
+            token,
+            email,
             password: '',
             password_confirmation: '',
         },

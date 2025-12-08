@@ -1,244 +1,664 @@
-import { useState, useEffect } from 'react';
-import { z } from "zod";
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
+import {
+    Form,
+    FormControl,
+    FormField,
+    FormItem,
+    FormLabel,
+    FormMessage,
+} from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import { AppLayout } from '@/layouts/AppLayout';
-import { Edit2, Loader2, Plus, Trash2, Wallet } from 'lucide-react';
+import { zodResolver } from '@hookform/resolvers/zod';
+import axios from 'axios';
+import { Coins, Loader2, Plus, Trash2, Wallet } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+
+// --- Types ---
+interface Balance {
+    currency_code: string;
+    amount: number;
+}
+
+interface Account {
+    id: string;
+    name: string;
+    type: string;
+    color: string;
+    is_archived: boolean;
+    balances: Balance[];
+}
 
 // --- Helper Function ---
-const formatCurrency = (amount: number) => {
-  return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(amount);
+const formatCurrency = (amount: number, currency: string) => {
+    return new Intl.NumberFormat('fr-FR', {
+        style: 'currency',
+        currency: currency,
+    }).format(amount);
 };
 
-// --- Mock Data ---
-const mockAccountTypes = [
-  { value: 'checking', label: 'Compte Courant' },
-  { value: 'savings', label: 'Compte Épargne' },
-  { value: 'investment', label: 'Portefeuille' },
+// --- Mock Data (for Options) ---
+const accountTypes = [
+    { value: 'cash', label: 'Cash' },
+    { value: 'bank', label: 'Banque' },
+    { value: 'mobile_money', label: 'Mobile Money' },
+    { value: 'saving', label: 'Épargne' },
+    { value: 'other', label: 'Autre' },
 ];
+
+const currencies = ['USD', 'EUR', 'CDF'];
 
 const mockColors = [
-  '#ef4444', '#f97316', '#eab308', '#84cc16', '#22c55e', '#14b8a6',
-  '#06b6d4', '#3b82f6', '#6366f1', '#8b5cf6', '#a855f7', '#d946ef',
-  '#ec4899', '#f43f5e'
+    '#ef4444',
+    '#f97316',
+    '#eab308',
+    '#84cc16',
+    '#22c55e',
+    '#14b8a6',
+    '#06b6d4',
+    '#3b82f6',
+    '#6366f1',
+    '#8b5cf6',
+    '#a855f7',
+    '#d946ef',
+    '#ec4899',
+    '#f43f5e',
 ];
 
-const initialAccounts = [
-  { id: '1', name: 'Compte Courant BNP', type: 'checking', balance: 2500.75, color: '#3b82f6' },
-  { id: '2', name: 'Livret A', type: 'savings', balance: 10000.00, color: '#22c55e' },
-  { id: '3', name: 'PEA', type: 'investment', balance: 12500.50, color: '#8b5cf6' },
-];
+// --- Zod Schema for Create Account ---
+const createAccountSchema = z.object({
+    name: z.string().min(2, 'Le nom doit contenir au moins 2 caractères'),
+    type: z.string().min(1, 'Le type est requis'),
+    color: z.string().min(1, 'La couleur est requise'),
+    initial_currency: z.string().length(3, 'Code devise invalide').optional(),
+    initial_balance: z.string().optional(),
+});
 
-// --- Zod Schema for Form ---
-const accountFormSchema = z.object({
-  name: z.string().min(2, 'Le nom doit contenir au moins 2 caractères'),
-  type: z.string().min(1, 'Le type est requis'),
-  balance: z.string().refine((val) => !isNaN(parseFloat(val)), 'Le solde doit être un nombre'),
-  color: z.string().min(1, 'La couleur est requise'),
+// --- Zod Schema for Add Currency ---
+const addCurrencySchema = z.object({
+    currency_code: z.string().length(3),
+    initial_balance: z.string().optional(),
 });
 
 export default function AccountPage() {
-  // --- State Management ---
-  const [accounts, setAccounts] = useState(initialAccounts);
-  const [formOpen, setFormOpen] = useState(false);
-  const [editAccount, setEditAccount] = useState<any>(null);
-  const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+    // --- State Management ---
+    const [accounts, setAccounts] = useState<Account[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [createFormOpen, setCreateFormOpen] = useState(false);
+    const [addCurrencyOpen, setAddCurrencyOpen] = useState(false);
+    const [selectedAccountId, setSelectedAccountId] = useState<string | null>(
+        null,
+    );
+    const [deleteId, setDeleteId] = useState<string | null>(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [formError, setFormError] = useState<string | null>(null);
 
-  const totalBalance = accounts.reduce((sum, account) => sum + account.balance, 0);
+    // --- Fetch Data ---
+    const fetchAccounts = async () => {
+        try {
+            const response = await axios.get('/api/accounts');
+            setAccounts(response.data.data);
+        } catch (error) {
+            console.error('Failed to fetch accounts', error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
-  // --- Form Handling ---
-  const form = useForm({
-    resolver: zodResolver(accountFormSchema),
-    defaultValues: {
-      name: '',
-      type: 'checking',
-      balance: '0',
-      color: mockColors[0],
-    },
-  });
+    useEffect(() => {
+        fetchAccounts();
+    }, []);
 
-  const resetForm = () => {
-    form.reset();
-    setEditAccount(null);
-  };
+    // --- Forms ---
+    const createForm = useForm({
+        resolver: zodResolver(createAccountSchema),
+        defaultValues: {
+            name: '',
+            type: 'cash',
+            color: mockColors[0],
+            initial_currency: 'USD',
+            initial_balance: '0',
+        },
+    });
 
-  const openForm = (account?: any) => {
-    if (account) {
-      form.setValue('name', account.name);
-      form.setValue('type', account.type);
-      form.setValue('balance', account.balance.toString());
-      form.setValue('color', account.color);
-      setEditAccount(account);
-    } else {
-      resetForm();
-    }
-    setFormOpen(true);
-  };
+    const currencyForm = useForm({
+        resolver: zodResolver(addCurrencySchema),
+        defaultValues: {
+            currency_code: 'CDF',
+            initial_balance: '0',
+        },
+    });
 
-  const closeForm = () => {
-    setFormOpen(false);
-    resetForm();
-  };
+    // --- Handlers ---
+    const handleCreateSubmit = async (values: any) => {
+        setIsSubmitting(true);
+        setFormError(null);
+        try {
+            await axios.post('/api/accounts', values);
+            await fetchAccounts();
+            setCreateFormOpen(false);
+            createForm.reset();
+        } catch (error: any) {
+            console.error('Failed to create account', error);
+            setFormError(
+                error.response?.data?.message ||
+                    'Une erreur est survenue lors de la création du compte.',
+            );
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
 
-  const handleSubmit = async (values: any) => {
-    setIsSubmitting(true);
-    const accountData = { ...values, balance: parseFloat(values.balance) };
+    const handleAddCurrencySubmit = async (values: any) => {
+        if (!selectedAccountId) return;
+        setIsSubmitting(true);
+        setFormError(null);
+        try {
+            await axios.post(
+                `/api/accounts/${selectedAccountId}/currencies`,
+                values,
+            );
+            await fetchAccounts();
+            setAddCurrencyOpen(false);
+            currencyForm.reset();
+            setSelectedAccountId(null);
+        } catch (error: any) {
+            console.error('Failed to add currency', error);
+            setFormError(
+                error.response?.data?.message ||
+                    "Une erreur est survenue lors de l'ajout de la devise.",
+            );
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
 
-    await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate network request
+    const handleDelete = async () => {
+        if (!deleteId) return;
+        try {
+            // Assuming delete endpoint exists (not implemented in controller yet? Ah, check task)
+            // Wait, repository has delete, handler has delete, Create/AddCurrency implemented. DELETE route was NOT added to api.php explicitly?
+            // Route::apiResource includes destroy. So DELETE /api/accounts/{id} works.
+            await axios.delete(`/api/accounts/${deleteId}`);
+            await fetchAccounts();
+            setDeleteId(null);
+        } catch (error) {
+            console.error('Failed to delete account', error);
+        }
+    };
 
-    if (editAccount) {
-      console.log('Modification du compte:', { id: editAccount.id, ...accountData });
-      setAccounts(prev => prev.map(acc => acc.id === editAccount.id ? { ...acc, ...accountData } : acc));
-    } else {
-      console.log('Ajout du compte:', accountData);
-      setAccounts(prev => [...prev, { ...accountData, id: Date.now().toString() }]);
-    }
+    const openAddCurrency = (accountId: string) => {
+        setSelectedAccountId(accountId);
+        setFormError(null);
+        setAddCurrencyOpen(true);
+    };
 
-    setIsSubmitting(false);
-    closeForm();
-  };
-
-  const handleDelete = () => {
-    if (!deleteId) return;
-    console.log('Suppression du compte avec l\'ID:', deleteId);
-    setAccounts(prev => prev.filter(acc => acc.id !== deleteId));
-    setDeleteId(null);
-  };
-
-  return (
-    <AppLayout>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">Comptes</h1>
-            <p className="text-muted-foreground">Gérez vos comptes bancaires et portefeuilles</p>
-          </div>
-          <Button onClick={() => openForm()} className="gap-2 bg-emerald-600 hover:bg-emerald-700">
-            <Plus className="h-4 w-4" />
-            Nouveau compte
-          </Button>
-        </div>
-
-        {/* Total Balance Card */}
-        <Card className="bg-emerald-600 text-white">
-          <CardContent className="p-6">
-            <p className="text-sm font-medium text-white/80">Solde total</p>
-            <p className="mt-1 text-3xl font-bold">{formatCurrency(totalBalance)}</p>
-            <p className="mt-1 text-sm text-white/70">{accounts.length} compte{accounts.length > 1 ? 's' : ''}</p>
-          </CardContent>
-        </Card>
-
-        {/* Accounts Grid */}
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {accounts.map((account) => (
-            <Card key={account.id} className="group relative overflow-hidden">
-              <div className="absolute inset-x-0 top-0 h-1" style={{ backgroundColor: account.color }} />
-              <CardHeader className="pb-3">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full" style={{ backgroundColor: account.color }}>
-                      <Wallet className="h-5 w-5 text-white" />
-                    </div>
+    return (
+        <AppLayout>
+            <div className="space-y-6">
+                {/* Header */}
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                      <CardTitle className="text-base">{account.name}</CardTitle>
-                      <p className="text-sm text-muted-foreground">{mockAccountTypes.find(t => t.value === account.type)?.label}</p>
+                        <h1 className="text-2xl font-bold tracking-tight">
+                            Comptes
+                        </h1>
+                        <p className="text-muted-foreground">
+                            Gérez vos comptes et portefeuilles multi-devises
+                        </p>
                     </div>
-                  </div>
-                  <div className="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openForm(account)}>
-                      <Edit2 className="h-4 w-4" />
+                    <Button
+                        onClick={() => {
+                            setFormError(null);
+                            setCreateFormOpen(true);
+                        }}
+                        className="gap-2 bg-emerald-600 hover:bg-emerald-700"
+                        variant="primary"
+                    >
+                        <Plus className="h-4 w-4" />
+                        Nouveau compte
                     </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-red-600 hover:text-red-700" onClick={() => setDeleteId(account.id)}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
                 </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-2xl font-bold">{formatCurrency(account.balance)}</p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
 
-        {accounts.length === 0 && (
-          <Card>
-            <CardContent className="flex flex-col items-center justify-center py-12">
-              <div className="mb-4 rounded-full bg-muted p-4">
-                <Wallet className="h-8 w-8 text-muted-foreground" />
-              </div>
-              <h3 className="text-lg font-semibold">Aucun compte</h3>
-              <p className="mt-1 text-sm text-muted-foreground">Ajoutez votre premier compte pour commencer</p>
-              <Button onClick={() => openForm()} className="mt-4">
-                <Plus className="mr-2 h-4 w-4" />
-                Ajouter un compte
-              </Button>
-            </CardContent>
-          </Card>
-        )}
-      </div>
+                {/* Loading State */}
+                {isLoading ? (
+                    <div className="flex h-64 items-center justify-center">
+                        <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
+                    </div>
+                ) : (
+                    <>
+                        {/* Accounts Grid */}
+                        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                            {accounts.map((account) => (
+                                <Card
+                                    key={account.id}
+                                    className="group relative overflow-hidden"
+                                >
+                                    <div
+                                        className="absolute inset-x-0 top-0 h-1"
+                                        style={{
+                                            backgroundColor: account.color,
+                                        }}
+                                    />
+                                    <CardHeader className="pb-3">
+                                        <div className="flex items-start justify-between">
+                                            <div className="flex items-center gap-3">
+                                                <div
+                                                    className="flex h-10 w-10 items-center justify-center rounded-full"
+                                                    style={{
+                                                        backgroundColor:
+                                                            account.color,
+                                                    }}
+                                                >
+                                                    <Wallet className="h-5 w-5 text-white" />
+                                                </div>
+                                                <div>
+                                                    <CardTitle className="text-base">
+                                                        {account.name}
+                                                    </CardTitle>
+                                                    <p className="text-sm text-muted-foreground">
+                                                        {accountTypes.find(
+                                                            (t) =>
+                                                                t.value ===
+                                                                account.type,
+                                                        )?.label ||
+                                                            account.type}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <div className="flex gap-1">
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-8 w-8"
+                                                    onClick={() =>
+                                                        openAddCurrency(
+                                                            account.id,
+                                                        )
+                                                    }
+                                                    title="Ajouter une devise"
+                                                >
+                                                    <Coins className="h-4 w-4" />
+                                                </Button>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-8 w-8 text-red-600 hover:text-red-700"
+                                                    onClick={() =>
+                                                        setDeleteId(account.id)
+                                                    }
+                                                >
+                                                    <Trash2 className="h-4 w-4" />
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="space-y-1">
+                                            {account.balances.length > 0 ? (
+                                                account.balances.map(
+                                                    (balance) => (
+                                                        <div
+                                                            key={
+                                                                balance.currency_code
+                                                            }
+                                                            className="flex justify-between text-sm"
+                                                        >
+                                                            <span className="font-medium text-muted-foreground">
+                                                                {
+                                                                    balance.currency_code
+                                                                }
+                                                            </span>
+                                                            <span className="font-bold">
+                                                                {formatCurrency(
+                                                                    balance.amount,
+                                                                    balance.currency_code,
+                                                                )}
+                                                            </span>
+                                                        </div>
+                                                    ),
+                                                )
+                                            ) : (
+                                                <p className="text-sm text-muted-foreground italic">
+                                                    Aucune devise
+                                                </p>
+                                            )}
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            ))}
+                        </div>
 
-      {/* Account Form Dialog */}
-      <Dialog open={formOpen} onOpenChange={closeForm}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{editAccount ? 'Modifier le compte' : 'Nouveau compte'}</DialogTitle>
-          </DialogHeader>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-              <FormField control={form.control} name="name" render={({ field }) => (
-                <FormItem><FormLabel>Nom du compte</FormLabel><FormControl><Input placeholder="Ex: Compte courant BNP" {...field} /></FormControl><FormMessage /></FormItem>
-              )} />
-              <FormField control={form.control} name="type" render={({ field }) => (
-                <FormItem><FormLabel>Type de compte</FormLabel><Select onValueChange={field.onChange} value={field.value}>
-                  <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-                  <SelectContent>{mockAccountTypes.map(type => (<SelectItem key={type.value} value={type.value}>{type.label}</SelectItem>))}</SelectContent>
-                </Select><FormMessage /></FormItem>
-              )} />
-              <FormField control={form.control} name="balance" render={({ field }) => (
-                <FormItem><FormLabel>Solde actuel (€)</FormLabel><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage /></FormItem>
-              )} />
-              <FormField control={form.control} name="color" render={({ field }) => (
-                <FormItem><FormLabel>Couleur</FormLabel><FormControl>
-                  <div className="flex flex-wrap gap-2">{mockColors.map(color => (
-                    <button key={color} type="button" className={`h-8 w-8 rounded-full transition-transform ${field.value === color ? 'scale-110 ring-2 ring-primary ring-offset-2' : ''}`} style={{ backgroundColor: color }} onClick={() => field.onChange(color)} />
-                  ))}</div>
-                </FormControl><FormMessage /></FormItem>
-              )} />
-              <div className="flex gap-3 pt-4">
-                <Button type="button" variant="outline" className="flex-1" onClick={closeForm}>Annuler</Button>
-                <Button type="submit" className="flex-1" disabled={isSubmitting}>
-                  {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  {editAccount ? 'Modifier' : 'Ajouter'}
-                </Button>
-              </div>
-            </form>
-          </Form>
-        </DialogContent>
-      </Dialog>
+                        {accounts.length === 0 && (
+                            <Card>
+                                <CardContent className="flex flex-col items-center justify-center py-12">
+                                    <div className="mb-4 rounded-full bg-muted p-4">
+                                        <Wallet className="h-8 w-8 text-muted-foreground" />
+                                    </div>
+                                    <h3 className="text-lg font-semibold">
+                                        Aucun compte
+                                    </h3>
+                                    <p className="mt-1 text-sm text-muted-foreground">
+                                        Créez votre premier compte pour
+                                        commencer
+                                    </p>
+                                </CardContent>
+                            </Card>
+                        )}
+                    </>
+                )}
+            </div>
 
-      {/* Delete Confirmation */}
-      <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Supprimer le compte ?</AlertDialogTitle>
-            <AlertDialogDescription>Cette action est irréversible. Vous ne pouvez pas supprimer un compte qui contient des transactions.</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Annuler</AlertDialogCancel>
-            <AlertDialogAction className="bg-red-600 text-white hover:bg-red-700" onClick={handleDelete}>Supprimer</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </AppLayout>
-  );
+            {/* Create Account Dialog */}
+            <Dialog open={createFormOpen} onOpenChange={setCreateFormOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Nouveau compte</DialogTitle>
+                    </DialogHeader>
+                    <Form {...createForm}>
+                        <form
+                            onSubmit={createForm.handleSubmit(
+                                handleCreateSubmit,
+                            )}
+                            className="space-y-4"
+                        >
+                            {formError && (
+                                <div className="rounded-md bg-red-50 p-3 text-sm text-red-500">
+                                    {formError}
+                                </div>
+                            )}
+                            <FormField
+                                control={createForm.control}
+                                name="name"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Nom du compte</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                placeholder="Ex: Portefeuille Principal"
+                                                {...field}
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={createForm.control}
+                                name="type"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Type</FormLabel>
+                                        <Select
+                                            onValueChange={field.onChange}
+                                            value={field.value}
+                                        >
+                                            <FormControl>
+                                                <SelectTrigger>
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                                {accountTypes.map((type) => (
+                                                    <SelectItem
+                                                        key={type.value}
+                                                        value={type.value}
+                                                    >
+                                                        {type.label}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <div className="grid grid-cols-2 gap-4">
+                                <FormField
+                                    control={createForm.control}
+                                    name="initial_currency"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>
+                                                Devise Initiale
+                                            </FormLabel>
+                                            <Select
+                                                onValueChange={field.onChange}
+                                                value={field.value}
+                                            >
+                                                <FormControl>
+                                                    <SelectTrigger>
+                                                        <SelectValue />
+                                                    </SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent>
+                                                    {currencies.map((c) => (
+                                                        <SelectItem
+                                                            key={c}
+                                                            value={c}
+                                                        >
+                                                            {c}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={createForm.control}
+                                    name="initial_balance"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Solde Initial</FormLabel>
+                                            <FormControl>
+                                                <Input
+                                                    type="number"
+                                                    step="0.01"
+                                                    {...field}
+                                                />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
+                            <FormField
+                                control={createForm.control}
+                                name="color"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Couleur</FormLabel>
+                                        <FormControl>
+                                            <div className="flex flex-wrap gap-2">
+                                                {mockColors.map((color) => (
+                                                    <button
+                                                        key={color}
+                                                        type="button"
+                                                        className={`h-8 w-8 rounded-full transition-transform ${field.value === color ? 'scale-110 ring-2 ring-primary ring-offset-2' : ''}`}
+                                                        style={{
+                                                            backgroundColor:
+                                                                color,
+                                                        }}
+                                                        onClick={() =>
+                                                            field.onChange(
+                                                                color,
+                                                            )
+                                                        }
+                                                    />
+                                                ))}
+                                            </div>
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <div className="flex gap-3 pt-4">
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    className="flex-1"
+                                    onClick={() => setCreateFormOpen(false)}
+                                >
+                                    Annuler
+                                </Button>
+                                <Button
+                                    type="submit"
+                                    className="flex-1"
+                                    disabled={isSubmitting}
+                                >
+                                    {isSubmitting && (
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    )}
+                                    Créer
+                                </Button>
+                            </div>
+                        </form>
+                    </Form>
+                </DialogContent>
+            </Dialog>
+
+            {/* Add Currency Dialog */}
+            <Dialog open={addCurrencyOpen} onOpenChange={setAddCurrencyOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Ajouter une devise</DialogTitle>
+                    </DialogHeader>
+                    <Form {...currencyForm}>
+                        <form
+                            onSubmit={currencyForm.handleSubmit(
+                                handleAddCurrencySubmit,
+                            )}
+                            className="space-y-4"
+                        >
+                            {formError && (
+                                <div className="rounded-md bg-red-50 p-3 text-sm text-red-500">
+                                    {formError}
+                                </div>
+                            )}
+                            <FormField
+                                control={currencyForm.control}
+                                name="currency_code"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Devise</FormLabel>
+                                        <Select
+                                            onValueChange={field.onChange}
+                                            value={field.value}
+                                        >
+                                            <FormControl>
+                                                <SelectTrigger>
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                                {currencies.map((c) => (
+                                                    <SelectItem
+                                                        key={c}
+                                                        value={c}
+                                                    >
+                                                        {c}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={currencyForm.control}
+                                name="initial_balance"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Solde Initial</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                type="number"
+                                                step="0.01"
+                                                {...field}
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <div className="flex gap-3 pt-4">
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    className="flex-1"
+                                    onClick={() => setAddCurrencyOpen(false)}
+                                >
+                                    Annuler
+                                </Button>
+                                <Button
+                                    type="submit"
+                                    className="flex-1"
+                                    disabled={isSubmitting}
+                                >
+                                    {isSubmitting && (
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    )}
+                                    Ajouter
+                                </Button>
+                            </div>
+                        </form>
+                    </Form>
+                </DialogContent>
+            </Dialog>
+
+            {/* Delete Confirmation */}
+            <AlertDialog
+                open={!!deleteId}
+                onOpenChange={() => setDeleteId(null)}
+            >
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>
+                            Supprimer le compte ?
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Cette action est irréversible.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Annuler</AlertDialogCancel>
+                        <AlertDialogAction
+                            className="bg-red-600 text-white hover:bg-red-700"
+                            onClick={handleDelete}
+                        >
+                            Supprimer
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+        </AppLayout>
+    );
 }

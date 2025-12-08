@@ -14,7 +14,7 @@ use Ramsey\Uuid\UuidInterface;
 final class GetAllCategoriesQuery
 {
     public function __construct(
-        public readonly UuidInterface $userId
+        public readonly string $userId
     ) {
     }
 }

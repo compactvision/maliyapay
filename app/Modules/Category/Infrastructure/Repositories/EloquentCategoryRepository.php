@@ -27,20 +27,20 @@ class EloquentCategoryRepository implements CategoryRepositoryInterface
     ) {
     }
 
-    public function findById(UuidInterface $id, UuidInterface $userId): ?CategoryEntity
+    public function findById(UuidInterface $id, string $userId): ?CategoryEntity
     {
         $model = $this->model
             ->where('id', $id->toString())
-            ->where('user_id', $userId->toString())
+            ->where('user_id', $userId)
             ->first();
 
         return $model ? $this->toDomainEntity($model) : null;
     }
 
-    public function findAllByUser(UuidInterface $userId): array
+    public function findAllByUser(string $userId): array
     {
         $models = $this->model
-            ->where('user_id', $userId->toString())
+            ->where('user_id', $userId)
             ->orderBy('type')
             ->orderBy('name')
             ->get();
@@ -48,10 +48,10 @@ class EloquentCategoryRepository implements CategoryRepositoryInterface
         return $models->map(fn($model) => $this->toDomainEntity($model))->all();
     }
 
-    public function findByType(CategoryType $type, UuidInterface $userId): array
+    public function findByType(CategoryType $type, string $userId): array
     {
         $models = $this->model
-            ->where('user_id', $userId->toString())
+            ->where('user_id', $userId)
             ->where('type', $type->value())
             ->orderBy('name')
             ->get();
@@ -59,10 +59,10 @@ class EloquentCategoryRepository implements CategoryRepositoryInterface
         return $models->map(fn($model) => $this->toDomainEntity($model))->all();
     }
 
-    public function existsByName(string $name, UuidInterface $userId, ?UuidInterface $excludeId = null): bool
+    public function existsByName(string $name, string $userId, ?UuidInterface $excludeId = null): bool
     {
         $query = $this->model
-            ->where('user_id', $userId->toString())
+            ->where('user_id', $userId)
             ->where('name', $name);
 
         if ($excludeId !== null) {
@@ -79,7 +79,8 @@ class EloquentCategoryRepository implements CategoryRepositoryInterface
             'name' => $category->name()->value(),
             'type' => $category->type()->value(),
             'color' => $category->color()->value(),
-            'user_id' => $category->userId()->toString(),
+            'user_id' => $category->userId(),
+            'deleted_at' => $category->deletedAt()?->format('Y-m-d H:i:s'),
         ];
 
         $this->model->updateOrCreate(
@@ -95,17 +96,17 @@ class EloquentCategoryRepository implements CategoryRepositoryInterface
             ->delete();
     }
 
-    public function countByUser(UuidInterface $userId): int
+    public function countByUser(string $userId): int
     {
         return $this->model
-            ->where('user_id', $userId->toString())
+            ->where('user_id', $userId)
             ->count();
     }
 
-    public function countByType(CategoryType $type, UuidInterface $userId): int
+    public function countByType(CategoryType $type, string $userId): int
     {
         return $this->model
-            ->where('user_id', $userId->toString())
+            ->where('user_id', $userId)
             ->where('type', $type->value())
             ->count();
     }
@@ -120,7 +121,7 @@ class EloquentCategoryRepository implements CategoryRepositoryInterface
             name: CategoryName::fromString($model->name),
             type: CategoryType::fromString($model->type),
             color: CategoryColor::fromString($model->color),
-            userId: Uuid::fromString($model->user_id),
+            userId: (string) $model->user_id,
             createdAt: DateTimeImmutable::createFromMutable($model->created_at),
             updatedAt: DateTimeImmutable::createFromMutable($model->updated_at),
             deletedAt: $model->deleted_at ? DateTimeImmutable::createFromMutable($model->deleted_at) : null

@@ -15,7 +15,7 @@ final class GetCategoryByIdQuery
 {
     public function __construct(
         public readonly UuidInterface $id,
-        public readonly UuidInterface $userId
+        public readonly string $userId
     ) {
     }
 }

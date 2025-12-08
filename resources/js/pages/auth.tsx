@@ -12,6 +12,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth, useLoginForm, useRegisterForm } from '@/hooks/useAuth';
+import { Link } from '@inertiajs/react';
 import { Loader2, Lock, Mail, Sparkles, User } from 'lucide-react';
 import { useState } from 'react';
 
@@ -145,10 +146,20 @@ export default function Auth() {
                                                 )}
                                             />
 
+                                            <div className="flex items-center justify-end">
+                                                <Link
+                                                    href="/forgot-password"
+                                                    className="text-sm text-primary hover:underline"
+                                                >
+                                                    Mot de passe oublié ?
+                                                </Link>
+                                            </div>
+
                                             <Button
                                                 type="submit"
                                                 className="w-full"
                                                 disabled={isLoading}
+                                                variant="primary"
                                             >
                                                 {isLoading && (
                                                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -267,6 +278,7 @@ export default function Auth() {
                                                 type="submit"
                                                 className="w-full"
                                                 disabled={isLoading}
+                                                variant="primary"
                                             >
                                                 {isLoading && (
                                                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />

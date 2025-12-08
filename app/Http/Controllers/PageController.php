@@ -91,4 +91,36 @@ class PageController extends Controller
             'requiresAuth' => false,
         ]);
     }
+
+    /**
+     * Show email verification notice page
+     */
+    public function verifyEmail(): Response
+    {
+        return Inertia::render('verify-email', [
+            'requiresAuth' => false,
+        ]);
+    }
+
+    /**
+     * Show forgot password page
+     */
+    public function forgotPassword(): Response
+    {
+        return Inertia::render('forgot-password', [
+            'requiresAuth' => false,
+        ]);
+    }
+
+    /**
+     * Show reset password page
+     */
+    public function resetPassword(string $token): Response
+    {
+        return Inertia::render('reset-password', [
+            'requiresAuth' => false,
+            'token' => $token,
+            'email' => request()->query('email'),
+        ]);
+    }
 }

@@ -15,7 +15,7 @@ final class GetCategoriesByTypeQuery
 {
     public function __construct(
         public readonly string $type,
-        public readonly UuidInterface $userId
+        public readonly string $userId
     ) {
     }
 }

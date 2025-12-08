@@ -42,6 +42,7 @@ class Category extends Model
         'type',
         'color',
         'user_id',
+        'deleted_at',
     ];
 
     protected $casts = [

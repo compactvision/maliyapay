@@ -22,7 +22,7 @@ final class Category
     private CategoryName $name;
     private CategoryType $type;
     private CategoryColor $color;
-    private UuidInterface $userId;
+    private string $userId;
     private DateTimeImmutable $createdAt;
     private DateTimeImmutable $updatedAt;
     private ?DateTimeImmutable $deletedAt;
@@ -32,7 +32,7 @@ final class Category
         CategoryName $name,
         CategoryType $type,
         CategoryColor $color,
-        UuidInterface $userId,
+        string $userId,
         DateTimeImmutable $createdAt,
         DateTimeImmutable $updatedAt,
         ?DateTimeImmutable $deletedAt = null
@@ -55,7 +55,7 @@ final class Category
         CategoryName $name,
         CategoryType $type,
         CategoryColor $color,
-        UuidInterface $userId
+        string $userId
     ): self {
         $now = new DateTimeImmutable();
 
@@ -78,7 +78,7 @@ final class Category
         CategoryName $name,
         CategoryType $type,
         CategoryColor $color,
-        UuidInterface $userId,
+        string $userId,
         DateTimeImmutable $createdAt,
         DateTimeImmutable $updatedAt,
         ?DateTimeImmutable $deletedAt = null
@@ -146,9 +146,9 @@ final class Category
     /**
      * Check if category belongs to user
      */
-    public function belongsToUser(UuidInterface $userId): bool
+    public function belongsToUser(string $userId): bool
     {
-        return $this->userId->equals($userId);
+        return $this->userId === $userId;
     }
 
     // Getters
@@ -172,7 +172,7 @@ final class Category
         return $this->color;
     }
 
-    public function userId(): UuidInterface
+    public function userId(): string
     {
         return $this->userId;
     }

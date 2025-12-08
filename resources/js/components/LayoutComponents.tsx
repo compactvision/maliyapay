@@ -116,6 +116,7 @@ const mobileNavItems = [
     { title: 'Accueil', url: '/', icon: LayoutDashboard },
     { title: 'Transactions', url: '/transaction', icon: ArrowUpDown },
     { title: 'Comptes', url: '/account', icon: Wallet },
+    { title: 'Budgets', url: '/budget', icon: PiggyBank },
     { title: 'Activité', url: '/statistic', icon: BarChart3 },
 ];
 

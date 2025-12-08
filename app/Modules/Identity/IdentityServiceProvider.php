@@ -41,6 +41,8 @@ class IdentityServiceProvider extends ServiceProvider
             ->group(function () {
                 Route::post('/register', [\App\Modules\Identity\Presentation\Controllers\AuthController::class, 'register']);
                 Route::post('/login', [\App\Modules\Identity\Presentation\Controllers\AuthController::class, 'login']);
+                Route::post('/forgot-password', [\App\Modules\Identity\Presentation\Controllers\AuthController::class, 'forgotPassword']);
+                Route::post('/reset-password', [\App\Modules\Identity\Presentation\Controllers\AuthController::class, 'resetPassword']);
             });
 
         // Protected routes (auth required)
@@ -51,6 +53,10 @@ class IdentityServiceProvider extends ServiceProvider
                 Route::get('/user', [\App\Modules\Identity\Presentation\Controllers\AuthController::class, 'user']);
                 Route::put('/profile', [\App\Modules\Identity\Presentation\Controllers\AuthController::class, 'updateProfile']);
                 Route::post('/password', [\App\Modules\Identity\Presentation\Controllers\AuthController::class, 'changePassword']);
+                
+                // Email verification notification (requires auth)
+                Route::post('/email/verification-notification', [\App\Modules\Identity\Presentation\Controllers\AuthController::class, 'sendVerificationEmail'])
+                    ->middleware('throttle:6,1');
             });
     }
 }

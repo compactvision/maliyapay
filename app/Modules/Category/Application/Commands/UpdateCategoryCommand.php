@@ -18,7 +18,7 @@ final class UpdateCategoryCommand
         public readonly string $name,
         public readonly string $type,
         public readonly string $color,
-        public readonly UuidInterface $userId
+        public readonly string $userId
     ) {
     }
 }

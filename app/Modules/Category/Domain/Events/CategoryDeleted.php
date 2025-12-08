@@ -15,14 +15,14 @@ final class CategoryDeleted
 {
     public function __construct(
         public readonly UuidInterface $categoryId,
-        public readonly UuidInterface $userId,
+        public readonly string $userId,
         public readonly \DateTimeImmutable $occurredAt
     ) {
     }
 
     public static function create(
         UuidInterface $categoryId,
-        UuidInterface $userId
+        string $userId
     ): self {
         return new self(
             categoryId: $categoryId,

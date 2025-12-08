@@ -6,12 +6,15 @@ namespace App\Modules\Identity\Presentation\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use Illuminate\Auth\Events\Verified;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -226,5 +229,133 @@ class AuthController extends Controller
                 'error' => $e->getMessage(),
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
+    }
+
+    /**
+     * Send email verification notification
+     */
+    public function sendVerificationEmail(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        if ($user->hasVerifiedEmail()) {
+            return response()->json([
+                'message' => 'Email déjà vérifié',
+            ], Response::HTTP_BAD_REQUEST);
+        }
+
+        $user->sendEmailVerificationNotification();
+
+        return response()->json([
+            'message' => 'Email de vérification envoyé',
+        ]);
+    }
+
+    /**
+     * Verify email address
+     */
+    /**
+     * Verify email address
+     */
+    public function verifyEmail(Request $request)
+    {
+        $user = User::findOrFail($request->route('id'));
+
+        if (!hash_equals(
+            (string) $request->route('hash'),
+            sha1($user->getEmailForVerification())
+        )) {
+            return redirect('/verify-email?error=Lien de vérification invalide');
+        }
+
+        if ($user->hasVerifiedEmail()) {
+            return redirect('/');
+        }
+
+        if ($user->markEmailAsVerified()) {
+            event(new Verified($user));
+        }
+
+        return redirect('/');
+    }
+
+    /**
+     * Send password reset link
+     */
+    public function forgotPassword(Request $request): JsonResponse
+    {
+        $request->validate([
+            'email' => ['required', 'email'],
+        ]);
+
+        // Rate limiting
+        $key = 'forgot-password.' . $request->ip();
+        if (RateLimiter::tooManyAttempts($key, 3)) {
+            $seconds = RateLimiter::availableIn($key);
+            throw ValidationException::withMessages([
+                'email' => ["Trop de tentatives. Réessayez dans {$seconds} secondes."],
+            ]);
+        }
+
+        $status = Password::sendResetLink(
+            $request->only('email')
+        );
+
+        if ($status === Password::RESET_LINK_SENT) {
+            RateLimiter::clear($key);
+            return response()->json([
+                'message' => 'Email de réinitialisation envoyé',
+            ]);
+        }
+
+        RateLimiter::hit($key, 300); // 5 minutes
+
+        throw ValidationException::withMessages([
+            'email' => ['Aucun compte trouvé avec cet email.'],
+        ]);
+    }
+
+    /**
+     * Reset password
+     */
+    public function resetPassword(Request $request): JsonResponse
+    {
+        $request->validate([
+            'token' => ['required'],
+            'email' => ['required', 'email'],
+            'password' => [
+                'required',
+                'string',
+                'min:8',
+                'confirmed',
+                'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/'
+            ],
+        ], [
+            'password.regex' => 'Le mot de passe doit contenir au moins une majuscule, une minuscule et un chiffre',
+        ]);
+
+        $status = Password::reset(
+            $request->only('email', 'password', 'password_confirmation', 'token'),
+            function (User $user, string $password) {
+                $user->forceFill([
+                    'password' => Hash::make($password)
+                ])->setRememberToken(Str::random(60));
+
+                $user->save();
+
+                // Revoke all tokens
+                $user->tokens()->delete();
+            }
+        );
+
+        if ($status === Password::PASSWORD_RESET) {
+            return response()->json([
+                'message' => 'Mot de passe réinitialisé avec succès',
+            ]);
+        }
+
+        throw ValidationException::withMessages([
+            'email' => ['Le lien de réinitialisation est invalide ou expiré.'],
+        ]);
     }
 }
