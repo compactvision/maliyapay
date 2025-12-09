@@ -144,7 +144,7 @@ export default function NotificationPage() {
                                     >
                                         <NotificationItem
                                             notification={notification}
-                                            onRead={markAsRead}
+                                            onMarkAsRead={markAsRead}
                                             onDelete={deleteNotification}
                                         />
                                     </div>

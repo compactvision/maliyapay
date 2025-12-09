@@ -16,6 +16,7 @@ import {
 
 interface NotificationItemProps {
     notification: Notification;
+    
     onMarkAsRead: (id: string) => void;
     onDelete: (id: string) => void;
 }
