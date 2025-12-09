@@ -12,6 +12,7 @@ use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Storage;
 
 class ProfileController extends Controller
 {
@@ -28,16 +29,35 @@ class ProfileController extends Controller
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
+            'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users')->ignore($request->user()?->id)],
+            'avatar' => ['nullable', 'image', 'max:2048'], // Max 2MB
         ]);
 
+        // On retire l'avatar des données validées pour ne pas écraser l'existant avec null par mégarde
+        unset($validated['avatar']);
+        
         $user->fill($validated);
 
         if ($user->isDirty('email')) {
             $user->email_verified_at = null;
         }
 
-        $user->save();
+        // Logic d'upload d'avatar
+        if ($request->hasFile('avatar')) {
+             // Delete old avatar if exists
+             if ($user->avatar) {
+                // Convert /storage/images/users/xyz.jpg -> images/users/xyz.jpg
+                $oldPath = str_replace('/storage/', '', $user->avatar);
+                if (Storage::disk('public')->exists($oldPath)) {
+                    Storage::disk('public')->delete($oldPath);
+                }
+            }
+
+            $path = $request->file('avatar')->store('images/users', 'public');
+            $user->avatar = '/storage/' . $path;
+        }
+
+        $user->save(); // Save first
 
         return Redirect::route('profile.show');
     }

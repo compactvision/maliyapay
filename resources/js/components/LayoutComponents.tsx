@@ -19,6 +19,7 @@ import {
     X,
 } from 'lucide-react';
 import React, { createContext, useContext } from 'react';
+import { NotificationBell } from './notifications/NotificationBell';
 
 // --- Types ---
 interface User {
@@ -110,6 +111,7 @@ const mainNavItems = [
     { title: 'Budgets', url: '/budget', icon: PiggyBank },
     { title: 'Statistiques', url: '/statistic', icon: BarChart3 },
     { title: 'Tâches', url: '/task', icon: CheckSquare },
+    { title: 'Routine', url: '/routine', icon: CheckSquare },
 ];
 
 const mobileNavItems = [
@@ -220,12 +222,27 @@ export const MobileTopBar = () => {
             <span className="font-semibold text-gray-900 dark:text-white">
                 Bonjour, {user?.name || 'Invité'}
             </span>
-            <button
-                onClick={toggleRightMenu}
-                className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-600 text-white shadow-md"
-            >
-                <span className="text-sm font-bold">{initials}</span>
-            </button>
+            <div className="flex items-center gap-2">
+                <NotificationBell />
+                <button
+                    onClick={toggleRightMenu}
+                    className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-white shadow-md"
+                >
+                    {user?.avatar ? (
+                        <img
+                            src={user.avatar}
+                            alt={user.name}
+                            className="h-full w-full object-cover"
+                        />
+                    ) : (
+                        <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-blue-500 to-purple-600 text-white">
+                            <span className="text-sm font-bold">
+                                {initials}
+                            </span>
+                        </div>
+                    )}
+                </button>
+            </div>
         </header>
     );
 };
@@ -266,9 +283,19 @@ export const RightMenu = () => {
                     </button>
                 </div>
                 <div className="flex flex-col items-center p-6 text-center">
-                    <div className="flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-600 text-2xl font-bold text-white shadow-lg">
-                        {initials}
-                    </div>
+                    {user?.avatar ? (
+                        <div className="h-20 w-20 overflow-hidden rounded-full shadow-lg">
+                            <img
+                                src={user.avatar}
+                                alt={user.name}
+                                className="h-full w-full object-cover"
+                            />
+                        </div>
+                    ) : (
+                        <div className="flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-600 text-2xl font-bold text-white shadow-lg">
+                            {initials}
+                        </div>
+                    )}
                     {/* On affiche le nom/email ou des valeurs par défaut */}
                     <h3 className="mt-4 text-lg font-semibold text-gray-900 dark:text-white">
                         {user?.name || 'Utilisateur'}
@@ -293,6 +320,14 @@ export const RightMenu = () => {
                     >
                         <User className="h-5 w-5" />
                         Mon Profil
+                    </Link>
+                    <Link
+                        href="/routine"
+                        onClick={closeRightMenu}
+                        className="flex items-center gap-3 rounded-lg px-3 py-2 text-gray-600 transition-colors hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"
+                    >
+                        <Settings className="h-5 w-5" />
+                        Routine
                     </Link>
                     <Link
                         href="/settings"
@@ -437,6 +472,8 @@ export const DesktopHeaderProfile = () => {
                 <ThemeToggle />
             </div>
 
+            <NotificationBell />
+
             {/* Séparateur */}
             <div className="h-8 w-px bg-gray-200 dark:bg-gray-700" />
 
@@ -446,9 +483,19 @@ export const DesktopHeaderProfile = () => {
                     onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                     className="flex items-center gap-3 rounded-lg px-3 py-2 text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
                 >
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-600 text-sm font-bold text-white shadow-md">
-                        {initials}
-                    </div>
+                    {user?.avatar ? (
+                        <div className="h-8 w-8 overflow-hidden rounded-full shadow-md">
+                            <img
+                                src={user.avatar}
+                                alt={user.name}
+                                className="h-full w-full object-cover"
+                            />
+                        </div>
+                    ) : (
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-600 text-sm font-bold text-white shadow-md">
+                            {initials}
+                        </div>
+                    )}
                     <div className="hidden text-left xl:block">
                         <p className="text-sm font-medium">
                             {user?.name || 'Utilisateur'}

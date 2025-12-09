@@ -64,6 +64,30 @@ class EloquentTransactionRepository implements TransactionRepositoryInterface
         return $models->map(fn (TransactionModel $model) => $this->toDomain($model))->toArray();
     }
 
+    public function findByUserAndPeriod(string $userId, DateTimeImmutable $startDate, DateTimeImmutable $endDate): array
+    {
+        $models = TransactionModel::where('user_id', $userId)
+            ->whereBetween('date', [$startDate, $endDate])
+            ->orderBy('date', 'desc')
+            ->get();
+
+        return $models->map(fn (TransactionModel $model) => $this->toDomain($model))->toArray();
+    }
+
+    public function findById(string $id, string $userId): ?Transaction
+    {
+        $model = TransactionModel::where('id', $id)->where('user_id', $userId)->first();
+        if (!$model) {
+            return null;
+        }
+        return $this->toDomain($model);
+    }
+
+    public function delete(Transaction $transaction): void
+    {
+        TransactionModel::where('id', $transaction->id()->toString())->delete();
+    }
+
     private function toDomain(TransactionModel $model): Transaction
     {
         return Transaction::reconstitute(

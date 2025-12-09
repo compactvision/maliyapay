@@ -23,6 +23,8 @@ class User extends Authenticatable implements MustVerifyEmail
     protected $fillable = [
         'name',
         'email',
+        'avatar',
+        'receive_notifications',
         'password',
     ];
 
@@ -48,6 +50,7 @@ class User extends Authenticatable implements MustVerifyEmail
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'receive_notifications' => 'boolean',
             'two_factor_confirmed_at' => 'datetime',
         ];
     }

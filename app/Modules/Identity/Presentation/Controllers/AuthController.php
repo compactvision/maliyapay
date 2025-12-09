@@ -145,6 +145,7 @@ class AuthController extends Controller
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
+                'avatar' => $user->avatar,
                 'email_verified_at' => $user->email_verified_at,
                 'roles' => $user->getRoleNames(),
                 'permissions' => $user->getAllPermissions()->pluck('name'),
@@ -174,6 +175,7 @@ class AuthController extends Controller
                     'id' => $user->id,
                     'name' => $user->name,
                     'email' => $user->email,
+                    'avatar' => $user->avatar,
                 ],
             ]);
         } catch (\Exception $e) {

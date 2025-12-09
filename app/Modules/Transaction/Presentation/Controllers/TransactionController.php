@@ -6,7 +6,9 @@ namespace App\Modules\Transaction\Presentation\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Modules\Transaction\Application\Commands\CreateTransactionCommand;
+use App\Modules\Transaction\Application\Commands\DeleteTransactionCommand;
 use App\Modules\Transaction\Application\Handlers\CreateTransactionHandler;
+use App\Modules\Transaction\Application\Handlers\DeleteTransactionHandler;
 use App\Modules\Transaction\Domain\Repositories\TransactionRepositoryInterface;
 use App\Modules\Transaction\Domain\ValueObjects\TransactionType;
 use App\Modules\Transaction\Presentation\Requests\CreateTransactionRequest;
@@ -20,6 +22,7 @@ class TransactionController extends Controller
 {
     public function __construct(
         private readonly CreateTransactionHandler $createHandler,
+        private readonly DeleteTransactionHandler $deleteHandler,
         private readonly TransactionRepositoryInterface $repository
     ) {
     }
@@ -30,18 +33,11 @@ class TransactionController extends Controller
         $startDate = new DateTimeImmutable($month . '-01 00:00:00');
         $endDate = $startDate->modify('last day of this month')->setTime(23, 59, 59);
 
-        // Fetch all transactions for user
-        // Note: Repository `findAllByUser` is generic. Better to filter by date in Repository for performance.
-        // For now, let's filter in memory or add method to Repo later if slow. 
-        // Actually, user wants "month filters". 
-        // Let's rely on `findAllByUser` and filter in memory for MVP speed, 
-        // checking the `TransactionRepositoryInterface` definitions.
-        
-        $transactions = $this->repository->findAllByUser((string) auth()->id());
-        
-        // Filter by Date
-        $filtered = array_filter($transactions, fn($t) => 
-            $t->date() >= $startDate && $t->date() <= $endDate
+        // Optimized Query: Filter at SQL level
+        $filtered = $this->repository->findByUserAndPeriod(
+            (string) auth()->id(),
+            $startDate,
+            $endDate
         );
 
         // Calculate Totals for this month grouped by currency
@@ -139,44 +135,14 @@ class TransactionController extends Controller
     public function destroy(string $id): JsonResponse
     {
         try {
-            $transaction = \App\Modules\Transaction\Infrastructure\Models\Transaction::findOrFail($id);
-            $userId = (string) auth()->id();
+            $command = new DeleteTransactionCommand(
+                transactionId: $id,
+                userId: (string) auth()->id()
+            );
 
-            // 1. Create Reversal Transaction (Reimbursement)
-            $reversalType = $transaction->type === 'income' ? 'expense' : 'income'; // Enum value string check
-            // Actually type is Enum in Model cast? No, cast to string in DB usually or use accessor.
-            // Model uses casts? Let's check view_file. 
-            // Assuming simplified logic:
-            
-            $reversal = $transaction->replicate();
-            $reversal->id = (string) \Illuminate\Support\Str::uuid();
-            $reversal->type = $transaction->type === 'income' ? 'expense' : 'income';
-            $reversal->description = "Remboursement: " . $transaction->description;
-            $reversal->created_at = now();
-            $reversal->updated_at = now();
-            $reversal->save();
+            $this->deleteHandler->handle($command);
 
-            // 2. Update Account Balance
-            // We need to inject AccountRepository or use Account Model directly.
-            // Assuming simplified direct Model usage for Speed as per "Anti-Gravity"
-            $account = \App\Modules\Account\Infrastructure\Models\Account::find($transaction->account_id);
-            if ($account) {
-                 // Load balances
-                 $balance = $account->balances()->where('currency_code', $transaction->currency)->first();
-                 if ($balance) {
-                     if ($reversal->type === 'income') {
-                         $balance->balance += $transaction->amount;
-                     } else {
-                         $balance->balance -= $transaction->amount;
-                     }
-                     $balance->save();
-                 }
-            }
-
-            // 3. Delete Original
-            $transaction->delete();
-
-            return response()->json(['message' => 'Transaction and reimbursement processed']);
+            return response()->json(['message' => 'Transaction deleted successfully']);
 
         } catch (Exception $e) {
             return response()->json(['message' => $e->getMessage()], 500);

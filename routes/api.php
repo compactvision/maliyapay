@@ -7,6 +7,10 @@ use App\Modules\Account\Presentation\Controllers\AccountController;
 use App\Modules\Identity\Presentation\Controllers\AuthController;
 use App\Modules\Budget\Presentation\Controllers\BudgetController;
 use App\Modules\Transaction\Presentation\Controllers\TransactionController;
+use App\Modules\Task\Presentation\Controllers\TaskController;
+use App\Modules\Routine\Presentation\Controllers\RoutineController;
+use App\Modules\Routine\Presentation\Controllers\RoutineTaskController;
+use App\Modules\Notification\Presentation\Controllers\NotificationController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -53,4 +57,31 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('transactions', [TransactionController::class, 'store']);
     Route::put('transactions/{id}', [TransactionController::class, 'update']);
     Route::delete('transactions/{id}', [TransactionController::class, 'destroy']);
+
+    // Tasks
+    Route::get('tasks', [TaskController::class, 'index']);
+    Route::post('tasks', [TaskController::class, 'store']);
+    Route::put('tasks/{id}', [TaskController::class, 'update']);
+    Route::post('tasks/{id}/toggle', [TaskController::class, 'toggleCompletion']);
+    Route::delete('tasks/{id}', [TaskController::class, 'destroy']);
+
+    // Routines
+    Route::get('routines', [RoutineController::class, 'index']);
+    Route::post('routines', [RoutineController::class, 'store']);
+    Route::put('routines/{id}', [RoutineController::class, 'update']);
+    Route::post('routines/{id}/toggle', [RoutineController::class, 'toggleActive']);
+    Route::delete('routines/{id}', [RoutineController::class, 'destroy']);
+    Route::get('routine-tasks/day/{dayOfWeek}', [RoutineController::class, 'tasksForDay']);
+
+    // Routine Tasks
+    Route::get('routines/{routineId}/tasks', [RoutineTaskController::class, 'index']);
+    Route::post('routines/{routineId}/tasks', [RoutineTaskController::class, 'store']);
+    Route::put('routines/{routineId}/tasks/{taskId}', [RoutineTaskController::class, 'update']);
+    Route::delete('routines/{routineId}/tasks/{taskId}', [RoutineTaskController::class, 'destroy']);
+
+    // Notifications
+    Route::get('notifications', [NotificationController::class, 'index']);
+    Route::get('notifications/unread-count', [NotificationController::class, 'unreadCount']);
+    Route::post('notifications/{id}/mark-as-read', [NotificationController::class, 'markAsRead']);
+    Route::delete('notifications/{id}', [NotificationController::class, 'delete']);
 });

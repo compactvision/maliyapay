@@ -83,6 +83,16 @@ class PageController extends Controller
     }
 
     /**
+     * Show routine page
+     */
+    public function routine(): Response
+    {
+        return Inertia::render('routine', [
+            'requiresAuth' => true,
+        ]);
+    }
+
+    /**
      * Show auth page (login/register)
      */
     public function auth(): Response

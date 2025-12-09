@@ -8,6 +8,7 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -38,68 +39,50 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
+import { useRoutineTasksForDay } from '@/hooks/useRoutines';
+import { useTasks } from '@/hooks/useTasks';
 import { AppLayout } from '@/layouts/AppLayout';
 import { cn } from '@/lib/utils';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { format } from 'date-fns';
+import { addDays, format, isBefore, isToday, isTomorrow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import {
+    AlertCircle,
     CalendarIcon,
+    CheckCircle2,
     CheckSquare,
     Circle,
+    Clock,
     Edit2,
+    Filter,
     Loader2,
     Plus,
+    Search,
     Trash2,
+    X,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
-// --- Helper Function ---
-const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('fr-FR', {
-        style: 'currency',
-        currency: 'EUR',
-    }).format(amount);
-};
-
-// --- Mock Data ---
+// --- Constants ---
 const mockPriorities = [
-    { value: 'low', label: 'Basse', color: 'text-green-600' },
-    { value: 'medium', label: 'Moyenne', color: 'text-yellow-600' },
-    { value: 'high', label: 'Haute', color: 'text-red-600' },
-];
-
-const initialTodos = [
     {
-        id: '1',
-        title: 'Payer la facture EDF',
-        description: 'Ne pas oublier',
-        priority: 'high',
-        dueDate: new Date(Date.now() + 86400000),
-        completed: false,
+        value: 'low',
+        label: 'Basse',
+        color: 'text-green-600 bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800',
     },
     {
-        id: '2',
-        title: 'Appeler le plombier',
-        priority: 'medium',
-        dueDate: new Date(Date.now() + 172800000),
-        completed: false,
+        value: 'medium',
+        label: 'Moyenne',
+        color: 'text-yellow-600 bg-yellow-50 border-yellow-200 dark:bg-yellow-900/20 dark:border-yellow-800',
     },
     {
-        id: '3',
-        title: 'Faire les courses',
-        priority: 'low',
-        dueDate: new Date(Date.now() + 604800000),
-        completed: false,
-    },
-    {
-        id: '4',
-        title: 'Finaliser le rapport',
-        priority: 'high',
-        completed: true,
+        value: 'high',
+        label: 'Haute',
+        color: 'text-red-600 bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800',
     },
 ];
 
@@ -111,21 +94,40 @@ const todoFormSchema = z.object({
     priority: z.enum(['low', 'medium', 'high']),
 });
 
+type TodoFormValues = z.infer<typeof todoFormSchema>;
+
 export default function TaskPage() {
+    // --- Hooks ---
+    const {
+        activeTasks,
+        completedTasks,
+        isLoading,
+        createTask,
+        updateTask,
+        toggleCompletion,
+        deleteTask,
+    } = useTasks();
+
+    // Get today's day of week (1 = Monday, 7 = Sunday)
+    const today = new Date();
+    const dayOfWeek = today.getDay() === 0 ? 7 : today.getDay();
+
+    const { tasks: routineTasks, isLoading: routineTasksLoading } =
+        useRoutineTasksForDay(dayOfWeek);
+
     // --- State Management ---
-    const [todos, setTodos] = useState(initialTodos);
     const [formOpen, setFormOpen] = useState(false);
-    const [editTodo, setEditTodo] = useState<any>(null);
+    const [editTaskId, setEditTaskId] = useState<string | null>(null);
     const [deleteId, setDeleteId] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [quickTitle, setQuickTitle] = useState('');
-
-    // --- Derived State ---
-    const activeTodos = todos.filter((todo) => !todo.completed);
-    const completedTodos = todos.filter((todo) => todo.completed);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [filterPriority, setFilterPriority] = useState<string>('all');
+    const [filterDate, setFilterDate] = useState<string>('all');
+    const [activeTab, setActiveTab] = useState('all');
 
     // --- Form Handling ---
-    const form = useForm({
+    const form = useForm<TodoFormValues>({
         resolver: zodResolver(todoFormSchema),
         defaultValues: {
             title: '',
@@ -136,19 +138,19 @@ export default function TaskPage() {
 
     const resetForm = () => {
         form.reset();
-        setEditTodo(null);
+        setEditTaskId(null);
     };
 
-    const openForm = (todo?: any) => {
-        if (todo) {
-            form.setValue('title', todo.title);
-            form.setValue('description', todo.description || '');
-            form.setValue('priority', todo.priority);
+    const openForm = (task?: any) => {
+        if (task) {
+            form.setValue('title', task.title);
+            form.setValue('description', task.description || '');
+            form.setValue('priority', task.priority);
             form.setValue(
                 'dueDate',
-                todo.dueDate ? new Date(todo.dueDate) : undefined,
+                task.dueDate ? new Date(task.dueDate) : undefined,
             );
-            setEditTodo(todo);
+            setEditTaskId(task.id);
         } else {
             resetForm();
         }
@@ -160,98 +162,171 @@ export default function TaskPage() {
         resetForm();
     };
 
-    const handleSubmit = async (values: any) => {
+    const handleSubmit = async (values: TodoFormValues) => {
         setIsSubmitting(true);
-        const todoData = { ...values, completed: false };
+        try {
+            const taskData = {
+                title: values.title,
+                description: values.description || undefined,
+                priority: values.priority,
+                dueDate: values.dueDate
+                    ? format(values.dueDate, 'yyyy-MM-dd')
+                    : undefined,
+            };
 
-        await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulate network request
+            if (editTaskId) {
+                await updateTask(editTaskId, taskData);
+            } else {
+                await createTask(taskData);
+            }
 
-        if (editTodo) {
-            console.log('Modification de la tâche:', {
-                id: editTodo.id,
-                ...todoData,
-            });
-            setTodos((prev) =>
-                prev.map((todo) =>
-                    todo.id === editTodo.id ? { ...todo, ...todoData } : todo,
-                ),
-            );
-        } else {
-            console.log('Ajout de la tâche:', todoData);
-            setTodos((prev) => [
-                ...prev,
-                { ...todoData, id: Date.now().toString() },
-            ]);
+            closeForm();
+        } catch (error) {
+            console.error('Error submitting task:', error);
+        } finally {
+            setIsSubmitting(false);
         }
-
-        setIsSubmitting(false);
-        closeForm();
     };
 
     const handleQuickAdd = async (e: React.FormEvent) => {
         e.preventDefault();
         if (quickTitle.trim()) {
-            await handleAddTodo({
-                title: quickTitle.trim(),
-                priority: 'medium',
-            });
-            setQuickTitle('');
+            try {
+                await createTask({
+                    title: quickTitle.trim(),
+                    priority: 'medium',
+                });
+                setQuickTitle('');
+            } catch (error) {
+                console.error('Error creating quick task:', error);
+            }
         }
     };
 
-    const handleAddTodo = async (todoData: any) => {
-        console.log('Ajout de la tâche:', todoData);
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-        setTodos((prev) => [
-            ...prev,
-            { ...todoData, id: Date.now().toString() },
-        ]);
-    };
-
     const handleToggle = async (id: string) => {
-        console.log('Basculement de la tâche:', id);
-        setTodos((prev) =>
-            prev.map((todo) =>
-                todo.id === id ? { ...todo, completed: !todo.completed } : todo,
-            ),
-        );
+        try {
+            await toggleCompletion(id);
+        } catch (error) {
+            console.error('Error toggling task:', error);
+        }
     };
 
-    const handleDelete = () => {
+    const handleDelete = async () => {
         if (!deleteId) return;
-        console.log('Suppression de la tâche:', deleteId);
-        setTodos((prev) => prev.filter((todo) => todo.id !== deleteId));
-        setDeleteId(null);
+        try {
+            await deleteTask(deleteId);
+            setDeleteId(null);
+        } catch (error) {
+            console.error('Error deleting task:', error);
+        }
+    };
+
+    const handleRoutineTaskCheck = async (routineTask: any) => {
+        try {
+            // Create a real task from the routine task
+            await createTask({
+                title: routineTask.title,
+                description: routineTask.description || undefined,
+                priority: routineTask.priority,
+                dueDate: format(today, 'yyyy-MM-dd'),
+            });
+            // Note: The toast success message is already shown by createTask in useTasks hook
+        } catch (error) {
+            console.error('Error creating task from routine:', error);
+        }
     };
 
     // --- Helper Functions ---
-    const getDueDateClass = (date: Date) => {
+    const getDueDateClass = (dateString: string | null) => {
+        if (!dateString) return 'text-muted-foreground';
+
         const today = new Date();
         today.setHours(0, 0, 0, 0);
-        const dueDate = new Date(date);
+        const dueDate = new Date(dateString);
         dueDate.setHours(0, 0, 0, 0);
-        const diffTime = dueDate.getTime() - today.getTime();
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-        if (diffDays < 0) return 'text-destructive';
-        if (diffDays === 0) return 'text-yellow-600';
-        if (diffDays <= 3) return 'text-orange-600';
+        if (isBefore(dueDate, today)) return 'text-red-600 dark:text-red-400';
+        if (isToday(dueDate)) return 'text-yellow-600 dark:text-yellow-400';
+        if (isTomorrow(dueDate)) return 'text-orange-600 dark:text-orange-400';
+        if (isBefore(dueDate, addDays(today, 7)))
+            return 'text-blue-600 dark:text-blue-400';
         return 'text-muted-foreground';
     };
 
-    const getDueDateLabel = (date: Date) => {
+    const getDueDateLabel = (dateString: string | null) => {
+        if (!dateString) return '';
+
         const today = new Date();
         today.setHours(0, 0, 0, 0);
-        const dueDate = new Date(date);
+        const dueDate = new Date(dateString);
         dueDate.setHours(0, 0, 0, 0);
-        const diffTime = dueDate.getTime() - today.getTime();
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-        if (diffDays < 0) return `En retard de ${Math.abs(diffDays)} jour(s)`;
-        if (diffDays === 0) return "Aujourd'hui";
-        if (diffDays === 1) return 'Demain';
-        return `Dans ${diffDays} jour(s)`;
+        if (isBefore(dueDate, today)) {
+            const diffTime = today.getTime() - dueDate.getTime();
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            return `En retard de ${diffDays} jour(s)`;
+        }
+        if (isToday(dueDate)) return "Aujourd'hui";
+        if (isTomorrow(dueDate)) return 'Demain';
+        return format(dueDate, 'd MMMM', { locale: fr });
     };
+
+    // Filter tasks based on search term and filters
+    const filteredActiveTasks = useMemo(() => {
+        return activeTasks.filter((task) => {
+            const matchesSearch =
+                task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                (task.description &&
+                    task.description
+                        .toLowerCase()
+                        .includes(searchTerm.toLowerCase()));
+
+            const matchesPriority =
+                filterPriority === 'all' || task.priority === filterPriority;
+
+            let matchesDate = true;
+            if (filterDate !== 'all' && task.dueDate) {
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const dueDate = new Date(task.dueDate);
+                dueDate.setHours(0, 0, 0, 0);
+
+                if (filterDate === 'today') matchesDate = isToday(dueDate);
+                else if (filterDate === 'week')
+                    matchesDate = isBefore(dueDate, addDays(today, 7));
+                else if (filterDate === 'overdue')
+                    matchesDate = isBefore(dueDate, today);
+            }
+
+            return matchesSearch && matchesPriority && matchesDate;
+        });
+    }, [activeTasks, searchTerm, filterPriority, filterDate]);
+
+    const filteredCompletedTasks = useMemo(() => {
+        return completedTasks.filter((task) => {
+            const matchesSearch =
+                task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                (task.description &&
+                    task.description
+                        .toLowerCase()
+                        .includes(searchTerm.toLowerCase()));
+
+            const matchesPriority =
+                filterPriority === 'all' || task.priority === filterPriority;
+
+            return matchesSearch && matchesPriority;
+        });
+    }, [completedTasks, searchTerm, filterPriority]);
+
+    if (isLoading) {
+        return (
+            <AppLayout>
+                <div className="flex items-center justify-center py-12">
+                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </div>
+            </AppLayout>
+        );
+    }
 
     return (
         <AppLayout>
@@ -276,7 +351,7 @@ export default function TaskPage() {
                 </div>
 
                 {/* Quick Add */}
-                <Card>
+                <Card className="border-0 shadow-sm">
                     <CardContent className="p-4">
                         <form onSubmit={handleQuickAdd} className="flex gap-2">
                             <Input
@@ -286,157 +361,568 @@ export default function TaskPage() {
                                 onChange={(e) => setQuickTitle(e.target.value)}
                                 className="flex-1"
                             />
-                            <Button type="submit">
+                            <Button type="submit" className="shrink-0">
                                 <Plus className="h-4 w-4" />
                             </Button>
                         </form>
                     </CardContent>
                 </Card>
 
-                {/* Active Todos */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="text-lg">
-                            À faire ({activeTodos.length})
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        {activeTodos.length > 0 ? (
-                            <div className="space-y-2">
-                                {activeTodos.map((todo) => (
-                                    <div
-                                        key={todo.id}
-                                        className="group flex items-start gap-3 rounded-lg border p-3 transition-all hover:shadow-sm"
+                {/* Search and Filters */}
+                <Card className="border-0 shadow-sm">
+                    <CardContent className="p-4">
+                        <div className="flex flex-col gap-4 sm:flex-row">
+                            <div className="relative flex-1">
+                                <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                                <Input
+                                    placeholder="Rechercher une tâche..."
+                                    value={searchTerm}
+                                    onChange={(e) =>
+                                        setSearchTerm(e.target.value)
+                                    }
+                                    className="pl-10"
+                                />
+                            </div>
+                            <div className="flex gap-2">
+                                <Select
+                                    value={filterPriority}
+                                    onValueChange={setFilterPriority}
+                                >
+                                    <SelectTrigger className="w-[140px]">
+                                        <Filter className="mr-2 h-4 w-4" />
+                                        <SelectValue placeholder="Priorité" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">
+                                            Toutes priorités
+                                        </SelectItem>
+                                        {mockPriorities.map((p) => (
+                                            <SelectItem
+                                                key={p.value}
+                                                value={p.value}
+                                            >
+                                                {p.label}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                <Select
+                                    value={filterDate}
+                                    onValueChange={setFilterDate}
+                                >
+                                    <SelectTrigger className="w-[140px]">
+                                        <CalendarIcon className="mr-2 h-4 w-4" />
+                                        <SelectValue placeholder="Date" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">
+                                            Toutes dates
+                                        </SelectItem>
+                                        <SelectItem value="today">
+                                            Aujourd'hui
+                                        </SelectItem>
+                                        <SelectItem value="week">
+                                            Cette semaine
+                                        </SelectItem>
+                                        <SelectItem value="overdue">
+                                            En retard
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                {(searchTerm ||
+                                    filterPriority !== 'all' ||
+                                    filterDate !== 'all') && (
+                                    <Button
+                                        variant="outline"
+                                        size="icon"
+                                        onClick={() => {
+                                            setSearchTerm('');
+                                            setFilterPriority('all');
+                                            setFilterDate('all');
+                                        }}
+                                        className="shrink-0"
                                     >
-                                        <button
-                                            onClick={() =>
-                                                handleToggle(todo.id)
-                                            }
-                                            className="mt-0.5 text-muted-foreground transition-colors hover:text-primary"
-                                        >
-                                            <Circle className="h-5 w-5" />
-                                        </button>
-                                        <div className="min-w-0 flex-1">
-                                            <div className="flex items-center gap-2">
-                                                <p className="font-medium">
-                                                    {todo.title}
-                                                </p>
-                                                <span
-                                                    className={cn(
-                                                        'text-xs font-medium',
-                                                        mockPriorities.find(
-                                                            (p) =>
-                                                                p.value ===
-                                                                todo.priority,
-                                                        )?.color,
-                                                    )}
-                                                >
-                                                    {
-                                                        mockPriorities.find(
-                                                            (p) =>
-                                                                p.value ===
-                                                                todo.priority,
-                                                        )?.label
-                                                    }
-                                                </span>
-                                            </div>
-                                            {todo.description && (
-                                                <p className="mt-0.5 text-sm text-muted-foreground">
-                                                    {todo.description}
-                                                </p>
-                                            )}
-                                            {todo.dueDate && (
-                                                <p
-                                                    className={cn(
-                                                        'mt-1 text-xs',
-                                                        getDueDateClass(
-                                                            todo.dueDate,
-                                                        ),
-                                                    )}
-                                                >
-                                                    <CalendarIcon className="mr-1 inline h-3 w-3" />
-                                                    {getDueDateLabel(
-                                                        todo.dueDate,
-                                                    )}
-                                                </p>
-                                            )}
-                                        </div>
-                                        <div className="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                className="h-8 w-8"
-                                                onClick={() => openForm(todo)}
-                                            >
-                                                <Edit2 className="h-4 w-4" />
-                                            </Button>
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                className="h-8 w-8 text-destructive hover:text-destructive"
-                                                onClick={() =>
-                                                    setDeleteId(todo.id)
-                                                }
-                                            >
-                                                <Trash2 className="h-4 w-4" />
-                                            </Button>
-                                        </div>
-                                    </div>
-                                ))}
+                                        <X className="h-4 w-4" />
+                                    </Button>
+                                )}
                             </div>
-                        ) : (
-                            <div className="py-8 text-center text-muted-foreground">
-                                Aucune tâche en cours
-                            </div>
-                        )}
+                        </div>
                     </CardContent>
                 </Card>
 
-                {/* Completed Todos */}
-                {completedTodos.length > 0 && (
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="text-lg text-muted-foreground">
-                                Terminées ({completedTodos.length})
-                            </CardTitle>
+                {/* Routine Tasks for Today */}
+                {routineTasks.length > 0 && (
+                    <Card className="overflow-hidden border-0 shadow-sm">
+                        <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20">
+                            <div className="flex items-center justify-between">
+                                <CardTitle className="flex items-center gap-2 text-lg">
+                                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/50">
+                                        <Calendar className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                                    </div>
+                                    Tâches de routine ({routineTasks.length})
+                                </CardTitle>
+                                <span className="text-sm text-muted-foreground">
+                                    {format(today, 'EEEE', { locale: fr })}
+                                </span>
+                            </div>
                         </CardHeader>
-                        <CardContent>
-                            <div className="space-y-2">
-                                {completedTodos.map((todo) => (
+                        <CardContent className="p-4">
+                            <div className="space-y-3">
+                                {routineTasks.map((task) => (
                                     <div
-                                        key={todo.id}
-                                        className="group flex items-start gap-3 rounded-lg border p-3 opacity-60"
+                                        key={task.id}
+                                        className="group flex items-start gap-3 rounded-lg border border-blue-200 bg-blue-50/50 p-3 transition-all hover:shadow-sm dark:border-blue-900 dark:bg-blue-950/20"
                                     >
                                         <button
                                             onClick={() =>
-                                                handleToggle(todo.id)
+                                                handleRoutineTaskCheck(task)
                                             }
-                                            className="text-success mt-0.5"
+                                            className="mt-0.5 text-blue-500 transition-colors hover:text-blue-600 dark:hover:text-blue-300"
+                                            title="Créer une tâche à partir de cette routine"
                                         >
-                                            <CheckSquare className="h-5 w-5" />
+                                            <Circle className="h-5 w-5" />
                                         </button>
-                                        <div className="min-w-0 flex-1">
-                                            <p className="font-medium line-through">
-                                                {todo.title}
-                                            </p>
+                                        <div className="flex-1 space-y-1">
+                                            <div className="flex items-center gap-2">
+                                                <p className="font-medium">
+                                                    {task.title}
+                                                </p>
+                                                <Badge
+                                                    variant="outline"
+                                                    className={cn(
+                                                        'gap-1 border-0 font-medium',
+                                                        task.priority ===
+                                                            'high' &&
+                                                            'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
+                                                        task.priority ===
+                                                            'medium' &&
+                                                            'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
+                                                        task.priority ===
+                                                            'low' &&
+                                                            'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+                                                    )}
+                                                >
+                                                    {task.priority ===
+                                                        'high' && (
+                                                        <AlertCircle className="h-3 w-3" />
+                                                    )}
+                                                    {task.priority ===
+                                                        'medium' && (
+                                                        <Clock className="h-3 w-3" />
+                                                    )}
+                                                    {task.priority ===
+                                                        'low' && (
+                                                        <CheckCircle2 className="h-3 w-3" />
+                                                    )}
+                                                    {task.priority === 'high' &&
+                                                        'Haute'}
+                                                    {task.priority ===
+                                                        'medium' && 'Moyenne'}
+                                                    {task.priority === 'low' &&
+                                                        'Basse'}
+                                                </Badge>
+                                            </div>
+                                            {task.description && (
+                                                <p className="text-sm text-muted-foreground">
+                                                    {task.description}
+                                                </p>
+                                            )}
+                                            <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                                                {task.timeRange && (
+                                                    <div className="flex items-center gap-1">
+                                                        <Clock className="h-3 w-3" />
+                                                        {task.timeRange}
+                                                    </div>
+                                                )}
+                                                {task.dayLabel && (
+                                                    <div className="flex items-center gap-1">
+                                                        <CalendarIcon className="h-3 w-3" />
+                                                        {task.dayLabel}
+                                                    </div>
+                                                )}
+                                                <span className="text-xs text-blue-600 italic dark:text-blue-400">
+                                                    📅 Routine
+                                                </span>
+                                            </div>
                                         </div>
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="h-8 w-8 text-destructive opacity-0 group-hover:opacity-100 hover:text-destructive"
-                                            onClick={() => setDeleteId(todo.id)}
-                                        >
-                                            <Trash2 className="h-4 w-4" />
-                                        </Button>
                                     </div>
                                 ))}
                             </div>
+                            <p className="mt-3 text-xs text-muted-foreground">
+                                💡 Ces tâches proviennent de vos routines. Elles
+                                se régénèrent automatiquement chaque jour.
+                            </p>
                         </CardContent>
                     </Card>
                 )}
 
-                {todos.length === 0 && (
-                    <Card>
+                {/* Tasks Tabs */}
+                <Tabs
+                    value={activeTab}
+                    onValueChange={setActiveTab}
+                    className="space-y-4"
+                >
+                    <TabsList className="grid w-full grid-cols-3">
+                        <TabsTrigger value="all" className="relative">
+                            Toutes
+                            <span className="ml-1 rounded-full bg-muted px-2 py-0.5 text-xs">
+                                {activeTasks.length + completedTasks.length}
+                            </span>
+                        </TabsTrigger>
+                        <TabsTrigger value="active" className="relative">
+                            À faire
+                            <span className="ml-1 rounded-full bg-muted px-2 py-0.5 text-xs">
+                                {filteredActiveTasks.length}
+                            </span>
+                        </TabsTrigger>
+                        <TabsTrigger value="completed" className="relative">
+                            Terminées
+                            <span className="ml-1 rounded-full bg-muted px-2 py-0.5 text-xs">
+                                {filteredCompletedTasks.length}
+                            </span>
+                        </TabsTrigger>
+                    </TabsList>
+
+                    <TabsContent value="all" className="space-y-4">
+                        {/* Active Todos */}
+                        <Card className="border-0 shadow-sm">
+                            <CardHeader>
+                                <CardTitle className="text-lg">
+                                    À faire ({filteredActiveTasks.length})
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                {filteredActiveTasks.length > 0 ? (
+                                    <div className="space-y-3">
+                                        {filteredActiveTasks.map((todo) => (
+                                            <div
+                                                key={todo.id}
+                                                className="group flex items-start gap-3 rounded-lg border p-3 transition-all hover:shadow-sm"
+                                            >
+                                                <button
+                                                    onClick={() =>
+                                                        handleToggle(todo.id)
+                                                    }
+                                                    className="mt-0.5 text-muted-foreground transition-colors hover:text-primary"
+                                                >
+                                                    <Circle className="h-5 w-5" />
+                                                </button>
+                                                <div className="min-w-0 flex-1">
+                                                    <div className="flex items-center gap-2">
+                                                        <p className="font-medium">
+                                                            {todo.title}
+                                                        </p>
+                                                        <Badge
+                                                            variant="outline"
+                                                            className={cn(
+                                                                'gap-1 border-0 font-medium',
+                                                                mockPriorities.find(
+                                                                    (p) =>
+                                                                        p.value ===
+                                                                        todo.priority,
+                                                                )?.color,
+                                                            )}
+                                                        >
+                                                            {todo.priority ===
+                                                                'high' && (
+                                                                <AlertCircle className="h-3 w-3" />
+                                                            )}
+                                                            {todo.priority ===
+                                                                'medium' && (
+                                                                <Clock className="h-3 w-3" />
+                                                            )}
+                                                            {todo.priority ===
+                                                                'low' && (
+                                                                <CheckCircle2 className="h-3 w-3" />
+                                                            )}
+                                                            {
+                                                                mockPriorities.find(
+                                                                    (p) =>
+                                                                        p.value ===
+                                                                        todo.priority,
+                                                                )?.label
+                                                            }
+                                                        </Badge>
+                                                    </div>
+                                                    {todo.description && (
+                                                        <p className="mt-0.5 text-sm text-muted-foreground">
+                                                            {todo.description}
+                                                        </p>
+                                                    )}
+                                                    {todo.dueDate && (
+                                                        <p
+                                                            className={cn(
+                                                                'mt-1 flex items-center gap-1 text-xs',
+                                                                getDueDateClass(
+                                                                    todo.dueDate,
+                                                                ),
+                                                            )}
+                                                        >
+                                                            <CalendarIcon className="h-3 w-3" />
+                                                            {getDueDateLabel(
+                                                                todo.dueDate,
+                                                            )}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                                <div className="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-8 w-8"
+                                                        onClick={() =>
+                                                            openForm(todo)
+                                                        }
+                                                    >
+                                                        <Edit2 className="h-4 w-4" />
+                                                    </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-8 w-8 text-destructive hover:text-destructive"
+                                                        onClick={() =>
+                                                            setDeleteId(todo.id)
+                                                        }
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="py-8 text-center text-muted-foreground">
+                                        {searchTerm ||
+                                        filterPriority !== 'all' ||
+                                        filterDate !== 'all'
+                                            ? 'Aucune tâche ne correspond à vos filtres'
+                                            : 'Aucune tâche en cours'}
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
+
+                        {/* Completed Todos */}
+                        {filteredCompletedTasks.length > 0 && (
+                            <Card className="border-0 shadow-sm">
+                                <CardHeader>
+                                    <CardTitle className="text-lg text-muted-foreground">
+                                        Terminées (
+                                        {filteredCompletedTasks.length})
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="space-y-3">
+                                        {filteredCompletedTasks.map((todo) => (
+                                            <div
+                                                key={todo.id}
+                                                className="group flex items-start gap-3 rounded-lg border p-3 opacity-60"
+                                            >
+                                                <button
+                                                    onClick={() =>
+                                                        handleToggle(todo.id)
+                                                    }
+                                                    className="text-success mt-0.5"
+                                                >
+                                                    <CheckSquare className="h-5 w-5" />
+                                                </button>
+                                                <div className="min-w-0 flex-1">
+                                                    <p className="font-medium line-through">
+                                                        {todo.title}
+                                                    </p>
+                                                </div>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-8 w-8 text-destructive opacity-0 group-hover:opacity-100 hover:text-destructive"
+                                                    onClick={() =>
+                                                        setDeleteId(todo.id)
+                                                    }
+                                                >
+                                                    <Trash2 className="h-4 w-4" />
+                                                </Button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        )}
+                    </TabsContent>
+
+                    <TabsContent value="active" className="space-y-4">
+                        <Card className="border-0 shadow-sm">
+                            <CardHeader>
+                                <CardTitle className="text-lg">
+                                    À faire ({filteredActiveTasks.length})
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                {filteredActiveTasks.length > 0 ? (
+                                    <div className="space-y-3">
+                                        {filteredActiveTasks.map((todo) => (
+                                            <div
+                                                key={todo.id}
+                                                className="group flex items-start gap-3 rounded-lg border p-3 transition-all hover:shadow-sm"
+                                            >
+                                                <button
+                                                    onClick={() =>
+                                                        handleToggle(todo.id)
+                                                    }
+                                                    className="mt-0.5 text-muted-foreground transition-colors hover:text-primary"
+                                                >
+                                                    <Circle className="h-5 w-5" />
+                                                </button>
+                                                <div className="min-w-0 flex-1">
+                                                    <div className="flex items-center gap-2">
+                                                        <p className="font-medium">
+                                                            {todo.title}
+                                                        </p>
+                                                        <Badge
+                                                            variant="outline"
+                                                            className={cn(
+                                                                'gap-1 border-0 font-medium',
+                                                                mockPriorities.find(
+                                                                    (p) =>
+                                                                        p.value ===
+                                                                        todo.priority,
+                                                                )?.color,
+                                                            )}
+                                                        >
+                                                            {todo.priority ===
+                                                                'high' && (
+                                                                <AlertCircle className="h-3 w-3" />
+                                                            )}
+                                                            {todo.priority ===
+                                                                'medium' && (
+                                                                <Clock className="h-3 w-3" />
+                                                            )}
+                                                            {todo.priority ===
+                                                                'low' && (
+                                                                <CheckCircle2 className="h-3 w-3" />
+                                                            )}
+                                                            {
+                                                                mockPriorities.find(
+                                                                    (p) =>
+                                                                        p.value ===
+                                                                        todo.priority,
+                                                                )?.label
+                                                            }
+                                                        </Badge>
+                                                    </div>
+                                                    {todo.description && (
+                                                        <p className="mt-0.5 text-sm text-muted-foreground">
+                                                            {todo.description}
+                                                        </p>
+                                                    )}
+                                                    {todo.dueDate && (
+                                                        <p
+                                                            className={cn(
+                                                                'mt-1 flex items-center gap-1 text-xs',
+                                                                getDueDateClass(
+                                                                    todo.dueDate,
+                                                                ),
+                                                            )}
+                                                        >
+                                                            <CalendarIcon className="h-3 w-3" />
+                                                            {getDueDateLabel(
+                                                                todo.dueDate,
+                                                            )}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                                <div className="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-8 w-8"
+                                                        onClick={() =>
+                                                            openForm(todo)
+                                                        }
+                                                    >
+                                                        <Edit2 className="h-4 w-4" />
+                                                    </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-8 w-8 text-destructive hover:text-destructive"
+                                                        onClick={() =>
+                                                            setDeleteId(todo.id)
+                                                        }
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="py-8 text-center text-muted-foreground">
+                                        {searchTerm ||
+                                        filterPriority !== 'all' ||
+                                        filterDate !== 'all'
+                                            ? 'Aucune tâche ne correspond à vos filtres'
+                                            : 'Aucune tâche en cours'}
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
+
+                    <TabsContent value="completed" className="space-y-4">
+                        <Card className="border-0 shadow-sm">
+                            <CardHeader>
+                                <CardTitle className="text-lg text-muted-foreground">
+                                    Terminées ({filteredCompletedTasks.length})
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                {filteredCompletedTasks.length > 0 ? (
+                                    <div className="space-y-3">
+                                        {filteredCompletedTasks.map((todo) => (
+                                            <div
+                                                key={todo.id}
+                                                className="group flex items-start gap-3 rounded-lg border p-3 opacity-60"
+                                            >
+                                                <button
+                                                    onClick={() =>
+                                                        handleToggle(todo.id)
+                                                    }
+                                                    className="text-success mt-0.5"
+                                                >
+                                                    <CheckSquare className="h-5 w-5" />
+                                                </button>
+                                                <div className="min-w-0 flex-1">
+                                                    <p className="font-medium line-through">
+                                                        {todo.title}
+                                                    </p>
+                                                </div>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-8 w-8 text-destructive opacity-0 group-hover:opacity-100 hover:text-destructive"
+                                                    onClick={() =>
+                                                        setDeleteId(todo.id)
+                                                    }
+                                                >
+                                                    <Trash2 className="h-4 w-4" />
+                                                </Button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="py-8 text-center text-muted-foreground">
+                                        {searchTerm || filterPriority !== 'all'
+                                            ? 'Aucune tâche ne correspond à vos filtres'
+                                            : 'Aucune tâche terminée'}
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
+                </Tabs>
+
+                {activeTasks.length === 0 && completedTasks.length === 0 && (
+                    <Card className="border-0 shadow-sm">
                         <CardContent className="flex flex-col items-center justify-center py-12">
                             <div className="mb-4 rounded-full bg-muted p-4">
                                 <CheckSquare className="h-8 w-8 text-muted-foreground" />
@@ -454,10 +940,12 @@ export default function TaskPage() {
 
             {/* Todo Form Dialog */}
             <Dialog open={formOpen} onOpenChange={closeForm}>
-                <DialogContent>
+                <DialogContent className="sm:max-w-[425px]">
                     <DialogHeader>
                         <DialogTitle>
-                            {editTodo ? 'Modifier la tâche' : 'Nouvelle tâche'}
+                            {editTaskId
+                                ? 'Modifier la tâche'
+                                : 'Nouvelle tâche'}
                         </DialogTitle>
                     </DialogHeader>
                     <Form {...form}>
@@ -605,7 +1093,7 @@ export default function TaskPage() {
                                     {isSubmitting && (
                                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                     )}
-                                    {editTodo ? 'Modifier' : 'Ajouter'}
+                                    {editTaskId ? 'Modifier' : 'Ajouter'}
                                 </Button>
                             </div>
                         </form>

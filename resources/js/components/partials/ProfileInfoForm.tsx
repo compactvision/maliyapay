@@ -9,10 +9,11 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useAuth } from '@/hooks/useAuth';
 import { User } from '@/types';
 import { useForm } from '@inertiajs/react';
 import { Loader2 } from 'lucide-react';
-import { FormEventHandler } from 'react';
+import React, { FormEventHandler } from 'react';
 import { toast } from 'sonner';
 
 interface ProfileInfoFormProps {
@@ -20,19 +21,51 @@ interface ProfileInfoFormProps {
 }
 
 export function ProfileInfoForm({ user }: ProfileInfoFormProps) {
-    const { data, setData, patch, processing, errors, recentlySuccessful } =
+    const { refreshUser } = useAuth();
+    const { data, setData, post, processing, errors, recentlySuccessful } =
         useForm({
             name: user?.name ?? '',
             email: user?.email ?? '',
+            avatar: null as File | null,
+            _method: 'PATCH',
         });
 
     if (!user) return null;
 
+    // Synchroniser les données du formulaire quand l'utilisateur change (ex: après refreshUser)
+    // Note: On utilise useEffect pour réagir aux props qui changent
+    React.useEffect(() => {
+        if (user) {
+            setData((prev) => ({
+                ...prev,
+                name: user.name,
+                email: user.email,
+                // On ne touche pas à l'avatar file ici
+            }));
+        }
+    }, [user]); // Dépendance user
+
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
-        patch(route('profile.update'), {
-            onSuccess: () => toast.success('Profil mis à jour avec succès !'),
+        post(route('profile.update'), {
+            onSuccess: async () => {
+                toast.success('Profil mis à jour avec succès !');
+                setData('avatar', null);
+                await refreshUser();
+            },
+            forceFormData: true,
+            preserveScroll: true,
+            onError: (errors) => {
+                console.error('Profile update errors:', errors);
+                toast.error('Erreur lors de la mise à jour');
+            },
         });
+    };
+
+    const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            setData('avatar', e.target.files[0]);
+        }
     };
 
     return (
@@ -40,12 +73,63 @@ export function ProfileInfoForm({ user }: ProfileInfoFormProps) {
             <CardHeader>
                 <CardTitle>Informations du profil</CardTitle>
                 <CardDescription>
-                    Mettez à jour vos informations de compte et votre adresse
-                    e-mail.
+                    Mettez à jour vos informations de compte, votre adresse
+                    e-mail et votre photo de profil.
                 </CardDescription>
             </CardHeader>
             <CardContent>
-                <form onSubmit={submit} className="space-y-6">
+                <form
+                    onSubmit={submit}
+                    className="space-y-6"
+                    encType="multipart/form-data"
+                >
+                    {/* Avatar Upload Section */}
+                    <div className="flex items-center gap-6">
+                        <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-full border bg-gray-100">
+                            {/* Preview logic or current avatar */}
+                            {data.avatar ? (
+                                <img
+                                    src={URL.createObjectURL(data.avatar)}
+                                    alt="Preview"
+                                    className="h-full w-full object-cover"
+                                />
+                            ) : user.avatar ? (
+                                <img
+                                    src={user.avatar}
+                                    alt="Avatar"
+                                    className="h-full w-full object-cover"
+                                />
+                            ) : (
+                                <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-blue-500 to-purple-600 text-2xl font-bold text-white">
+                                    {user.name.charAt(0).toUpperCase()}
+                                </div>
+                            )}
+                        </div>
+                        <div className="grid gap-2">
+                            <Label
+                                htmlFor="avatar"
+                                className="cursor-pointer rounded-md bg-secondary px-4 py-2 text-sm font-medium hover:bg-secondary/80"
+                            >
+                                Changer la photo
+                            </Label>
+                            <Input
+                                id="avatar"
+                                type="file"
+                                className="hidden"
+                                onChange={handleAvatarChange}
+                                accept="image/*"
+                            />
+                            <p className="text-xs text-muted-foreground">
+                                JPG, PNG ou GIF (Max. 2MB)
+                            </p>
+                            {errors.avatar && (
+                                <p className="text-sm text-destructive">
+                                    {errors.avatar}
+                                </p>
+                            )}
+                        </div>
+                    </div>
+
                     <div className="grid gap-2">
                         <Label htmlFor="name">Nom</Label>
                         <Input

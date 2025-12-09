@@ -90,3 +90,18 @@ createInertiaApp({
         color: '#4B5563',
     },
 });
+
+// PWA Service Worker Registration
+import { registerSW } from 'virtual:pwa-register';
+
+if ('serviceWorker' in navigator) {
+    registerSW({
+        immediate: true,
+        onNeedRefresh() {
+            // Check for updates
+        },
+        onOfflineReady() {
+            // Ready for offline
+        },
+    });
+}

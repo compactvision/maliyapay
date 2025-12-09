@@ -7,8 +7,10 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 Route::middleware('auth')->group(function () {
-    Route::redirect('settings', '/profile');
-    Route::redirect('settings/profile', '/profile');
+    // Route::redirect('settings', '/profile'); // On remplace la redirection par la vraie page
+    // Route::redirect('settings/profile', '/profile'); // On garde celle-ci si on veut
+     Route::get('settings', [\App\Http\Controllers\SettingsController::class, 'index'])->name('settings.index');
+     Route::patch('settings/notifications', [\App\Http\Controllers\SettingsController::class, 'update'])->name('settings.notifications.update');
 
     // Route::get('settings/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('settings/profile', [ProfileController::class, 'update'])->name('profile.update');

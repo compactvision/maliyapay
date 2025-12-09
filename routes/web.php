@@ -15,9 +15,7 @@ Route::get('/reset-password/{token}', [PageController::class, 'resetPassword'])-
 
 
 // Protected routes (auth required via Sanctum)
-// Note: For web routes with Inertia, we check auth on the frontend
-// The API routes are protected with auth:sanctum middleware
-
+// Protected routes (auth required via Sanctum)
 Route::get('/', [PageController::class, 'dashboard'])->name('home');
 Route::get('/account', [PageController::class, 'account'])->name('account');
 Route::get('/transaction', [PageController::class, 'transaction'])->name('transaction');
@@ -25,8 +23,15 @@ Route::get('/category', [PageController::class, 'category'])->name('category');
 Route::get('/budget', [PageController::class, 'budget'])->name('budget');
 Route::get('/statistic', [PageController::class, 'statistic'])->name('statistic');
 Route::get('/task', [PageController::class, 'task'])->name('task');
+Route::get('/routine', [PageController::class, 'routine'])->name('routine');
 Route::get('/profile', [\App\Modules\Identity\Presentation\Controllers\ProfileController::class, 'show'])->name('profile.show');
-Route::patch('/profile', [\App\Modules\Identity\Presentation\Controllers\ProfileController::class, 'update'])->name('profile.update');
+Route::patch('/profile', [\App\Modules\Identity\Presentation\Controllers\ProfileController::class, 'update'])
+    ->middleware('auth:sanctum') // Utilisation de Sanctum pour supporter l'auth par token
+    ->name('profile.update');
+
+Route::patch('/password', [\App\Http\Controllers\Settings\PasswordController::class, 'update'])
+    ->middleware('auth:sanctum')
+    ->name('profile.password.update');
 
 
 require __DIR__.'/settings.php';
