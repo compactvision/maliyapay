@@ -105,6 +105,36 @@ export function useNotifications() {
         [notifications, fetchNotifications],
     );
 
+    const markAllAsRead = useCallback(async () => {
+        try {
+            // Optimistic update
+            setNotifications((prev) =>
+                prev.map((n) => ({
+                    ...n,
+                    isRead: true,
+                    readAt: new Date().toISOString(),
+                })),
+            );
+            setUnreadCount(0);
+            await notificationApi.markAllAsRead();
+        } catch (err) {
+            console.error('Error marking all as read', err);
+            fetchNotifications();
+        }
+    }, [fetchNotifications]);
+
+    const deleteAllNotifications = useCallback(async () => {
+        try {
+            // Optimistic update
+            setNotifications([]);
+            setUnreadCount(0);
+            await notificationApi.deleteAll();
+        } catch (err) {
+            console.error('Error deleting all notifications', err);
+            fetchNotifications();
+        }
+    }, [fetchNotifications]);
+
     // Initial fetch
     useEffect(() => {
         fetchUnreadCount();
@@ -121,6 +151,8 @@ export function useNotifications() {
         fetchNotifications,
         fetchUnreadCount,
         markAsRead,
+        markAllAsRead,
         deleteNotification,
+        deleteAllNotifications,
     };
 }

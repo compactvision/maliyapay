@@ -20,5 +20,7 @@ interface NotificationRepositoryInterface
     
     public function markAllAsRead(int $userId): void;
     
+    public function deleteAll(int $userId): void;
+    
     public function deleteOldNotifications(int $daysOld = 30): int;
 }

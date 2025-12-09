@@ -1,4 +1,4 @@
-import axios from "axios";
+import axios from 'axios';
 
 export interface Notification {
     id: string;
@@ -49,5 +49,13 @@ export const notificationApi = {
 
     delete: async (id: string): Promise<void> => {
         await axios.delete(`/api/notifications/${id}`);
+    },
+
+    markAllAsRead: async (): Promise<void> => {
+        await axios.post('/api/notifications/mark-all-as-read');
+    },
+
+    deleteAll: async (): Promise<void> => {
+        await axios.delete('/api/notifications/delete-all');
     },
 };

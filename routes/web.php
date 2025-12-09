@@ -24,6 +24,7 @@ Route::get('/budget', [PageController::class, 'budget'])->name('budget');
 Route::get('/statistic', [PageController::class, 'statistic'])->name('statistic');
 Route::get('/task', [PageController::class, 'task'])->name('task');
 Route::get('/routine', [PageController::class, 'routine'])->name('routine');
+Route::get('/notification', [PageController::class, 'notification'])->name('notification');
 Route::get('/profile', [\App\Modules\Identity\Presentation\Controllers\ProfileController::class, 'show'])->name('profile.show');
 Route::patch('/profile', [\App\Modules\Identity\Presentation\Controllers\ProfileController::class, 'update'])
     ->middleware('auth:sanctum') // Utilisation de Sanctum pour supporter l'auth par token
@@ -32,6 +33,8 @@ Route::patch('/profile', [\App\Modules\Identity\Presentation\Controllers\Profile
 Route::patch('/password', [\App\Http\Controllers\Settings\PasswordController::class, 'update'])
     ->middleware('auth:sanctum')
     ->name('profile.password.update');
+
+
 
 
 require __DIR__.'/settings.php';

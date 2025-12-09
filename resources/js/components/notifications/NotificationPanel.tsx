@@ -63,6 +63,18 @@ export function NotificationPanel({
                     </div>
                 )}
             </ScrollArea>
+
+            <div className="border-t p-2">
+                <Button
+                    variant="ghost"
+                    className="w-full justify-center text-sm"
+                    onClick={() => {
+                        window.location.href = route('notification');
+                    }}
+                >
+                    Voir toutes les notifications
+                </Button>
+            </div>
         </div>
     );
 }

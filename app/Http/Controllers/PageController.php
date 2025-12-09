@@ -133,4 +133,13 @@ class PageController extends Controller
             'email' => request()->query('email'),
         ]);
     }
+    /**
+     * Show notification page
+     */
+    public function notification(): Response
+    {
+        return Inertia::render('notification', [
+            'requiresAuth' => true,
+        ]);
+    }
 }

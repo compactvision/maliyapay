@@ -77,6 +77,13 @@ class EloquentNotificationRepository implements NotificationRepositoryInterface
             ->update(['read_at' => now()]);
     }
 
+    public function deleteAll(int $userId): void
+    {
+        DB::table('notifications')
+            ->where('user_id', $userId)
+            ->delete();
+    }
+
     public function deleteOldNotifications(int $daysOld = 30): int
     {
         return DB::table('notifications')

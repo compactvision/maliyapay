@@ -89,4 +89,42 @@ class NotificationController extends Controller
             ], $e->getMessage() === 'Unauthorized' ? 403 : 404);
         }
     }
+    public function markAllAsRead(Request $request): JsonResponse
+    {
+        $userId = $request->user()->id;
+
+        try {
+             // Directly using repository for this action to avoid creating a new Command/Handler
+             // for the sake of speed as requested by "Anti-Gravity" principles (User Request).
+             // In a cleaner architectue, we would use MarkAllAsReadCommand.
+             app(\App\Modules\Notification\Domain\Repositories\NotificationRepositoryInterface::class)
+                ->markAllAsRead($userId);
+
+            return response()->json([
+                'message' => 'Toutes les notifications marquées comme lues',
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function deleteAll(Request $request): JsonResponse
+    {
+        $userId = $request->user()->id;
+
+        try {
+             app(\App\Modules\Notification\Domain\Repositories\NotificationRepositoryInterface::class)
+                ->deleteAll($userId);
+
+            return response()->json([
+                'message' => 'Toutes les notifications ont été supprimées',
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
 }
