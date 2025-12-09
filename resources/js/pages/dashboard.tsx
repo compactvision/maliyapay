@@ -1,8 +1,11 @@
 import { TransactionForm } from '@/components/transactions/TransactionForm';
+import { TransactionList } from '@/components/transactions/TransactionList';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { StatCard } from '@/components/ui/stat-card';
 import { AppLayout } from '@/layouts/AppLayout';
+import { Link, usePage } from '@inertiajs/react';
+import axios from 'axios';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import {
@@ -12,54 +15,56 @@ import {
     TrendingUp,
     Wallet,
 } from 'lucide-react';
-import { useState } from 'react';
-// import { Transaction } from '@/types/transaction';
+import { useEffect, useState } from 'react';
 
 export default function Welcome() {
+    const { auth } = usePage<any>().props;
+    const user = auth.user;
+
     const [formOpen, setFormOpen] = useState(false);
-    const [editTransaction, setEditTransaction] = useState();
+    const [editTransaction, setEditTransaction] = useState<any>(null);
 
-    const user = [
-        {
-            name: 'Juan Loze',
-            email: 'juan.loze@gmail.com',
-            avatar: 'https://randomuser.me/api/portraits/men/75.jpg',
-        },
-    ];
+    // Data State
+    const [accounts, setAccounts] = useState<any[]>([]);
+    const [recentTransactions, setRecentTransactions] = useState<any[]>([]);
+    const [categories, setCategories] = useState<any[]>([]);
+    const [stats, setStats] = useState<{
+        income: Record<string, number>;
+        expenses: Record<string, number>;
+    }>({
+        income: {},
+        expenses: {},
+    });
+    const [isLoading, setIsLoading] = useState(true);
 
-    const formatCurrency = (amount: number) => {
+    const formatCurrency = (amount: number, currency = 'USD') => {
         return new Intl.NumberFormat('fr-FR', {
             style: 'currency',
-            currency: 'EUR',
+            currency: currency,
         }).format(amount);
     };
 
-    const accounts = [
-        {
-            id: 1,
-            name: 'Compte bancaire',
-            balance: 1500,
-            color: '#FFCDD2',
-            type: 'checking',
-        },
-        {
-            id: 2,
-            name: "Compte d'epargne",
-            balance: 2500,
-            color: '#B3E5FC',
-            type: 'savings',
-        },
-    ];
+    const fetchData = async () => {
+        try {
+            const [dashboardRes, categoriesRes] = await Promise.all([
+                axios.get('/api/dashboard'),
+                axios.get('/api/categories'),
+            ]);
 
-    const totalBalance = accounts.reduce(
-        (acc, account) => acc + account.balance,
-        0,
-    );
-    const income = accounts.reduce((acc, account) => acc + account.balance, 0);
-    const expenses = accounts.reduce(
-        (acc, account) => acc + account.balance,
-        0,
-    );
+            setAccounts(dashboardRes.data.accounts);
+            setRecentTransactions(dashboardRes.data.recent_transactions);
+            setStats(dashboardRes.data.stats);
+            setCategories(categoriesRes.data.data);
+            setIsLoading(false);
+        } catch (error) {
+            console.error('Failed to fetch dashboard data', error);
+            setIsLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchData();
+    }, []);
 
     const handleEdit = (transaction: any) => {
         setEditTransaction(transaction);
@@ -67,14 +72,76 @@ export default function Welcome() {
     };
 
     const handleDelete = async (id: string) => {
-        // await deleteTransaction(id);
+        try {
+            await axios.delete(`/api/transactions/${id}`);
+            fetchData(); // Refresh list to show reimbursement
+        } catch (error) {
+            console.error('Failed to delete', error);
+        }
     };
 
     const handleFormClose = (open: boolean) => {
         setFormOpen(open);
         if (!open) {
-            setEditTransaction(undefined);
+            setEditTransaction(null);
         }
+    };
+
+    const handleTransactionSuccess = () => {
+        fetchData();
+    };
+
+    // Calculate total balance display (aggregating all balances)
+    // For MVP, we just list them in the card if multiple.
+    const renderMultiCurrencyValue = (
+        values: Record<string, number> | undefined,
+        type: 'total' | 'income' | 'expense' | 'balance' = 'total',
+    ) => {
+        if (!values || Object.keys(values).length === 0) return '0,00 $';
+
+        return (
+            <div className="flex flex-col gap-0.5">
+                {Object.entries(values).map(([currency, amount]) => (
+                    <span key={currency} className="text-lg">
+                        {type === 'income'
+                            ? '+'
+                            : type === 'expense'
+                              ? '-'
+                              : ''}
+                        {formatCurrency(amount, currency)}
+                    </span>
+                ))}
+            </div>
+        );
+    };
+
+    // Calculate simple Balance (Income - Expense) per currency
+    const calculateBalanceStats = () => {
+        const balances: Record<string, number> = {};
+        const allCurrencies = new Set([
+            ...Object.keys(stats.income),
+            ...Object.keys(stats.expenses),
+        ]);
+
+        allCurrencies.forEach((currency) => {
+            const inc = stats.income[currency] || 0;
+            const exp = stats.expenses[currency] || 0;
+            balances[currency] = inc - exp;
+        });
+
+        return balances;
+    };
+
+    // Aggregate account balances by currency for "Solde total"
+    const calculateTotalBalance = () => {
+        const totals: Record<string, number> = {};
+        accounts.forEach((acc) => {
+            acc.balances.forEach((bal: any) => {
+                if (!totals[bal.currency]) totals[bal.currency] = 0;
+                totals[bal.currency] += parseFloat(bal.amount);
+            });
+        });
+        return totals;
     };
 
     return (
@@ -84,7 +151,7 @@ export default function Welcome() {
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                         <h1 className="text-2xl font-bold tracking-tight">
-                            Bonjour, {user[0].name?.split(' ')[0]} 👋
+                            Bonjour, {user?.name?.split(' ')[0]} 👋
                         </h1>
                         <p className="text-muted-foreground">
                             {format(new Date(), 'EEEE d MMMM yyyy', {
@@ -106,31 +173,36 @@ export default function Welcome() {
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                     <StatCard
                         title="Solde total"
-                        value={formatCurrency(totalBalance)}
+                        value={renderMultiCurrencyValue(
+                            calculateTotalBalance(),
+                        )}
                         subtitle={`${accounts.length} compte${accounts.length > 1 ? 's' : ''}`}
                         icon={<Wallet className="h-5 w-5 text-primary" />}
                         variant="primary"
                     />
                     <StatCard
                         title="Revenus du mois"
-                        value={formatCurrency(income)}
+                        value={renderMultiCurrencyValue(stats.income, 'income')}
                         icon={<TrendingUp className="text-success h-5 w-5" />}
                         variant="income"
                     />
                     <StatCard
                         title="Dépenses du mois"
-                        value={formatCurrency(expenses)}
+                        value={renderMultiCurrencyValue(
+                            stats.expenses,
+                            'expense',
+                        )}
                         icon={
                             <TrendingDown className="h-5 w-5 text-destructive" />
                         }
                         variant="expense"
                     />
                     <StatCard
-                        title="Balance"
-                        value={formatCurrency(income - expenses)}
-                        subtitle={
-                            income - expenses >= 0 ? 'Excédent' : 'Déficit'
-                        }
+                        title="Balance Mensuelle"
+                        value={renderMultiCurrencyValue(
+                            calculateBalanceStats(),
+                            'balance',
+                        )}
                         icon={<ArrowUpRight className="h-5 w-5 text-primary" />}
                     />
                 </div>
@@ -166,22 +238,21 @@ export default function Welcome() {
                                                 {account.name}
                                             </p>
                                             <p className="text-sm text-muted-foreground capitalize">
-                                                {account.type === 'checking' &&
-                                                    'Courant'}
-                                                {account.type === 'savings' &&
-                                                    'Épargne'}
-                                                {account.type === 'credit' &&
-                                                    'Crédit'}
-                                                {account.type === 'cash' &&
-                                                    'Espèces'}
-                                                {account.type ===
-                                                    'investment' &&
-                                                    'Investissement'}
+                                                {account.type}
                                             </p>
                                         </div>
-                                        <p className="font-semibold">
-                                            {formatCurrency(account.balance)}
-                                        </p>
+                                        <div className="text-right font-semibold">
+                                            {account.balances.map(
+                                                (bal: any) => (
+                                                    <div key={bal.currency}>
+                                                        {formatCurrency(
+                                                            bal.amount,
+                                                            bal.currency,
+                                                        )}
+                                                    </div>
+                                                ),
+                                            )}
+                                        </div>
                                     </div>
                                 ))}
                             </div>
@@ -196,17 +267,18 @@ export default function Welcome() {
                             Transactions récentes
                         </CardTitle>
                         <Button variant="ghost" size="sm" asChild>
-                            <a href="/transactions">Voir tout</a>
+                            <Link href="/transaction">Voir tout</Link>
                         </Button>
                     </CardHeader>
                     <CardContent>
-                        {/* <TransactionList
+                        <TransactionList
                             transactions={recentTransactions}
                             categories={categories}
                             accounts={accounts}
+                            isLoading={isLoading}
                             onEdit={handleEdit}
                             onDelete={handleDelete}
-                        /> */}
+                        />
                     </CardContent>
                 </Card>
             </div>
@@ -215,6 +287,7 @@ export default function Welcome() {
                 open={formOpen}
                 onOpenChange={handleFormClose}
                 transaction={editTransaction}
+                onSuccess={handleTransactionSuccess}
             />
         </AppLayout>
     );

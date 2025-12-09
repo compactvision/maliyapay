@@ -112,6 +112,55 @@ final class Account
     {
         return $this->balances;
     }
+
+    public function deposit(float $amount, string $currency): void
+    {
+        foreach ($this->balances as $balance) {
+            if ($balance->currencyCode() === $currency) {
+                // Assuming Balance is immutable, we might need a setBalance or create a new Balance
+                // Since Balance is a VO, we should replace it in the array or update internal state if mutable (unlikely for VO)
+                // Let's check Balance VO implementation. If it's just a DTO, we can't easily update it inside the array unless we remove and replace.
+                // However, usually we should update the Aggregate.
+                
+                // Simplified: We assume we can replace the balance object.
+                // Actually, let's look at the Balance VO next. For now, let's implement the logic assuming we can update it.
+                // If Balance is immutable (as it should be), we create a new one.
+                $newAmount = $balance->amount() + $amount;
+                $newBalance = new Balance($currency, $newAmount);
+                $this->updateBalance($newBalance);
+                return;
+            }
+        }
+        // If not found, create new? Or throw?
+        // Usually accounts should have the currency initialized. If not, maybe auto-create? 
+        // Let's auto-create for now as it's user friendly.
+        $this->addBalance(new Balance($currency, $amount));
+    }
+
+    public function withdraw(float $amount, string $currency): void
+    {
+        foreach ($this->balances as $balance) {
+            if ($balance->currencyCode() === $currency) {
+                $newAmount = $balance->amount() - $amount;
+                $newBalance = new Balance($currency, $newAmount);
+                $this->updateBalance($newBalance);
+                return;
+            }
+        }
+        // If currency doesn't exist, we can create it with negative balance or throw.
+        // Let's create with negative.
+        $this->addBalance(new Balance($currency, -$amount));
+    }
+
+    private function updateBalance(Balance $newBalance): void
+    {
+        foreach ($this->balances as $key => $balance) {
+            if ($balance->currencyCode() === $newBalance->currencyCode()) {
+                $this->balances[$key] = $newBalance;
+                return;
+            }
+        }
+    }
     
     // Getters...
     public function id(): UuidInterface { return $this->id; }

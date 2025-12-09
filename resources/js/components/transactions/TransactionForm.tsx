@@ -1,360 +1,484 @@
-import { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { format } from 'date-fns';
-import { fr } from 'date-fns/locale';
-import { Calendar, Loader2 } from 'lucide-react';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
+import {
+    Form,
+    FormControl,
+    FormField,
+    FormItem,
+    FormLabel,
+    FormMessage,
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
 } from '@/components/ui/popover';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Textarea } from '@/components/ui/textarea';
+import { useToast } from '@/components/ui/use-toast';
 import { cn } from '@/lib/utils';
+import { zodResolver } from '@hookform/resolvers/zod';
+import axios from 'axios';
+import { format } from 'date-fns';
+import { fr } from 'date-fns/locale';
+import { AlertCircle, Calendar, Loader2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
 
 const formSchema = z.object({
-  type: z.enum(['income', 'expense']),
-  amount: z.string().min(1, 'Montant requis').refine(
-    (val) => !isNaN(parseFloat(val)) && parseFloat(val) > 0,
-    'Montant invalide'
-  ),
-  description: z.string().min(1, 'Description requise'),
-  accountId: z.string().min(1, 'Compte requis'),
-  categoryId: z.string().min(1, 'Catégorie requise'),
-  date: z.date(),
-  notes: z.string().optional(),
+    type: z.enum(['income', 'expense']),
+    amount: z
+        .string()
+        .min(1, 'Montant requis')
+        .refine(
+            (val) => !isNaN(parseFloat(val)) && parseFloat(val) > 0,
+            'Montant invalide',
+        ),
+    currency: z.string().min(1, 'Devise requise'),
+    description: z.string().min(1, 'Description requise'),
+    accountId: z.string().min(1, 'Compte requis'),
+    categoryId: z.string().min(1, 'Catégorie requise'),
+    date: z.date(),
+    notes: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
 
 interface TransactionFormProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  transaction?: any;
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+    transaction?: any;
+    onSuccess?: () => void;
 }
 
-const mockAccounts = [
-  { id: '1', name: 'Compte Courant' },
-  { id: '2', name: 'Livret A' },
-  { id: '3', name: 'Compte Épargne' },
-];
+export function TransactionForm({
+    open,
+    onOpenChange,
+    transaction,
+    onSuccess,
+}: TransactionFormProps) {
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [accounts, setAccounts] = useState<any[]>([]);
+    const [categories, setCategories] = useState<any[]>([]);
+    const { toast } = useToast();
 
-const mockIncomeCategories = [
-  { id: 'inc_1', name: 'Salaire' },
-  { id: 'inc_2', name: 'Freelance' },
-  { id: 'inc_3', name: 'Remboursement' },
-];
+    const form = useForm<FormValues>({
+        resolver: zodResolver(formSchema),
+        defaultValues: {
+            type: transaction?.type === 'income' ? 'income' : 'expense',
+            amount: transaction?.amount?.toString() || '',
+            currency: transaction?.currency || 'CDF',
+            description: transaction?.description || '',
+            accountId: transaction?.accountId || '',
+            categoryId: transaction?.categoryId || '',
+            date: transaction?.date ? new Date(transaction.date) : new Date(),
+            notes: transaction?.notes || '',
+        },
+    });
 
-const mockExpenseCategories = [
-  { id: 'exp_1', name: 'Courses' },
-  { id: 'exp_2', name: 'Loisir' },
-  { id: 'exp_3', name: 'Transport' },
-  { id: 'exp_4', name: 'Logement' },
-];
+    useEffect(() => {
+        if (open) {
+            fetchData();
+            if (transaction) {
+                form.reset({
+                    type: transaction.type === 'income' ? 'income' : 'expense',
+                    amount: transaction.amount.toString(),
+                    currency: transaction.currency,
+                    description: transaction.description,
+                    accountId: transaction.accountId || transaction.account_id,
+                    categoryId:
+                        transaction.categoryId || transaction.category_id,
+                    date: new Date(transaction.date),
+                    notes: transaction.notes || '',
+                });
+            } else {
+                form.reset({
+                    type: 'expense',
+                    amount: '',
+                    currency: 'CDF',
+                    description: '',
+                    accountId: '',
+                    categoryId: '',
+                    date: new Date(),
+                    notes: '',
+                });
+            }
+        }
+    }, [open, transaction, form]);
 
-const mockAddTransaction = async (data: any) => {
-  console.log('Simulation d\'ajout de transaction:', data);
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  return { success: true };
-};
+    const fetchData = async () => {
+        try {
+            const [accRes, catRes] = await Promise.all([
+                axios.get('/api/accounts'),
+                axios.get('/api/categories'),
+            ]);
+            setAccounts(accRes.data.data);
+            setCategories(catRes.data.data);
+        } catch (error) {
+            console.error('Failed to fetch data', error);
+        }
+    };
 
-const mockUpdateTransaction = async (id: string, data: any) => {
-  console.log(`Simulation de modification de la transaction ${id}:`, data);
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  return { success: true };
-};
+    const transactionType = form.watch('type');
+    const filteredCategories = categories.filter(
+        (c) => c.type === transactionType,
+    );
 
-export function TransactionForm({ open, onOpenChange, transaction }: TransactionFormProps) {
-  const [isSubmitting, setIsSubmitting] = useState(false);
+    const handleSubmit = form.handleSubmit(async (values: FormValues) => {
+        setIsSubmitting(true);
+        form.clearErrors(); // Clear previous errors
+        try {
+            const data = {
+                type: values.type,
+                amount: values.amount,
+                currency: values.currency,
+                description: values.description,
+                account_id: values.accountId,
+                category_id: values.categoryId,
+                date: format(values.date, 'yyyy-MM-dd HH:mm:ss'),
+                notes: values.notes,
+            };
 
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      type: transaction?.type === 'income' ? 'income' : 'expense',
-      amount: transaction?.amount?.toString() || '',
-      description: transaction?.description || '',
-      accountId: transaction?.accountId || '',
-      categoryId: transaction?.categoryId || '',
-      date: transaction?.date ? new Date(transaction.date) : new Date(),
-      notes: transaction?.notes || '',
-    },
-  });
+            if (transaction) {
+                await axios.put(`/api/transactions/${transaction.id}`, data);
+            } else {
+                await axios.post('/api/transactions', data);
+            }
 
-  const transactionType = form.watch('type');
-  const categories = transactionType === 'income' ? mockIncomeCategories : mockExpenseCategories;
+            toast({
+                title: 'Succès',
+                description: 'Transaction enregistrée',
+            });
 
-  const handleSubmit = form.handleSubmit(async (values: FormValues) => {
-    setIsSubmitting(true);
-    try {
-      const data = {
-        type: values.type,
-        amount: parseFloat(values.amount),
-        description: values.description,
-        accountId: values.accountId,
-        categoryId: values.categoryId,
-        date: values.date,
-        notes: values.notes,
-      };
+            onOpenChange(false);
+            form.reset();
+            if (onSuccess) onSuccess();
+        } catch (error: any) {
+            console.error('Error submitting transaction:', error);
+            const errorMessage =
+                error.response?.data?.message || 'Une erreur est survenue';
 
-      let result;
-      if (transaction) {
-        result = await mockUpdateTransaction(transaction.id, data);
-      } else {
-        result = await mockAddTransaction(data);
-      }
+            // Set form root error to display in the UI
+            form.setError('root', {
+                type: 'manual',
+                message: errorMessage,
+            });
 
-      if (result.success) {
-        console.log(transaction ? 'Transaction modifiée avec succès' : 'Transaction ajoutée avec succès');
-        onOpenChange(false);
-        form.reset();
-      } else {
-        console.error('Une erreur est survenue lors de la simulation.');
-      }
-    } catch (error) {
-      console.error('Une erreur est survenue:', error);
-    } finally {
-      setIsSubmitting(false);
-    }
-  });
+            // Also show toast as backup/notification
+            toast({
+                variant: 'destructive',
+                title: 'Erreur',
+                description: errorMessage,
+            });
+        } finally {
+            setIsSubmitting(false);
+        }
+    });
 
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px] h-screen sm:h-auto sm:max-h-[90vh] w-full overflow-hidden flex flex-col p-0 gap-0">
-        <DialogHeader className="px-4 pt-4 pb-2 sm:px-6 sm:pt-6 shrink-0">
-          <DialogTitle className="text-lg sm:text-xl">
-            {transaction ? 'Modifier' : 'Nouvelle transaction'}
-          </DialogTitle>
-        </DialogHeader>
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="flex h-screen w-full flex-col gap-0 overflow-hidden p-0 sm:h-auto sm:max-h-[90vh] sm:max-w-[425px]">
+                <DialogHeader className="shrink-0 px-4 pt-4 pb-2 sm:px-6 sm:pt-6">
+                    <DialogTitle className="text-lg sm:text-xl">
+                        {transaction ? 'Modifier' : 'Nouvelle transaction'}
+                    </DialogTitle>
+                </DialogHeader>
 
-        <Form {...form}>
-          <div className="flex-1 overflow-y-auto px-4 sm:px-6 space-y-2.5 sm:space-y-4 pb-4">
-            <FormField
-              control={form.control}
-              name="type"
-              render={({ field }) => (
-                <FormItem>
-                  <Tabs
-                    value={field.value}
-                    onValueChange={(value) => {
-                      field.onChange(value);
-                      form.setValue('categoryId', '');
-                    }}
-                  >
-                    <TabsList className="grid w-full grid-cols-2 h-9">
-                      <TabsTrigger 
-                        value="expense"
-                        className="text-sm data-[state=active]:bg-red-500 data-[state=active]:text-white"
-                      >
-                        Dépense
-                      </TabsTrigger>
-                      <TabsTrigger 
-                        value="income"
-                        className="text-sm data-[state=active]:bg-emerald-500 data-[state=active]:text-white"
-                      >
-                        Revenu
-                      </TabsTrigger>
-                    </TabsList>
-                  </Tabs>
-                </FormItem>
-              )}
-            />
+                <Form {...form}>
+                    <div className="flex-1 space-y-2.5 overflow-y-auto px-4 pb-4 sm:space-y-4 sm:px-6">
+                        {form.formState.errors.root && (
+                            <div className="rounded-md bg-destructive/15 p-3 text-sm text-destructive dark:bg-destructive/10">
+                                <div className="flex gap-2">
+                                    <AlertCircle className="h-4 w-4" />
+                                    <span>
+                                        {form.formState.errors.root.message}
+                                    </span>
+                                </div>
+                            </div>
+                        )}
+                        <FormField
+                            control={form.control}
+                            name="type"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <Tabs
+                                        value={field.value}
+                                        onValueChange={(value) => {
+                                            field.onChange(value);
+                                            form.setValue('categoryId', '');
+                                        }}
+                                    >
+                                        <TabsList className="grid h-9 w-full grid-cols-2">
+                                            <TabsTrigger
+                                                value="expense"
+                                                className="text-sm data-[state=active]:bg-red-500 data-[state=active]:text-white"
+                                            >
+                                                Dépense
+                                            </TabsTrigger>
+                                            <TabsTrigger
+                                                value="income"
+                                                className="text-sm data-[state=active]:bg-emerald-500 data-[state=active]:text-white"
+                                            >
+                                                Revenu
+                                            </TabsTrigger>
+                                        </TabsList>
+                                    </Tabs>
+                                </FormItem>
+                            )}
+                        />
 
-            <FormField
-              control={form.control}
-              name="amount"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-xs sm:text-sm">Montant (€)</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      placeholder="0.00"
-                      className="h-9 sm:h-10 text-base sm:text-lg font-semibold"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage className="text-xs" />
-                </FormItem>
-              )}
-            />
+                        <div className="grid grid-cols-2 gap-2 sm:gap-4">
+                            <FormField
+                                control={form.control}
+                                name="amount"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel className="text-xs sm:text-sm">
+                                            Montant
+                                        </FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                type="number"
+                                                step="0.01"
+                                                placeholder="0.00"
+                                                className="h-9 text-base font-semibold sm:h-10 sm:text-lg"
+                                                {...field}
+                                            />
+                                        </FormControl>
+                                        <FormMessage className="text-xs" />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="currency"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel className="text-xs sm:text-sm">
+                                            Devise
+                                        </FormLabel>
+                                        <Select
+                                            onValueChange={field.onChange}
+                                            value={field.value}
+                                        >
+                                            <FormControl>
+                                                <SelectTrigger className="h-9 sm:h-10">
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                                <SelectItem value="CDF">
+                                                    CDF
+                                                </SelectItem>
+                                                <SelectItem value="USD">
+                                                    USD
+                                                </SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        <FormMessage className="text-xs" />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
 
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-xs sm:text-sm">Description</FormLabel>
-                  <FormControl>
-                    <Input 
-                      placeholder="Ex: Courses" 
-                      className="h-9 sm:h-10"
-                      {...field} 
-                    />
-                  </FormControl>
-                  <FormMessage className="text-xs" />
-                </FormItem>
-              )}
-            />
+                        <FormField
+                            control={form.control}
+                            name="description"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel className="text-xs sm:text-sm">
+                                        Description
+                                    </FormLabel>
+                                    <FormControl>
+                                        <Input
+                                            placeholder="Ex: Courses"
+                                            className="h-9 sm:h-10"
+                                            {...field}
+                                        />
+                                    </FormControl>
+                                    <FormMessage className="text-xs" />
+                                </FormItem>
+                            )}
+                        />
 
-            <div className="grid grid-cols-2 gap-2 sm:gap-4">
-              <FormField
-                control={form.control}
-                name="accountId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-xs sm:text-sm">Compte</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger className="h-9 sm:h-10">
-                          <SelectValue placeholder="Sélect." />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {mockAccounts.map((account) => (
-                          <SelectItem key={account.id} value={account.id}>
-                            {account.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage className="text-xs" />
-                  </FormItem>
-                )}
-              />
+                        <div className="grid grid-cols-2 gap-2 sm:gap-4">
+                            <FormField
+                                control={form.control}
+                                name="accountId"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel className="text-xs sm:text-sm">
+                                            Compte
+                                        </FormLabel>
+                                        <Select
+                                            onValueChange={field.onChange}
+                                            value={field.value}
+                                        >
+                                            <FormControl>
+                                                <SelectTrigger className="h-9 sm:h-10">
+                                                    <SelectValue placeholder="Sélect." />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                                {accounts.map((account) => (
+                                                    <SelectItem
+                                                        key={account.id}
+                                                        value={account.id}
+                                                    >
+                                                        {account.name}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        <FormMessage className="text-xs" />
+                                    </FormItem>
+                                )}
+                            />
 
-              <FormField
-                control={form.control}
-                name="categoryId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-xs sm:text-sm">Catégorie</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger className="h-9 sm:h-10">
-                          <SelectValue placeholder="Sélect." />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {categories.map((category) => (
-                          <SelectItem key={category.id} value={category.id}>
-                            {category.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage className="text-xs" />
-                  </FormItem>
-                )}
-              />
-            </div>
+                            <FormField
+                                control={form.control}
+                                name="categoryId"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel className="text-xs sm:text-sm">
+                                            Catégorie
+                                        </FormLabel>
+                                        <Select
+                                            onValueChange={field.onChange}
+                                            value={field.value}
+                                        >
+                                            <FormControl>
+                                                <SelectTrigger className="h-9 sm:h-10">
+                                                    <SelectValue placeholder="Sélect." />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                                {filteredCategories.map(
+                                                    (category) => (
+                                                        <SelectItem
+                                                            key={category.id}
+                                                            value={category.id}
+                                                        >
+                                                            {category.name}
+                                                        </SelectItem>
+                                                    ),
+                                                )}
+                                            </SelectContent>
+                                        </Select>
+                                        <FormMessage className="text-xs" />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
 
-            <FormField
-              control={form.control}
-              name="date"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-xs sm:text-sm">Date</FormLabel>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <FormControl>
+                        <FormField
+                            control={form.control}
+                            name="date"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel className="text-xs sm:text-sm">
+                                        Date
+                                    </FormLabel>
+                                    <Popover>
+                                        <PopoverTrigger asChild>
+                                            <FormControl>
+                                                <Button
+                                                    variant="outline"
+                                                    className={cn(
+                                                        'h-9 w-full justify-start text-left text-sm font-normal sm:h-10',
+                                                        !field.value &&
+                                                            'text-muted-foreground',
+                                                    )}
+                                                >
+                                                    <Calendar className="mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                                                    {field.value ? (
+                                                        format(
+                                                            field.value,
+                                                            'dd/MM/yyyy',
+                                                        )
+                                                    ) : (
+                                                        <span>Choisir</span>
+                                                    )}
+                                                </Button>
+                                            </FormControl>
+                                        </PopoverTrigger>
+                                        <PopoverContent
+                                            className="w-auto p-0"
+                                            align="start"
+                                        >
+                                            <CalendarComponent
+                                                mode="single"
+                                                selected={field.value}
+                                                onSelect={field.onChange}
+                                                initialFocus
+                                                locale={fr}
+                                            />
+                                        </PopoverContent>
+                                    </Popover>
+                                    <FormMessage className="text-xs" />
+                                </FormItem>
+                            )}
+                        />
+
+                        <FormField
+                            control={form.control}
+                            name="notes"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel className="text-xs sm:text-sm">
+                                        Notes (optionnel)
+                                    </FormLabel>
+                                    <FormControl>
+                                        <Textarea
+                                            placeholder="Notes..."
+                                            className="h-14 resize-none text-sm sm:h-16"
+                                            {...field}
+                                        />
+                                    </FormControl>
+                                    <FormMessage className="text-xs" />
+                                </FormItem>
+                            )}
+                        />
+                    </div>
+
+                    <div className="flex shrink-0 gap-2 border-t bg-background p-3 sm:gap-3 sm:p-4">
                         <Button
-                          variant="outline"
-                          className={cn(
-                            "w-full h-9 sm:h-10 justify-start text-left font-normal text-sm",
-                            !field.value && "text-muted-foreground"
-                          )}
+                            type="button"
+                            variant="outline"
+                            className="h-10 flex-1 sm:h-11"
+                            onClick={() => onOpenChange(false)}
                         >
-                          <Calendar className="mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                          {field.value ? (
-                            format(field.value, 'dd/MM/yyyy')
-                          ) : (
-                            <span>Choisir</span>
-                          )}
+                            Annuler
                         </Button>
-                      </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <CalendarComponent
-                        mode="single"
-                        selected={field.value}
-                        onSelect={field.onChange}
-                        initialFocus
-                        locale={fr}
-                      />
-                    </PopoverContent>
-                  </Popover>
-                  <FormMessage className="text-xs" />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="notes"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-xs sm:text-sm">Notes (optionnel)</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Notes..."
-                      className="resize-none h-14 sm:h-16 text-sm"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage className="text-xs" />
-                </FormItem>
-              )}
-            />
-          </div>
-
-          <div className="flex gap-2 sm:gap-3 p-3 sm:p-4 border-t bg-background shrink-0">
-            <Button
-              type="button"
-              variant="outline"
-              className="flex-1 h-10 sm:h-11"
-              onClick={() => onOpenChange(false)}
-            >
-              Annuler
-            </Button>
-            <Button
-              type="button"
-              className="flex-1 h-10 sm:h-11"
-              disabled={isSubmitting}
-              onClick={handleSubmit}
-            >
-              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {transaction ? 'Modifier' : 'Ajouter'}
-            </Button>
-          </div>
-        </Form>
-      </DialogContent>
-    </Dialog>
-  );
+                        <Button
+                            type="button"
+                            className="h-10 flex-1 sm:h-11"
+                            disabled={isSubmitting}
+                            onClick={handleSubmit}
+                        >
+                            {isSubmitting && (
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            )}
+                            {transaction ? 'Modifier' : 'Ajouter'}
+                        </Button>
+                    </div>
+                </Form>
+            </DialogContent>
+        </Dialog>
+    );
 }

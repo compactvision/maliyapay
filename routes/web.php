@@ -25,5 +25,8 @@ Route::get('/category', [PageController::class, 'category'])->name('category');
 Route::get('/budget', [PageController::class, 'budget'])->name('budget');
 Route::get('/statistic', [PageController::class, 'statistic'])->name('statistic');
 Route::get('/task', [PageController::class, 'task'])->name('task');
+Route::get('/profile', [\App\Modules\Identity\Presentation\Controllers\ProfileController::class, 'show'])->name('profile.show');
+Route::patch('/profile', [\App\Modules\Identity\Presentation\Controllers\ProfileController::class, 'update'])->name('profile.update');
+
 
 require __DIR__.'/settings.php';

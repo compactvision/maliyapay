@@ -12,6 +12,8 @@ export interface User {
     roles: string[];
     permissions: string[];
     created_at: string;
+    updated_at: string;
+    avatar?: string;
 }
 
 export interface LoginCredentials {

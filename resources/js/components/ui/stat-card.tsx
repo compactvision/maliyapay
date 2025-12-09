@@ -9,7 +9,7 @@ import { Card, CardContent } from '@/components/ui/card'; // Assurez-vous que le
 
 interface StatCardProps {
   title: string;
-  value: string | number;
+  value: string | number | ReactNode;
   subtitle?: string;
   icon?: ReactNode;
   trend?: {
@@ -57,12 +57,12 @@ export function StatCard({
             )}>
               {title}
             </p>
-            <p className={cn(
+            <div className={cn(
               "text-3xl font-bold tracking-tight",
               variant === 'primary' && "dark:text-emerald-500"
             )}>
               {value}
-            </p>
+            </div>
             {subtitle && (
               <p className={cn(
                 "text-sm",

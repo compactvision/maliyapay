@@ -20,22 +20,50 @@ class BudgetController extends Controller
     public function __construct(
         private readonly SetBudgetHandler $setHandler,
         private readonly DeleteBudgetHandler $deleteHandler,
-        private readonly BudgetRepositoryInterface $repository
+        private readonly BudgetRepositoryInterface $repository,
+        private readonly \App\Modules\Transaction\Domain\Repositories\TransactionRepositoryInterface $transactionRepository
     ) {
     }
 
     public function index(): JsonResponse
     {
-        $budgets = $this->repository->findAllByUser((string) auth()->id());
+        $userId = (string) auth()->id();
+        $budgets = $this->repository->findAllByUser($userId);
+        
+        $data = array_map(function ($b) use ($userId) {
+            // Calculate period dates
+            $now = new \DateTimeImmutable();
+            $startDate = match ($b->period()->value) {
+                'daily' => $now->setTime(0, 0, 0),
+                'weekly' => $now->modify('monday this week')->setTime(0, 0, 0),
+                'monthly' => $now->modify('first day of this month')->setTime(0, 0, 0),
+            };
+            
+            $endDate = match ($b->period()->value) {
+                'daily' => $now->setTime(23, 59, 59),
+                'weekly' => $now->modify('sunday this week')->setTime(23, 59, 59),
+                'monthly' => $now->modify('last day of this month')->setTime(23, 59, 59),
+            };
 
-        return response()->json([
-            'data' => array_map(fn ($b) => [
+            $spent = $this->transactionRepository->getSpentAmountForCategory(
+                $userId,
+                $b->categoryId(),
+                $startDate,
+                $endDate
+            );
+
+            return [
                 'id' => $b->id()->toString(),
                 'category_id' => $b->categoryId(),
                 'amount' => $b->amount(),
                 'currency' => $b->currency(),
                 'period' => $b->period()->value,
-            ], $budgets)
+                'spent_amount' => $spent,
+            ];
+        }, $budgets);
+
+        return response()->json([
+            'data' => $data
         ]);
     }
 
@@ -53,7 +81,7 @@ class BudgetController extends Controller
 
         return response()->json([
             'message' => 'Budget set successfully',
-        ], Response::HTTP_OK); // Using OK because it might be an update
+        ], Response::HTTP_OK);
     }
 
     public function destroy(string $id): JsonResponse

@@ -202,9 +202,7 @@ export const DesktopSidebar = () => {
 // --- Composant pour la Top Bar Mobile (CORRIGÉ) ---
 export const MobileTopBar = () => {
     const { toggleRightMenu } = useLayout();
-    const { props } = usePage();
-    // On accède à l'utilisateur de manière sécurisée avec `?.`
-    const user = props.auth?.user as User | undefined;
+    const { user } = useAuth();
 
     // On calcule les initiales avec une valeur par défaut si le nom n'existe pas
     const initials = user?.name
@@ -213,6 +211,7 @@ export const MobileTopBar = () => {
               .map((n) => n[0])
               .join('')
               .toUpperCase()
+              .slice(0, 2)
         : 'U';
 
     return (
@@ -234,10 +233,7 @@ export const MobileTopBar = () => {
 // --- Composant pour le Menu de Droite (Right Menu) (CORRIGÉ) ---
 export const RightMenu = () => {
     const { rightMenuIsOpen, closeRightMenu } = useLayout();
-    const { logout } = useAuth();
-    const { props } = usePage();
-    // On accède à l'utilisateur de manière sécurisée avec `?.`
-    const user = props.auth?.user as User | undefined;
+    const { logout, user } = useAuth();
 
     // On calcule les initiales avec une valeur par défaut
     const initials = user?.name
@@ -246,6 +242,7 @@ export const RightMenu = () => {
               .map((n) => n[0])
               .join('')
               .toUpperCase()
+              .slice(0, 2)
         : 'U';
 
     return (
@@ -281,6 +278,14 @@ export const RightMenu = () => {
                     </p>
                 </div>
                 <nav className="flex-1 space-y-1 px-4">
+                    <Link
+                        href="/category"
+                        onClick={closeRightMenu}
+                        className="flex items-center gap-3 rounded-lg px-3 py-2 text-gray-600 transition-colors hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"
+                    >
+                        <Tags className="h-5 w-5" />
+                        Catégories
+                    </Link>
                     <Link
                         href="/profile"
                         onClick={closeRightMenu}
@@ -388,9 +393,7 @@ export const SidebarTrigger = () => {
 export const DesktopHeaderProfile = () => {
     const [isDropdownOpen, setIsDropdownOpen] = React.useState(false);
     const { isDarkMode, toggleTheme } = useLayout();
-    const { logout } = useAuth();
-    const { props } = usePage();
-    const user = props.auth?.user as User | undefined;
+    const { logout, user } = useAuth();
 
     // Calculer les initiales
     const initials = user?.name
@@ -399,6 +402,7 @@ export const DesktopHeaderProfile = () => {
               .map((n) => n[0])
               .join('')
               .toUpperCase()
+              .slice(0, 2)
         : 'U';
 
     // Fermer le dropdown quand on clique en dehors

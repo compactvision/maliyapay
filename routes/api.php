@@ -5,6 +5,8 @@ use Illuminate\Support\Facades\Route;
 use App\Modules\Category\Presentation\Controllers\CategoryController;
 use App\Modules\Account\Presentation\Controllers\AccountController;
 use App\Modules\Identity\Presentation\Controllers\AuthController;
+use App\Modules\Budget\Presentation\Controllers\BudgetController;
+use App\Modules\Transaction\Presentation\Controllers\TransactionController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -39,4 +41,16 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     // Budgets
     Route::apiResource('budgets', \App\Modules\Budget\Presentation\Controllers\BudgetController::class);
+
+    // Dashboard
+    Route::get('/dashboard', [\App\Modules\Dashboard\Presentation\Controllers\DashboardController::class, 'index']);
+
+    // Statistics
+    Route::get('statistics', [\App\Modules\Statistic\Presentation\Controllers\StatisticController::class, 'index']);
+
+    // Transactions
+    Route::get('transactions', [TransactionController::class, 'index']);
+    Route::post('transactions', [TransactionController::class, 'store']);
+    Route::put('transactions/{id}', [TransactionController::class, 'update']);
+    Route::delete('transactions/{id}', [TransactionController::class, 'destroy']);
 });

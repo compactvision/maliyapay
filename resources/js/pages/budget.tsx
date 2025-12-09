@@ -54,7 +54,7 @@ interface Budget {
     amount: number;
     currency: string;
     period: 'daily' | 'weekly' | 'monthly';
-    spent_amount?: number; // Placeholder for future backend update
+    spent_amount: number;
 }
 
 const budgetSchema = z.object({
@@ -179,8 +179,8 @@ export default function Budget() {
                             const category = categories.find(
                                 (c) => c.id === budget.category_id,
                             );
-                            // Placeholder logic for expenses
-                            const spent = 0;
+                            // Use real spent amount from backend
+                            const spent = budget.spent_amount || 0;
                             const percentage = Math.min(
                                 (spent / budget.amount) * 100,
                                 100,

@@ -6,4 +6,5 @@ return [
     App\Modules\Category\CategoryServiceProvider::class,
     App\Modules\Identity\IdentityServiceProvider::class,
     App\Modules\Budget\BudgetServiceProvider::class,
+    App\Modules\Transaction\TransactionServiceProvider::class,
 ];

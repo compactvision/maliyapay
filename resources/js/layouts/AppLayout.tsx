@@ -11,6 +11,7 @@ import {
     useLayout,
 } from '@/components/LayoutComponents';
 import { ReactNode } from 'react';
+import { Toaster } from 'sonner';
 
 interface AppLayoutProps {
     children: ReactNode;
@@ -19,6 +20,7 @@ interface AppLayoutProps {
 export function AppLayout({ children }: AppLayoutProps) {
     return (
         <LayoutProvider>
+            <Toaster richColors />
             <AppLayoutContent>{children}</AppLayoutContent>
         </LayoutProvider>
     );
