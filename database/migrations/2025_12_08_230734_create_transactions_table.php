@@ -20,7 +20,7 @@ return new class extends Migration
             $table->string('currency', 3);
             $table->string('type'); // income, expense
             $table->string('description');
-            $table->string('avatar');
+
             $table->timestamp('date');
             $table->timestamps();
 

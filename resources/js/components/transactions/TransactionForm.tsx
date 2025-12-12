@@ -141,7 +141,7 @@ export function TransactionForm({
 
     const handleSubmit = form.handleSubmit(async (values: FormValues) => {
         setIsSubmitting(true);
-        form.clearErrors(); // Clear previous errors
+        form.clearErrors();
         try {
             const data = {
                 type: values.type,
@@ -173,13 +173,11 @@ export function TransactionForm({
             const errorMessage =
                 error.response?.data?.message || 'Une erreur est survenue';
 
-            // Set form root error to display in the UI
             form.setError('root', {
                 type: 'manual',
                 message: errorMessage,
             });
 
-            // Also show toast as backup/notification
             toast({
                 variant: 'destructive',
                 title: 'Erreur',
@@ -193,24 +191,25 @@ export function TransactionForm({
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="flex h-screen w-full flex-col gap-0 overflow-hidden p-0 sm:h-auto sm:max-h-[90vh] sm:max-w-[425px]">
-                <DialogHeader className="shrink-0 px-4 pt-4 pb-2 sm:px-6 sm:pt-6">
-                    <DialogTitle className="text-lg sm:text-xl">
+                <DialogHeader className="shrink-0 px-3 pt-3 pb-2 sm:px-6 sm:pt-6">
+                    <DialogTitle className="text-base sm:text-xl">
                         {transaction ? 'Modifier' : 'Nouvelle transaction'}
                     </DialogTitle>
                 </DialogHeader>
 
                 <Form {...form}>
-                    <div className="flex-1 space-y-2.5 overflow-y-auto px-4 pb-4 sm:space-y-4 sm:px-6">
+                    <div className="flex-1 space-y-2 overflow-y-auto px-3 pb-2 sm:space-y-4 sm:px-6 sm:pb-4">
                         {form.formState.errors.root && (
-                            <div className="rounded-md bg-destructive/15 p-3 text-sm text-destructive dark:bg-destructive/10">
+                            <div className="rounded-md bg-destructive/15 p-2 text-xs text-destructive dark:bg-destructive/10 sm:p-3 sm:text-sm">
                                 <div className="flex gap-2">
-                                    <AlertCircle className="h-4 w-4" />
+                                    <AlertCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                                     <span>
                                         {form.formState.errors.root.message}
                                     </span>
                                 </div>
                             </div>
                         )}
+                        
                         <FormField
                             control={form.control}
                             name="type"
@@ -223,16 +222,16 @@ export function TransactionForm({
                                             form.setValue('categoryId', '');
                                         }}
                                     >
-                                        <TabsList className="grid h-9 w-full grid-cols-2">
+                                        <TabsList className="grid h-8 w-full grid-cols-2 sm:h-9">
                                             <TabsTrigger
                                                 value="expense"
-                                                className="text-sm data-[state=active]:bg-red-500 data-[state=active]:text-white"
+                                                className="text-xs sm:text-sm data-[state=active]:bg-red-500 data-[state=active]:text-white"
                                             >
                                                 Dépense
                                             </TabsTrigger>
                                             <TabsTrigger
                                                 value="income"
-                                                className="text-sm data-[state=active]:bg-emerald-500 data-[state=active]:text-white"
+                                                className="text-xs sm:text-sm data-[state=active]:bg-emerald-500 data-[state=active]:text-white"
                                             >
                                                 Revenu
                                             </TabsTrigger>
@@ -248,7 +247,7 @@ export function TransactionForm({
                                 name="amount"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel className="text-xs sm:text-sm">
+                                        <FormLabel className="text-xs">
                                             Montant
                                         </FormLabel>
                                         <FormControl>
@@ -256,11 +255,11 @@ export function TransactionForm({
                                                 type="number"
                                                 step="0.01"
                                                 placeholder="0.00"
-                                                className="h-9 text-base font-semibold sm:h-10 sm:text-lg"
+                                                className="h-8 text-base font-semibold sm:h-10 sm:text-lg"
                                                 {...field}
                                             />
                                         </FormControl>
-                                        <FormMessage className="text-xs" />
+                                        <FormMessage className="text-[10px] sm:text-xs" />
                                     </FormItem>
                                 )}
                             />
@@ -269,7 +268,7 @@ export function TransactionForm({
                                 name="currency"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel className="text-xs sm:text-sm">
+                                        <FormLabel className="text-xs">
                                             Devise
                                         </FormLabel>
                                         <Select
@@ -277,7 +276,7 @@ export function TransactionForm({
                                             value={field.value}
                                         >
                                             <FormControl>
-                                                <SelectTrigger className="h-9 sm:h-10">
+                                                <SelectTrigger className="h-8 text-base sm:h-10">
                                                     <SelectValue />
                                                 </SelectTrigger>
                                             </FormControl>
@@ -290,7 +289,7 @@ export function TransactionForm({
                                                 </SelectItem>
                                             </SelectContent>
                                         </Select>
-                                        <FormMessage className="text-xs" />
+                                        <FormMessage className="text-[10px] sm:text-xs" />
                                     </FormItem>
                                 )}
                             />
@@ -301,17 +300,17 @@ export function TransactionForm({
                             name="description"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel className="text-xs sm:text-sm">
+                                    <FormLabel className="text-xs">
                                         Description
                                     </FormLabel>
                                     <FormControl>
                                         <Input
                                             placeholder="Ex: Courses"
-                                            className="h-9 sm:h-10"
+                                            className="h-8 text-base sm:h-10"
                                             {...field}
                                         />
                                     </FormControl>
-                                    <FormMessage className="text-xs" />
+                                    <FormMessage className="text-[10px] sm:text-xs" />
                                 </FormItem>
                             )}
                         />
@@ -322,7 +321,7 @@ export function TransactionForm({
                                 name="accountId"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel className="text-xs sm:text-sm">
+                                        <FormLabel className="text-xs">
                                             Compte
                                         </FormLabel>
                                         <Select
@@ -330,7 +329,7 @@ export function TransactionForm({
                                             value={field.value}
                                         >
                                             <FormControl>
-                                                <SelectTrigger className="h-9 sm:h-10">
+                                                <SelectTrigger className="h-8 text-base sm:h-10">
                                                     <SelectValue placeholder="Sélect." />
                                                 </SelectTrigger>
                                             </FormControl>
@@ -345,7 +344,7 @@ export function TransactionForm({
                                                 ))}
                                             </SelectContent>
                                         </Select>
-                                        <FormMessage className="text-xs" />
+                                        <FormMessage className="text-[10px] sm:text-xs" />
                                     </FormItem>
                                 )}
                             />
@@ -355,7 +354,7 @@ export function TransactionForm({
                                 name="categoryId"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel className="text-xs sm:text-sm">
+                                        <FormLabel className="text-xs">
                                             Catégorie
                                         </FormLabel>
                                         <Select
@@ -363,7 +362,7 @@ export function TransactionForm({
                                             value={field.value}
                                         >
                                             <FormControl>
-                                                <SelectTrigger className="h-9 sm:h-10">
+                                                <SelectTrigger className="h-8 text-base sm:h-10">
                                                     <SelectValue placeholder="Sélect." />
                                                 </SelectTrigger>
                                             </FormControl>
@@ -380,7 +379,7 @@ export function TransactionForm({
                                                 )}
                                             </SelectContent>
                                         </Select>
-                                        <FormMessage className="text-xs" />
+                                        <FormMessage className="text-[10px] sm:text-xs" />
                                     </FormItem>
                                 )}
                             />
@@ -391,7 +390,7 @@ export function TransactionForm({
                             name="date"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel className="text-xs sm:text-sm">
+                                    <FormLabel className="text-xs">
                                         Date
                                     </FormLabel>
                                     <Popover>
@@ -400,12 +399,12 @@ export function TransactionForm({
                                                 <Button
                                                     variant="outline"
                                                     className={cn(
-                                                        'h-9 w-full justify-start text-left text-sm font-normal sm:h-10',
+                                                        'h-8 w-full justify-start text-left text-base font-normal sm:h-10 sm:text-sm',
                                                         !field.value &&
                                                             'text-muted-foreground',
                                                     )}
                                                 >
-                                                    <Calendar className="mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                                                    <Calendar className="mr-2 h-3 w-3 sm:h-4 sm:w-4" />
                                                     {field.value ? (
                                                         format(
                                                             field.value,
@@ -430,7 +429,7 @@ export function TransactionForm({
                                             />
                                         </PopoverContent>
                                     </Popover>
-                                    <FormMessage className="text-xs" />
+                                    <FormMessage className="text-[10px] sm:text-xs" />
                                 </FormItem>
                             )}
                         />
@@ -440,39 +439,39 @@ export function TransactionForm({
                             name="notes"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel className="text-xs sm:text-sm">
+                                    <FormLabel className="text-xs">
                                         Notes (optionnel)
                                     </FormLabel>
                                     <FormControl>
                                         <Textarea
                                             placeholder="Notes..."
-                                            className="h-14 resize-none text-sm sm:h-16"
+                                            className="h-12 resize-none text-base sm:h-16 sm:text-sm"
                                             {...field}
                                         />
                                     </FormControl>
-                                    <FormMessage className="text-xs" />
+                                    <FormMessage className="text-[10px] sm:text-xs" />
                                 </FormItem>
                             )}
                         />
                     </div>
 
-                    <div className="flex shrink-0 gap-2 border-t bg-background p-3 sm:gap-3 sm:p-4">
+                    <div className="flex shrink-0 gap-2 border-t bg-background p-2.5 sm:gap-3 sm:p-4">
                         <Button
                             type="button"
                             variant="outline"
-                            className="h-10 flex-1 sm:h-11"
+                            className="h-9 flex-1 text-xs sm:h-11 sm:text-sm"
                             onClick={() => onOpenChange(false)}
                         >
                             Annuler
                         </Button>
                         <Button
                             type="button"
-                            className="h-10 flex-1 sm:h-11"
+                            className="h-9 flex-1 text-xs sm:h-11 sm:text-sm"
                             disabled={isSubmitting}
                             onClick={handleSubmit}
                         >
                             {isSubmitting && (
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin sm:h-4 sm:w-4" />
                             )}
                             {transaction ? 'Modifier' : 'Ajouter'}
                         </Button>

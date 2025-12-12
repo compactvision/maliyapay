@@ -135,12 +135,18 @@ export function useNotifications() {
         }
     }, [fetchNotifications]);
 
-    // Initial fetch
+    // Initial fetch and Polling
     useEffect(() => {
         fetchUnreadCount();
-        // We don't fetch all notifications immediately to save bandwidth,
-        // usually they are fetched when the panel is opened.
-        // But unread count is essential for the badge.
+
+        // Poll every 30 seconds
+        const intervalId = setInterval(() => {
+            fetchUnreadCount();
+            // Optionally fetch recent notifications if panel is open?
+            // For now, just badge count is enough to alert user.
+        }, 30000);
+
+        return () => clearInterval(intervalId);
     }, [fetchUnreadCount]);
 
     return {

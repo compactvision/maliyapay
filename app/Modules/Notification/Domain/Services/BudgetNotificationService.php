@@ -27,6 +27,15 @@ class BudgetNotificationService
         }
     }
 
+    public function checkUserBudgets(int $userId): void
+    {
+        $budgets = DB::table('budgets')->where('user_id', $userId)->get();
+
+        foreach ($budgets as $budget) {
+            $this->checkBudget((object) $budget);
+        }
+    }
+
     private function checkBudget(object $budget): void
     {
         // 2. Calculer les dépenses pour la période

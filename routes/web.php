@@ -37,4 +37,20 @@ Route::patch('/password', [\App\Http\Controllers\Settings\PasswordController::cl
 
 
 
+
+// Admin Routes
+Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function () {
+    // Settings
+    Route::get('/settings', [\App\Modules\Settings\Presentation\Controllers\MaliyaSettingsController::class, 'index'])->name('admin.settings.index');
+    Route::post('/settings', [\App\Modules\Settings\Presentation\Controllers\MaliyaSettingsController::class, 'update'])->name('admin.settings.update');
+
+    // Roles & Permissions
+    Route::resource('roles', \App\Modules\Identity\Presentation\Controllers\RoleController::class)->except(['create', 'edit', 'show']);
+    Route::resource('permissions', \App\Modules\Identity\Presentation\Controllers\PermissionController::class)->except(['create', 'edit', 'show']);
+
+    // User Management
+    Route::get('/users', [\App\Modules\Identity\Presentation\Controllers\UserManagementController::class, 'index'])->name('admin.users.index');
+    Route::post('/users/{user}/roles', [\App\Modules\Identity\Presentation\Controllers\UserManagementController::class, 'assignRole'])->name('admin.users.assign_role');
+});
+
 require __DIR__.'/settings.php';

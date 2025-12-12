@@ -102,6 +102,18 @@ export default function Budget() {
         fetchData();
     }, []);
 
+    useEffect(() => {
+        if (!open) {
+            setSelectedBudget(null);
+            form.reset({
+                category_id: '',
+                amount: '',
+                currency: 'USD',
+                period: 'monthly',
+            });
+        }
+    }, [open, form]);
+
     const onSubmit = async (values: z.infer<typeof budgetSchema>) => {
         setIsSubmitting(true);
         try {
@@ -138,6 +150,17 @@ export default function Budget() {
         setOpen(true);
     };
 
+    const handleNewBudget = () => {
+        setSelectedBudget(null);
+        form.reset({
+            category_id: '',
+            amount: '',
+            currency: 'USD',
+            period: 'monthly',
+        });
+        setOpen(true);
+    };
+
     const periodLabels: Record<string, string> = {
         daily: 'Journalier',
         weekly: 'Hebdomadaire',
@@ -156,14 +179,7 @@ export default function Budget() {
                             Gérez vos limites de dépenses par catégorie
                         </p>
                     </div>
-                    <Button
-                        onClick={() => {
-                            setSelectedBudget(null);
-                            form.reset();
-                            setOpen(true);
-                        }}
-                        variant="primary"
-                    >
+                    <Button onClick={handleNewBudget} variant="primary">
                         <Plus className="mr-2 h-4 w-4" />
                         Nouveau Budget
                     </Button>
@@ -259,9 +275,9 @@ export default function Budget() {
                 )}
 
                 <Dialog open={open} onOpenChange={setOpen}>
-                    <DialogContent>
+                    <DialogContent className="max-h-[95vh] overflow-y-auto sm:max-w-[425px]">
                         <DialogHeader>
-                            <DialogTitle>
+                            <DialogTitle className="text-base sm:text-lg">
                                 {selectedBudget
                                     ? 'Modifier le budget'
                                     : 'Nouveau budget'}
@@ -270,22 +286,24 @@ export default function Budget() {
                         <Form {...form}>
                             <form
                                 onSubmit={form.handleSubmit(onSubmit)}
-                                className="space-y-4"
+                                className="space-y-3 sm:space-y-4"
                             >
                                 <FormField
                                     control={form.control}
                                     name="category_id"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>Catégorie</FormLabel>
+                                            <FormLabel className="text-xs sm:text-sm">
+                                                Catégorie
+                                            </FormLabel>
                                             <Select
                                                 onValueChange={field.onChange}
                                                 value={field.value}
                                                 disabled={!!selectedBudget}
                                             >
                                                 <FormControl>
-                                                    <SelectTrigger>
-                                                        <SelectValue placeholder="Sélectionner une catégorie" />
+                                                    <SelectTrigger className="h-9 text-base sm:h-10">
+                                                        <SelectValue placeholder="Sélectionner" />
                                                     </SelectTrigger>
                                                 </FormControl>
                                                 <SelectContent>
@@ -299,25 +317,29 @@ export default function Budget() {
                                                     ))}
                                                 </SelectContent>
                                             </Select>
-                                            <FormMessage />
+                                            <FormMessage className="text-xs" />
                                         </FormItem>
                                     )}
                                 />
-                                <div className="grid grid-cols-2 gap-4">
+                                <div className="grid grid-cols-2 gap-3 sm:gap-4">
                                     <FormField
                                         control={form.control}
                                         name="amount"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel>Montant</FormLabel>
+                                                <FormLabel className="text-xs sm:text-sm">
+                                                    Montant
+                                                </FormLabel>
                                                 <FormControl>
                                                     <Input
                                                         type="number"
                                                         step="0.01"
+                                                        placeholder="0.00"
+                                                        className="h-9 text-base sm:h-10"
                                                         {...field}
                                                     />
                                                 </FormControl>
-                                                <FormMessage />
+                                                <FormMessage className="text-xs" />
                                             </FormItem>
                                         )}
                                     />
@@ -326,7 +348,9 @@ export default function Budget() {
                                         name="currency"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel>Devise</FormLabel>
+                                                <FormLabel className="text-xs sm:text-sm">
+                                                    Devise
+                                                </FormLabel>
                                                 <Select
                                                     onValueChange={
                                                         field.onChange
@@ -334,7 +358,7 @@ export default function Budget() {
                                                     value={field.value}
                                                 >
                                                     <FormControl>
-                                                        <SelectTrigger>
+                                                        <SelectTrigger className="h-9 text-base sm:h-10">
                                                             <SelectValue />
                                                         </SelectTrigger>
                                                     </FormControl>
@@ -347,7 +371,7 @@ export default function Budget() {
                                                         </SelectItem>
                                                     </SelectContent>
                                                 </Select>
-                                                <FormMessage />
+                                                <FormMessage className="text-xs" />
                                             </FormItem>
                                         )}
                                     />
@@ -357,13 +381,15 @@ export default function Budget() {
                                     name="period"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>Période</FormLabel>
+                                            <FormLabel className="text-xs sm:text-sm">
+                                                Période
+                                            </FormLabel>
                                             <Select
                                                 onValueChange={field.onChange}
                                                 value={field.value}
                                             >
                                                 <FormControl>
-                                                    <SelectTrigger>
+                                                    <SelectTrigger className="h-9 text-base sm:h-10">
                                                         <SelectValue />
                                                     </SelectTrigger>
                                                 </FormControl>
@@ -379,18 +405,18 @@ export default function Budget() {
                                                     </SelectItem>
                                                 </SelectContent>
                                             </Select>
-                                            <FormMessage />
+                                            <FormMessage className="text-xs" />
                                         </FormItem>
                                     )}
                                 />
                                 <Button
                                     variant="primary"
                                     type="submit"
-                                    className="w-full"
+                                    className="h-9 w-full text-sm sm:h-10"
                                     disabled={isSubmitting}
                                 >
                                     {isSubmitting && (
-                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin sm:h-4 sm:w-4" />
                                     )}
                                     Enregistrer
                                 </Button>

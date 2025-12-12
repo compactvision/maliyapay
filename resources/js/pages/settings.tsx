@@ -57,7 +57,7 @@ export default function Settings({ user }: PageProps) {
     };
 
     return (
-        <AppLayout title="Paramètres">
+        <AppLayout>
             <Head title="Paramètres" />
 
             <div className="space-y-6">

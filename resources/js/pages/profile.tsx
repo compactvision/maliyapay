@@ -12,7 +12,7 @@ export default function ProfilePage() {
 
     return (
         <AppLayout>
-            <div className="mx-auto max-w-4xl space-y-6 p-4 sm:p-6 lg:p-8">
+            <div className="mx-auto max-w-6xl space-y-6 py-4 sm:p-6 lg:p-8">
                 <ProfileHeader user={user} />
 
                 <Tabs defaultValue="profile" className="space-y-6">

@@ -1,4 +1,5 @@
 // resources/js/pages/Profile/Partials/ProfileInfoForm.tsx
+
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -10,7 +11,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/hooks/useAuth';
-import { User } from '@/types';
+import { User } from '@/types/auth';
 import { useForm } from '@inertiajs/react';
 import { Loader2 } from 'lucide-react';
 import React, { FormEventHandler } from 'react';
@@ -32,18 +33,15 @@ export function ProfileInfoForm({ user }: ProfileInfoFormProps) {
 
     if (!user) return null;
 
-    // Synchroniser les données du formulaire quand l'utilisateur change (ex: après refreshUser)
-    // Note: On utilise useEffect pour réagir aux props qui changent
     React.useEffect(() => {
         if (user) {
             setData((prev) => ({
                 ...prev,
                 name: user.name,
                 email: user.email,
-                // On ne touche pas à l'avatar file ici
             }));
         }
-    }, [user]); // Dépendance user
+    }, [user]);
 
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
@@ -84,9 +82,8 @@ export function ProfileInfoForm({ user }: ProfileInfoFormProps) {
                     encType="multipart/form-data"
                 >
                     {/* Avatar Upload Section */}
-                    <div className="flex items-center gap-6">
+                    <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start sm:gap-6">
                         <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-full border bg-gray-100">
-                            {/* Preview logic or current avatar */}
                             {data.avatar ? (
                                 <img
                                     src={URL.createObjectURL(data.avatar)}
@@ -105,7 +102,7 @@ export function ProfileInfoForm({ user }: ProfileInfoFormProps) {
                                 </div>
                             )}
                         </div>
-                        <div className="grid gap-2">
+                        <div className="grid gap-2 text-center sm:text-left">
                             <Label
                                 htmlFor="avatar"
                                 className="cursor-pointer rounded-md bg-secondary px-4 py-2 text-sm font-medium hover:bg-secondary/80"
@@ -138,6 +135,7 @@ export function ProfileInfoForm({ user }: ProfileInfoFormProps) {
                             onChange={(e) => setData('name', e.target.value)}
                             required
                             autoComplete="name"
+                            className="h-11 text-base" // <-- CORRECTION
                         />
                         {errors.name && (
                             <p className="text-sm text-destructive">
@@ -155,6 +153,8 @@ export function ProfileInfoForm({ user }: ProfileInfoFormProps) {
                             onChange={(e) => setData('email', e.target.value)}
                             required
                             autoComplete="username"
+                            className="h-11 text-base"
+                            disabled
                         />
                         {errors.email && (
                             <p className="text-sm text-destructive">
@@ -163,7 +163,11 @@ export function ProfileInfoForm({ user }: ProfileInfoFormProps) {
                         )}
                     </div>
 
-                    <Button type="submit" disabled={processing}>
+                    <Button
+                        type="submit"
+                        disabled={processing}
+                        className="h-11 w-full sm:w-auto" // <-- AMÉLIORATION
+                    >
                         {processing && (
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         )}

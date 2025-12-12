@@ -341,10 +341,7 @@ export default function TaskPage() {
                             Gérez vos rappels et échéances financières
                         </p>
                     </div>
-                    <Button
-                        onClick={() => openForm()}
-                        className="gap-2 bg-emerald-600 hover:bg-emerald-700"
-                    >
+                    <Button onClick={() => openForm()} variant="primary">
                         <Plus className="h-4 w-4" />
                         Nouvelle tâche
                     </Button>
@@ -371,8 +368,8 @@ export default function TaskPage() {
                 {/* Search and Filters */}
                 <Card className="border-0 shadow-sm">
                     <CardContent className="p-4">
-                        <div className="flex flex-col gap-4 sm:flex-row">
-                            <div className="relative flex-1">
+                        <div className="flex flex-col gap-4 lg:flex-row lg:items-center">
+                            <div className="relative flex-1 lg:max-w-md">
                                 <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                                 <Input
                                     placeholder="Rechercher une tâche..."
@@ -380,15 +377,16 @@ export default function TaskPage() {
                                     onChange={(e) =>
                                         setSearchTerm(e.target.value)
                                     }
-                                    className="pl-10"
+                                    className="h-11 pl-10 text-base"
                                 />
                             </div>
-                            <div className="flex gap-2">
+
+                            <div className="flex flex-wrap items-center gap-2 sm:flex-nowrap">
                                 <Select
                                     value={filterPriority}
                                     onValueChange={setFilterPriority}
                                 >
-                                    <SelectTrigger className="w-[140px]">
+                                    <SelectTrigger className="h-11 w-full text-base sm:w-[150px]">
                                         <Filter className="mr-2 h-4 w-4" />
                                         <SelectValue placeholder="Priorité" />
                                     </SelectTrigger>
@@ -406,11 +404,12 @@ export default function TaskPage() {
                                         ))}
                                     </SelectContent>
                                 </Select>
+
                                 <Select
                                     value={filterDate}
                                     onValueChange={setFilterDate}
                                 >
-                                    <SelectTrigger className="w-[140px]">
+                                    <SelectTrigger className="h-11 w-full text-base sm:w-[150px]">
                                         <CalendarIcon className="mr-2 h-4 w-4" />
                                         <SelectValue placeholder="Date" />
                                     </SelectTrigger>
@@ -429,6 +428,7 @@ export default function TaskPage() {
                                         </SelectItem>
                                     </SelectContent>
                                 </Select>
+
                                 {(searchTerm ||
                                     filterPriority !== 'all' ||
                                     filterDate !== 'all') && (
@@ -440,7 +440,7 @@ export default function TaskPage() {
                                             setFilterPriority('all');
                                             setFilterDate('all');
                                         }}
-                                        className="shrink-0"
+                                        className="h-11 w-11 shrink-0"
                                     >
                                         <X className="h-4 w-4" />
                                     </Button>
@@ -453,17 +453,11 @@ export default function TaskPage() {
                 {/* Routine Tasks for Today */}
                 {routineTasks.length > 0 && (
                     <Card className="overflow-hidden border-0 shadow-sm">
-                        <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20">
+                        <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 dark:from-blue-950/20 dark:to-indigo-950/20">
                             <div className="flex items-center justify-between">
-                                <CardTitle className="flex items-center gap-2 text-lg">
-                                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/50">
-                                        <Calendar className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                                    </div>
+                                <CardTitle className="text-lg font-semibold">
                                     Tâches de routine ({routineTasks.length})
                                 </CardTitle>
-                                <span className="text-sm text-muted-foreground">
-                                    {format(today, 'EEEE', { locale: fr })}
-                                </span>
                             </div>
                         </CardHeader>
                         <CardContent className="p-4">
@@ -477,20 +471,20 @@ export default function TaskPage() {
                                             onClick={() =>
                                                 handleRoutineTaskCheck(task)
                                             }
-                                            className="mt-0.5 text-blue-500 transition-colors hover:text-blue-600 dark:hover:text-blue-300"
-                                            title="Créer une tâche à partir de cette routine"
+                                            className="mt-0.5 shrink-0 text-blue-500 transition-colors hover:text-blue-600 dark:hover:text-blue-300"
+                                            title="Marquer comme terminée"
                                         >
                                             <Circle className="h-5 w-5" />
                                         </button>
-                                        <div className="flex-1 space-y-1">
+                                        <div className="min-w-0 flex-1 space-y-2">
                                             <div className="flex items-center gap-2">
-                                                <p className="font-medium">
+                                                <p className="truncate font-medium">
                                                     {task.title}
                                                 </p>
                                                 <Badge
                                                     variant="outline"
                                                     className={cn(
-                                                        'gap-1 border-0 font-medium',
+                                                        'shrink-0 gap-1 border-0 text-xs font-medium',
                                                         task.priority ===
                                                             'high' &&
                                                             'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
@@ -527,30 +521,21 @@ export default function TaskPage() {
                                                     {task.description}
                                                 </p>
                                             )}
-                                            <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                                                {task.timeRange && (
-                                                    <div className="flex items-center gap-1">
-                                                        <Clock className="h-3 w-3" />
+                                            {task.timeRange && (
+                                                <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                                                    <Clock className="h-3 w-3" />
+                                                    <span>
                                                         {task.timeRange}
-                                                    </div>
-                                                )}
-                                                {task.dayLabel && (
-                                                    <div className="flex items-center gap-1">
-                                                        <CalendarIcon className="h-3 w-3" />
-                                                        {task.dayLabel}
-                                                    </div>
-                                                )}
-                                                <span className="text-xs text-blue-600 italic dark:text-blue-400">
-                                                    📅 Routine
-                                                </span>
-                                            </div>
+                                                    </span>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 ))}
                             </div>
-                            <p className="mt-3 text-xs text-muted-foreground">
-                                💡 Ces tâches proviennent de vos routines. Elles
-                                se régénèrent automatiquement chaque jour.
+                            <p className="mt-4 text-xs text-muted-foreground">
+                                💡 Ces tâches proviennent de vos routines et se
+                                régénèrent automatiquement chaque jour.
                             </p>
                         </CardContent>
                     </Card>

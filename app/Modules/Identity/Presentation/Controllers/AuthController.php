@@ -41,6 +41,7 @@ class AuthController extends Controller
             ],
         ], [
             'password.regex' => 'Le mot de passe doit contenir au moins une majuscule, une minuscule et un chiffre',
+            'email.unique' => 'L\'adresse e-mail est déjà utilisée',
         ]);
 
         try {
@@ -113,6 +114,8 @@ class AuthController extends Controller
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
+                'avatar' => $user->avatar,
+                'email_verified_at' => $user->email_verified_at,
                 'roles' => $user->getRoleNames(),
                 'permissions' => $user->getAllPermissions()->pluck('name'),
             ],

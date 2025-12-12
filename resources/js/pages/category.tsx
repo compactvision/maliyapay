@@ -149,36 +149,40 @@ export default function CategoryPage() {
             {items.map((category) => (
                 <div
                     key={category.id}
-                    className="group flex items-center gap-3 rounded-lg border p-4 transition-all hover:shadow-sm dark:border-white/20 dark:bg-white/10 dark:backdrop-blur-xl"
+                    className="group flex items-center gap-3 rounded-lg border p-3 transition-all hover:shadow-sm sm:p-4 dark:border-white/20 dark:bg-white/10 dark:backdrop-blur-xl"
                 >
                     <div
-                        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full"
+                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full sm:h-10 sm:w-10"
                         style={{ backgroundColor: `${category.color}20` }}
                     >
                         <Tags
-                            className="h-5 w-5"
+                            className="h-4 w-4 sm:h-5 sm:w-5"
                             style={{ color: category.color }}
                         />
                     </div>
                     <div className="min-w-0 flex-1">
-                        <p className="truncate font-medium">{category.name}</p>
+                        <p className="truncate text-sm font-medium sm:text-base">
+                            {category.name}
+                        </p>
                     </div>
-                    <div className="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+
+                    {/* Actions visibles sur mobile, au hover sur desktop */}
+                    <div className="flex gap-1 sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100">
                         <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8"
+                            className="h-7 w-7 sm:h-8 sm:w-8"
                             onClick={() => openForm(category)}
                         >
-                            <Edit2 className="h-4 w-4" />
+                            <Edit2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                         </Button>
                         <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 text-red-600 hover:text-red-700 dark:text-red-400"
+                            className="h-7 w-7 text-red-600 hover:text-red-700 sm:h-8 sm:w-8 dark:text-red-400"
                             onClick={() => setDeleteId(category.id)}
                         >
-                            <Trash2 className="h-4 w-4" />
+                            <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                         </Button>
                     </div>
                 </div>
@@ -282,9 +286,9 @@ export default function CategoryPage() {
 
             {/* Category Form Dialog */}
             <Dialog open={formOpen} onOpenChange={closeForm}>
-                <DialogContent>
+                <DialogContent className="max-h-[95vh] overflow-y-auto sm:max-w-[425px]">
                     <DialogHeader>
-                        <DialogTitle>
+                        <DialogTitle className="text-base sm:text-lg">
                             {editCategory
                                 ? 'Modifier la catégorie'
                                 : 'Nouvelle catégorie'}
@@ -293,21 +297,24 @@ export default function CategoryPage() {
                     <Form {...form}>
                         <form
                             onSubmit={form.handleSubmit(handleSubmit)}
-                            className="space-y-4"
+                            className="space-y-3 sm:space-y-4"
                         >
                             <FormField
                                 control={form.control}
                                 name="name"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Nom</FormLabel>
+                                        <FormLabel className="text-xs sm:text-sm">
+                                            Nom
+                                        </FormLabel>
                                         <FormControl>
                                             <Input
                                                 placeholder="Ex: Alimentation"
+                                                className="h-9 text-base sm:h-10"
                                                 {...field}
                                             />
                                         </FormControl>
-                                        <FormMessage />
+                                        <FormMessage className="text-xs" />
                                     </FormItem>
                                 )}
                             />
@@ -316,21 +323,29 @@ export default function CategoryPage() {
                                 name="type"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Type</FormLabel>
+                                        <FormLabel className="text-xs sm:text-sm">
+                                            Type
+                                        </FormLabel>
                                         <Tabs
                                             value={field.value}
                                             onValueChange={field.onChange}
                                         >
-                                            <TabsList className="grid w-full grid-cols-2">
-                                                <TabsTrigger value="expense">
+                                            <TabsList className="grid h-9 w-full grid-cols-2 sm:h-10">
+                                                <TabsTrigger
+                                                    value="expense"
+                                                    className="text-sm"
+                                                >
                                                     Dépense
                                                 </TabsTrigger>
-                                                <TabsTrigger value="income">
+                                                <TabsTrigger
+                                                    value="income"
+                                                    className="text-sm"
+                                                >
                                                     Revenu
                                                 </TabsTrigger>
                                             </TabsList>
                                         </Tabs>
-                                        <FormMessage />
+                                        <FormMessage className="text-xs" />
                                     </FormItem>
                                 )}
                             />
@@ -339,14 +354,16 @@ export default function CategoryPage() {
                                 name="color"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Couleur</FormLabel>
+                                        <FormLabel className="text-xs sm:text-sm">
+                                            Couleur
+                                        </FormLabel>
                                         <FormControl>
                                             <div className="flex flex-wrap gap-2">
                                                 {mockColors.map((color) => (
                                                     <button
                                                         key={color}
                                                         type="button"
-                                                        className={`h-8 w-8 rounded-full transition-transform ${field.value === color ? 'scale-110 ring-2 ring-primary ring-offset-2' : ''}`}
+                                                        className={`h-9 w-9 rounded-full transition-transform sm:h-10 sm:w-10 ${field.value === color ? 'scale-110 ring-2 ring-primary ring-offset-2' : ''}`}
                                                         style={{
                                                             backgroundColor:
                                                                 color,
@@ -360,26 +377,26 @@ export default function CategoryPage() {
                                                 ))}
                                             </div>
                                         </FormControl>
-                                        <FormMessage />
+                                        <FormMessage className="text-xs" />
                                     </FormItem>
                                 )}
                             />
-                            <div className="flex gap-3 pt-4">
+                            <div className="flex gap-2 pt-3 sm:gap-3 sm:pt-4">
                                 <Button
                                     type="button"
                                     variant="outline"
-                                    className="flex-1"
+                                    className="h-9 flex-1 text-sm sm:h-10"
                                     onClick={closeForm}
                                 >
                                     Annuler
                                 </Button>
                                 <Button
                                     type="submit"
-                                    className="flex-1"
+                                    className="h-9 flex-1 text-sm sm:h-10"
                                     disabled={isSubmitting}
                                 >
                                     {isSubmitting && (
-                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin sm:h-4 sm:w-4" />
                                     )}
                                     {editCategory ? 'Modifier' : 'Ajouter'}
                                 </Button>

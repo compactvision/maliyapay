@@ -1,10 +1,12 @@
 // resources/js/Components/LayoutComponents.tsx
 
 import { useAuth } from '@/hooks/useAuth';
+import { getDynamicGreeting } from '@/lib/utils';
 import { Link, usePage } from '@inertiajs/react';
 import {
     ArrowUpDown,
     BarChart3,
+    Calendar,
     CheckSquare,
     LayoutDashboard,
     LogOut,
@@ -27,6 +29,7 @@ interface User {
     name: string;
     email: string;
     avatar?: string;
+    roles?: string[];
 }
 
 // --- Contexte Global pour le Layout ---
@@ -118,7 +121,7 @@ const mobileNavItems = [
     { title: 'Accueil', url: '/', icon: LayoutDashboard },
     { title: 'Transactions', url: '/transaction', icon: ArrowUpDown },
     { title: 'Comptes', url: '/account', icon: Wallet },
-    { title: 'Budgets', url: '/budget', icon: PiggyBank },
+    { title: 'Tâches', url: '/task', icon: CheckSquare },
     { title: 'Activité', url: '/statistic', icon: BarChart3 },
 ];
 
@@ -183,7 +186,6 @@ export const DesktopSidebar = () => {
                                 href={item.url}
                                 className={cn(
                                     'group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-gray-600 transition-all duration-200 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white',
-                                    // Active state: exact match for home, startsWith for others
                                     (item.url === '/'
                                         ? currentUrl === '/'
                                         : currentUrl.startsWith(item.url)) &&
@@ -195,9 +197,50 @@ export const DesktopSidebar = () => {
                             </Link>
                         </li>
                     ))}
+
+                    {/* Admin Link */}
+                    {/* Access user via useAuth hook inside the component not accessible here easily without refactoring mainNavItems to be dynamic or checking here */}
+                    {/* Actually DesktopSidebar uses useLayout(), lets grab useAuth() there too */}
+                    <AdminSidebarLink
+                        sidebarIsOpen={sidebarIsOpen}
+                        currentUrl={currentUrl}
+                    />
                 </ul>
             </nav>
         </aside>
+    );
+};
+
+// Helper component to access auth context inside sidebar
+const AdminSidebarLink = ({
+    sidebarIsOpen,
+    currentUrl,
+}: {
+    sidebarIsOpen: boolean;
+    currentUrl: string;
+}) => {
+    const { user } = useAuth();
+    // Check if user has admin role.
+    // Optimization: in real app, might want to memoize or check permissions more robustly.
+    const isAdmin =
+        user?.roles?.includes('admin') || user?.email === 'admin@admin.com';
+
+    if (!isAdmin) return null;
+
+    return (
+        <li>
+            <Link
+                href="/admin/settings"
+                className={cn(
+                    'group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-red-600 transition-all duration-200 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-900/30 dark:hover:text-red-300',
+                    currentUrl.startsWith('/admin') &&
+                        'bg-red-50 text-red-700 hover:bg-red-100 dark:bg-red-900/40 dark:text-red-300 dark:hover:bg-red-900/50',
+                )}
+            >
+                <Settings className="h-5 w-5 shrink-0" />
+                {sidebarIsOpen && <span>Administration</span>}
+            </Link>
+        </li>
     );
 };
 
@@ -216,11 +259,16 @@ export const MobileTopBar = () => {
               .slice(0, 2)
         : 'U';
 
+    const greetingMessage = getDynamicGreeting(user?.name || '');
+
     return (
         <header className="fixed top-0 right-0 left-0 z-30 flex h-14 items-center justify-between border-b border-gray-200 bg-white/80 px-4 backdrop-blur-md lg:hidden dark:border-gray-700 dark:bg-gray-900/80">
             {/* On affiche le nom de l'utilisateur ou "Invité" par défaut */}
-            <span className="font-semibold text-gray-900 dark:text-white">
-                Bonjour, {user?.name || 'Invité'}
+            {/* <span className="font-semibold text-gray-900 dark:text-white">
+                {getShortDynamicGreeting(user?.name || '')}
+            </span> */}
+            <span className="block max-w-[200px] truncate font-semibold text-gray-900 sm:max-w-md dark:text-white">
+                {greetingMessage}
             </span>
             <div className="flex items-center gap-2">
                 <NotificationBell />
@@ -306,6 +354,35 @@ export const RightMenu = () => {
                 </div>
                 <nav className="flex-1 space-y-1 px-4">
                     <Link
+                        href="/profile"
+                        onClick={closeRightMenu}
+                        className="flex items-center gap-3 rounded-lg px-3 py-2 text-gray-600 transition-colors hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"
+                    >
+                        <User className="h-5 w-5" />
+                        Mon Profil
+                    </Link>
+
+                    {/* Admin Link for Mobile/RightMenu */}
+                    {(user?.roles?.includes('admin') ||
+                        user?.email === 'admin@admin.com') && (
+                        <Link
+                            href="/admin/settings"
+                            onClick={closeRightMenu}
+                            className="flex items-center gap-3 rounded-lg px-3 py-2 text-red-600 transition-colors hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/30"
+                        >
+                            <Settings className="h-5 w-5" />
+                            Administration
+                        </Link>
+                    )}
+                    <Link
+                        href="/budget"
+                        onClick={closeRightMenu}
+                        className="flex items-center gap-3 rounded-lg px-3 py-2 text-gray-600 transition-colors hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"
+                    >
+                        <BarChart3 />
+                        Budgets
+                    </Link>
+                    <Link
                         href="/category"
                         onClick={closeRightMenu}
                         className="flex items-center gap-3 rounded-lg px-3 py-2 text-gray-600 transition-colors hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"
@@ -314,19 +391,11 @@ export const RightMenu = () => {
                         Catégories
                     </Link>
                     <Link
-                        href="/profile"
-                        onClick={closeRightMenu}
-                        className="flex items-center gap-3 rounded-lg px-3 py-2 text-gray-600 transition-colors hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"
-                    >
-                        <User className="h-5 w-5" />
-                        Mon Profil
-                    </Link>
-                    <Link
                         href="/routine"
                         onClick={closeRightMenu}
                         className="flex items-center gap-3 rounded-lg px-3 py-2 text-gray-600 transition-colors hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"
                     >
-                        <Settings className="h-5 w-5" />
+                        <Calendar className="h-5 w-5" />
                         Routine
                     </Link>
                     <Link

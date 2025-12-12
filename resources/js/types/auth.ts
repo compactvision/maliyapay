@@ -9,7 +9,7 @@ export interface User {
     name: string;
     email: string;
     email_verified_at: string | null;
-    roles: string[];
+    roles?: string[]; // Add roles
     permissions: string[];
     created_at: string;
     updated_at: string;

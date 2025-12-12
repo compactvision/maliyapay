@@ -15,7 +15,7 @@ import axios from 'axios';
 import { addMonths, format, subMonths } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight, Plus, Search } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 // --- Helper Function ---
 const formatCurrency = (amount: number, currency = 'USD') => {
@@ -42,6 +42,38 @@ export default function TransactionPage() {
         Record<string, { income: number; expenses: number }>
     >({});
     const [isLoading, setIsLoading] = useState(false);
+    const [touchStart, setTouchStart] = useState(0);
+    const [touchEnd, setTouchEnd] = useState(0);
+    const containerRef = useRef<HTMLDivElement>(null);
+
+    // Minimum de distance de swipe (en pixels)
+    const minSwipeDistance = 50;
+
+    const handleTouchStart = (e: React.TouchEvent) => {
+        setTouchEnd(0);
+        setTouchStart(e.targetTouches[0].clientX);
+    };
+
+    const handleTouchMove = (e: React.TouchEvent) => {
+        setTouchEnd(e.targetTouches[0].clientX);
+    };
+
+    const handleTouchEnd = () => {
+        if (!touchStart || !touchEnd) return;
+
+        const distance = touchStart - touchEnd;
+        const isLeftSwipe = distance > minSwipeDistance;
+        const isRightSwipe = distance < -minSwipeDistance;
+
+        if (isLeftSwipe) {
+            // Swipe vers la gauche = mois suivant
+            setCurrentMonth(addMonths(currentMonth, 1));
+        }
+        if (isRightSwipe) {
+            // Swipe vers la droite = mois précédent
+            setCurrentMonth(subMonths(currentMonth, 1));
+        }
+    };
 
     // --- Fetch Data ---
     const fetchTransactions = async () => {
@@ -140,24 +172,32 @@ export default function TransactionPage() {
 
                 {/* Month Navigation */}
                 <Card>
-                    <CardContent className="p-4">
-                        <div className="flex items-center justify-between">
+                    <CardContent className="p-3 sm:p-4">
+                        <div
+                            ref={containerRef}
+                            onTouchStart={handleTouchStart}
+                            onTouchMove={handleTouchMove}
+                            onTouchEnd={handleTouchEnd}
+                            className="flex items-center justify-between gap-2"
+                        >
                             <Button
                                 variant="ghost"
                                 size="icon"
+                                className="h-8 w-8 shrink-0 sm:h-10 sm:w-10"
                                 onClick={() =>
                                     setCurrentMonth(subMonths(currentMonth, 1))
                                 }
                             >
-                                <ChevronLeft className="h-5 w-5" />
+                                <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
                             </Button>
-                            <div className="text-center">
-                                <h2 className="text-lg font-semibold capitalize">
+
+                            <div className="min-w-0 flex-1 text-center">
+                                <h2 className="text-base font-semibold capitalize sm:text-lg">
                                     {format(currentMonth, 'MMMM yyyy', {
                                         locale: fr,
                                     })}
                                 </h2>
-                                <div className="mt-1 flex flex-col items-center justify-center gap-2 text-sm">
+                                <div className="mt-1 flex flex-col items-center justify-center gap-1.5 text-xs sm:mt-2 sm:gap-2 sm:text-sm">
                                     {Object.entries(totals).map(
                                         ([currency, { income, expenses }]: [
                                             string,
@@ -165,9 +205,9 @@ export default function TransactionPage() {
                                         ]) => (
                                             <div
                                                 key={currency}
-                                                className="flex gap-4"
+                                                className="flex flex-wrap items-center justify-center gap-2 sm:gap-4"
                                             >
-                                                <span className="w-10 text-right font-bold text-muted-foreground">
+                                                <span className="w-8 text-right font-bold text-muted-foreground sm:w-10">
                                                     {currency}
                                                 </span>
                                                 <span className="text-emerald-600 dark:text-emerald-400">
@@ -196,15 +236,22 @@ export default function TransactionPage() {
                                     )}
                                 </div>
                             </div>
+
                             <Button
                                 variant="ghost"
                                 size="icon"
+                                className="h-8 w-8 shrink-0 sm:h-10 sm:w-10"
                                 onClick={() =>
                                     setCurrentMonth(addMonths(currentMonth, 1))
                                 }
                             >
-                                <ChevronRight className="h-5 w-5" />
+                                <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5" />
                             </Button>
+                        </div>
+
+                        {/* Indicateur de swipe (optionnel) */}
+                        <div className="mt-2 text-center text-[10px] text-muted-foreground sm:hidden">
+                            ← Glissez pour changer de mois →
                         </div>
                     </CardContent>
                 </Card>
@@ -217,11 +264,11 @@ export default function TransactionPage() {
                             placeholder="Rechercher..."
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
-                            className="pl-10"
+                            className="pl-10 text-base"
                         />
                     </div>
                     <Select value={typeFilter} onValueChange={setTypeFilter}>
-                        <SelectTrigger className="w-full sm:w-40">
+                        <SelectTrigger className="w-full text-base sm:w-40">
                             <SelectValue placeholder="Type" />
                         </SelectTrigger>
                         <SelectContent>
@@ -234,7 +281,7 @@ export default function TransactionPage() {
                         value={categoryFilter}
                         onValueChange={setCategoryFilter}
                     >
-                        <SelectTrigger className="w-full sm:w-48">
+                        <SelectTrigger className="w-full text-base sm:w-48">
                             <SelectValue placeholder="Catégorie" />
                         </SelectTrigger>
                         <SelectContent>
@@ -249,7 +296,6 @@ export default function TransactionPage() {
                         </SelectContent>
                     </Select>
                 </div>
-
                 {/* Transaction List */}
                 <Card>
                     <CardHeader>

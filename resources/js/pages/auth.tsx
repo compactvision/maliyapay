@@ -1,6 +1,5 @@
 import { GuestGuard } from '@/components/auth/GuestGuard';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import {
     Form,
     FormControl,
@@ -9,17 +8,22 @@ import {
     FormLabel,
     FormMessage,
 } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { IconInput } from '@/components/ui/icon-input';
 import { useAuth, useLoginForm, useRegisterForm } from '@/hooks/useAuth';
 import { Link } from '@inertiajs/react';
-import { Loader2, Lock, Mail, Sparkles, User } from 'lucide-react';
+import { Loader2, Lock, Mail, Sparkles, User, Eye, EyeOff } from 'lucide-react'; // <-- Importer Eye et EyeOff
 import { useState } from 'react';
 
 export default function Auth() {
     const { login, register } = useAuth();
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [isLogin, setIsLogin] = useState(true);
+
+    // États pour la visibilité des mots de passe
+    const [showLoginPassword, setShowLoginPassword] = useState(false);
+    const [showRegisterPassword, setShowRegisterPassword] = useState(false);
+    const [showRegisterConfirmPassword, setShowRegisterConfirmPassword] = useState(false);
 
     const loginForm = useLoginForm();
     const registerForm = useRegisterForm();
@@ -56,245 +60,190 @@ export default function Auth() {
 
     return (
         <GuestGuard>
-            <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background via-background to-accent/30 p-4">
-                <div className="animate-fade-in w-full max-w-md">
+            <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-slate-950">
+                <div className="absolute inset-0">
+                    <div className="absolute top-0 -left-4 h-72 w-72 animate-pulse rounded-full bg-emerald-500 opacity-20 blur-xl"></div>
+                    <div className="absolute -bottom-8 left-20 h-72 w-72 animate-pulse rounded-full bg-sky-500 opacity-20 blur-xl animation-delay-2000"></div>
+                    <div className="absolute bottom-0 right-0 top-72 h-72 w-72 animate-pulse rounded-full bg-teal-500 opacity-20 blur-xl animation-delay-4000"></div>
+                </div>
+
+                <div className="relative z-10 w-full max-w-xl p-4"> {/* MODIFICATION: max-w-lg -> max-w-xl */}
                     <div className="mb-8 text-center">
-                        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary shadow-lg">
-                            <Sparkles className="h-8 w-8 text-primary-foreground" />
+                        <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-sky-400 shadow-2xl shadow-emerald-500/25">
+                            <img src="/maliya-logo.png" alt="Maliya Logo" className="h-10 w-10" />
                         </div>
-                        <h1 className="text-3xl font-bold tracking-tight">
+                        <h1 className="text-4xl font-extrabold tracking-tight text-white">
                             MaliyaPay
                         </h1>
-                        <p className="mt-2 text-muted-foreground">
+                        <p className="mt-2 text-lg text-white/60">
                             Gérez vos finances en toute simplicité
                         </p>
                     </div>
 
-                    {error && (
-                        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-4 text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-200">
-                            <p className="text-sm">{error}</p>
+                    <div className="rounded-2xl border border-white/10 bg-white/5 p-1 shadow-2xl backdrop-blur-xl">
+                        <div className="rounded-xl bg-slate-900/80 p-6">
+                            {error && (
+                                <div className="mb-6 rounded-lg border border-rose-500/30 bg-rose-500/10 p-4 text-rose-400 backdrop-blur-sm">
+                                    <p className="text-sm">{error}</p>
+                                </div>
+                            )}
+
+                            <div className="mb-6 grid grid-cols-2 rounded-xl bg-white/5 p-1 backdrop-blur-sm">
+                                <button
+                                    className={`rounded-lg px-4 py-2 text-sm font-medium transition-all duration-200 ${isLogin ? 'bg-white text-slate-900 shadow-lg' : 'text-white/70'}`}
+                                    onClick={() => setIsLogin(true)}
+                                >
+                                    Connexion
+                                </button>
+                                <button
+                                    className={`rounded-lg px-4 py-2 text-sm font-medium transition-all duration-200 ${!isLogin ? 'bg-white text-slate-900 shadow-lg' : 'text-white/70'}`}
+                                    onClick={() => setIsLogin(false)}
+                                >
+                                    Inscription
+                                </button>
+                            </div>
+
+                            {isLogin && (
+                                <Form {...loginForm}>
+                                    <form onSubmit={loginForm.handleSubmit(onLogin)} className="space-y-5">
+                                        <FormField
+                                            control={loginForm.control}
+                                            name="email"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel className="text-white/80">Email</FormLabel>
+                                                    <FormControl>
+                                                        <IconInput icon={Mail} type="email" placeholder="vous@exemple.com" {...field} />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+
+                                        <FormField
+                                            control={loginForm.control}
+                                            name="password"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel className="text-white/80">Mot de passe</FormLabel>
+                                                    <FormControl>
+                                                        <IconInput
+                                                            icon={Lock}
+                                                            trailingIcon={showLoginPassword ? EyeOff : Eye}
+                                                            onTrailingIconClick={() => setShowLoginPassword(!showLoginPassword)}
+                                                            type={showLoginPassword ? 'text' : 'password'}
+                                                            placeholder="•••••••"
+                                                            {...field}
+                                                        />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+
+                                        <div className="flex items-center justify-end">
+                                            <Link href="/forgot-password" className="text-sm text-emerald-400 hover:underline">
+                                                Mot de passe oublié ?
+                                            </Link>
+                                        </div>
+
+                                        <Button
+                                            type="submit"
+                                            className="w-full h-12 bg-gradient-to-r from-emerald-500 to-sky-400 text-base font-semibold text-white shadow-lg shadow-emerald-500/25 transition-all duration-300 hover:shadow-xl hover:shadow-emerald-500/40 active:scale-95"
+                                            disabled={isLoading}
+                                        >
+                                            {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : null}
+                                            Se connecter
+                                        </Button>
+                                    </form>
+                                </Form>
+                            )}
+
+                            {!isLogin && (
+                                <Form {...registerForm}>
+                                    <form onSubmit={registerForm.handleSubmit(onRegister)} className="space-y-5">
+                                        <FormField
+                                            control={registerForm.control}
+                                            name="name"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel className="text-white/80">Nom</FormLabel>
+                                                    <FormControl>
+                                                        <IconInput icon={User} placeholder="Votre nom" {...field} />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                        <FormField
+                                            control={registerForm.control}
+                                            name="email"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel className="text-white/80">Email</FormLabel>
+                                                    <FormControl>
+                                                        <IconInput icon={Mail} type="email" placeholder="vous@exemple.com" {...field} />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                        <FormField
+                                            control={registerForm.control}
+                                            name="password"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel className="text-white/80">Mot de passe</FormLabel>
+                                                    <FormControl>
+                                                        <IconInput
+                                                            icon={Lock}
+                                                            trailingIcon={showRegisterPassword ? EyeOff : Eye}
+                                                            onTrailingIconClick={() => setShowRegisterPassword(!showRegisterPassword)}
+                                                            type={showRegisterPassword ? 'text' : 'password'}
+                                                            placeholder="•••••••"
+                                                            {...field}
+                                                        />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                        <FormField
+                                            control={registerForm.control}
+                                            name="password_confirmation"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel className="text-white/80">Confirmer le mot de passe</FormLabel>
+                                                    <FormControl>
+                                                        <IconInput
+                                                            icon={Lock}
+                                                            trailingIcon={showRegisterConfirmPassword ? EyeOff : Eye}
+                                                            onTrailingIconClick={() => setShowRegisterConfirmPassword(!showRegisterConfirmPassword)}
+                                                            type={showRegisterConfirmPassword ? 'text' : 'password'}
+                                                            placeholder="•••••••"
+                                                            {...field}
+                                                        />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                        <Button
+                                            type="submit"
+                                            className="w-full h-12 bg-gradient-to-r from-emerald-500 to-sky-400 text-base font-semibold text-white shadow-lg shadow-emerald-500/25 transition-all duration-300 hover:shadow-xl hover:shadow-emerald-500/40 active:scale-95"
+                                            disabled={isLoading}
+                                        >
+                                            {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : null}
+                                            Créer un compte
+                                        </Button>
+                                    </form>
+                                </Form>
+                            )}
                         </div>
-                    )}
+                    </div>
 
-                    <Card className="border-0 shadow-xl">
-                        <Tabs defaultValue="login" className="w-full">
-                            <CardHeader className="pb-4">
-                                <TabsList className="grid w-full grid-cols-2">
-                                    <TabsTrigger value="login">
-                                        Connexion
-                                    </TabsTrigger>
-                                    <TabsTrigger value="register">
-                                        Inscription
-                                    </TabsTrigger>
-                                </TabsList>
-                            </CardHeader>
-
-                            <CardContent>
-                                <TabsContent value="login" className="mt-0">
-                                    <Form {...loginForm}>
-                                        <form
-                                            onSubmit={loginForm.handleSubmit(
-                                                onLogin,
-                                            )}
-                                            className="space-y-4"
-                                        >
-                                            <FormField
-                                                control={loginForm.control}
-                                                name="email"
-                                                render={({ field }) => (
-                                                    <FormItem>
-                                                        <FormLabel>
-                                                            Email
-                                                        </FormLabel>
-                                                        <FormControl>
-                                                            <div className="relative">
-                                                                <Mail className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                                                                <Input
-                                                                    type="email"
-                                                                    placeholder="vous@exemple.com"
-                                                                    className="pl-10"
-                                                                    {...field}
-                                                                />
-                                                            </div>
-                                                        </FormControl>
-                                                        <FormMessage />
-                                                    </FormItem>
-                                                )}
-                                            />
-
-                                            <FormField
-                                                control={loginForm.control}
-                                                name="password"
-                                                render={({ field }) => (
-                                                    <FormItem>
-                                                        <FormLabel>
-                                                            Mot de passe
-                                                        </FormLabel>
-                                                        <FormControl>
-                                                            <div className="relative">
-                                                                <Lock className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                                                                <Input
-                                                                    type="password"
-                                                                    placeholder="••••••••"
-                                                                    className="pl-10"
-                                                                    {...field}
-                                                                />
-                                                            </div>
-                                                        </FormControl>
-                                                        <FormMessage />
-                                                    </FormItem>
-                                                )}
-                                            />
-
-                                            <div className="flex items-center justify-end">
-                                                <Link
-                                                    href="/forgot-password"
-                                                    className="text-sm text-primary hover:underline"
-                                                >
-                                                    Mot de passe oublié ?
-                                                </Link>
-                                            </div>
-
-                                            <Button
-                                                type="submit"
-                                                className="w-full"
-                                                disabled={isLoading}
-                                                variant="primary"
-                                            >
-                                                {isLoading && (
-                                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                                )}
-                                                Se connecter
-                                            </Button>
-                                        </form>
-                                    </Form>
-                                </TabsContent>
-
-                                <TabsContent value="register" className="mt-0">
-                                    <Form {...registerForm}>
-                                        <form
-                                            onSubmit={registerForm.handleSubmit(
-                                                onRegister,
-                                            )}
-                                            className="space-y-4"
-                                        >
-                                            <FormField
-                                                control={registerForm.control}
-                                                name="name"
-                                                render={({ field }) => (
-                                                    <FormItem>
-                                                        <FormLabel>
-                                                            Nom
-                                                        </FormLabel>
-                                                        <FormControl>
-                                                            <div className="relative">
-                                                                <User className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                                                                <Input
-                                                                    placeholder="Votre nom"
-                                                                    className="pl-10"
-                                                                    {...field}
-                                                                />
-                                                            </div>
-                                                        </FormControl>
-                                                        <FormMessage />
-                                                    </FormItem>
-                                                )}
-                                            />
-
-                                            <FormField
-                                                control={registerForm.control}
-                                                name="email"
-                                                render={({ field }) => (
-                                                    <FormItem>
-                                                        <FormLabel>
-                                                            Email
-                                                        </FormLabel>
-                                                        <FormControl>
-                                                            <div className="relative">
-                                                                <Mail className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                                                                <Input
-                                                                    type="email"
-                                                                    placeholder="vous@exemple.com"
-                                                                    className="pl-10"
-                                                                    {...field}
-                                                                />
-                                                            </div>
-                                                        </FormControl>
-                                                        <FormMessage />
-                                                    </FormItem>
-                                                )}
-                                            />
-
-                                            <FormField
-                                                control={registerForm.control}
-                                                name="password"
-                                                render={({ field }) => (
-                                                    <FormItem>
-                                                        <FormLabel>
-                                                            Mot de passe
-                                                        </FormLabel>
-                                                        <FormControl>
-                                                            <div className="relative">
-                                                                <Lock className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                                                                <Input
-                                                                    type="password"
-                                                                    placeholder="••••••••"
-                                                                    className="pl-10"
-                                                                    {...field}
-                                                                />
-                                                            </div>
-                                                        </FormControl>
-                                                        <FormMessage />
-                                                    </FormItem>
-                                                )}
-                                            />
-
-                                            <FormField
-                                                control={registerForm.control}
-                                                name="password_confirmation"
-                                                render={({ field }) => (
-                                                    <FormItem>
-                                                        <FormLabel>
-                                                            Confirmer le mot de
-                                                            passe
-                                                        </FormLabel>
-                                                        <FormControl>
-                                                            <div className="relative">
-                                                                <Lock className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                                                                <Input
-                                                                    type="password"
-                                                                    placeholder="••••••••"
-                                                                    className="pl-10"
-                                                                    {...field}
-                                                                />
-                                                            </div>
-                                                        </FormControl>
-                                                        <FormMessage />
-                                                    </FormItem>
-                                                )}
-                                            />
-
-                                            <Button
-                                                type="submit"
-                                                className="w-full"
-                                                disabled={isLoading}
-                                                variant="primary"
-                                            >
-                                                {isLoading && (
-                                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                                )}
-                                                Créer un compte
-                                            </Button>
-                                        </form>
-                                    </Form>
-                                </TabsContent>
-                            </CardContent>
-                        </Tabs>
-                    </Card>
-
-                    <p className="mt-6 text-center text-sm text-muted-foreground">
-                        Application hors-ligne • Vos données restent sur votre
-                        appareil
+                    <p className="mt-8 text-center text-sm text-white/40">
+                        Application sécurisée • Vos données sont chiffrées
                     </p>
                 </div>
             </div>

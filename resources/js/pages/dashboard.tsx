@@ -150,9 +150,6 @@ export default function Welcome() {
                 {/* Header */}
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                        <h1 className="text-2xl font-bold tracking-tight">
-                            Bonjour, {user?.name?.split(' ')[0]} 👋
-                        </h1>
                         <p className="text-muted-foreground">
                             {format(new Date(), 'EEEE d MMMM yyyy', {
                                 locale: fr,
@@ -216,35 +213,45 @@ export default function Welcome() {
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                            <div className="grid gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
                                 {accounts.map((account) => (
                                     <div
                                         key={account.id}
-                                        className="flex items-center gap-3 rounded-lg border p-4 transition-colors hover:bg-accent/50"
+                                        className="flex items-center justify-between gap-3 rounded-lg border p-3 transition-colors hover:bg-accent/50 sm:p-4"
                                     >
-                                        <div
-                                            className="flex h-10 w-10 items-center justify-center rounded-full"
-                                            style={{
-                                                backgroundColor: `${account.color}20`,
-                                            }}
-                                        >
-                                            <Wallet
-                                                className="h-5 w-5"
-                                                style={{ color: account.color }}
-                                            />
+                                        {/* Icône et nom - flex-1 pour éviter le débordement */}
+                                        <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
+                                            <div
+                                                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full sm:h-10 sm:w-10"
+                                                style={{
+                                                    backgroundColor: `${account.color}20`,
+                                                }}
+                                            >
+                                                <Wallet
+                                                    className="h-4 w-4 sm:h-5 sm:w-5"
+                                                    style={{
+                                                        color: account.color,
+                                                    }}
+                                                />
+                                            </div>
+                                            <div className="min-w-0 flex-1">
+                                                <p className="truncate text-sm font-medium sm:text-base">
+                                                    {account.name}
+                                                </p>
+                                                <p className="text-xs text-muted-foreground capitalize sm:text-sm">
+                                                    {account.type}
+                                                </p>
+                                            </div>
                                         </div>
-                                        <div className="min-w-0 flex-1">
-                                            <p className="truncate font-medium">
-                                                {account.name}
-                                            </p>
-                                            <p className="text-sm text-muted-foreground capitalize">
-                                                {account.type}
-                                            </p>
-                                        </div>
-                                        <div className="text-right font-semibold">
+
+                                        {/* Solde à droite */}
+                                        <div className="shrink-0 text-right">
                                             {account.balances.map(
                                                 (bal: any) => (
-                                                    <div key={bal.currency}>
+                                                    <div
+                                                        key={bal.currency}
+                                                        className="text-sm font-semibold whitespace-nowrap sm:text-base"
+                                                    >
                                                         {formatCurrency(
                                                             bal.amount,
                                                             bal.currency,

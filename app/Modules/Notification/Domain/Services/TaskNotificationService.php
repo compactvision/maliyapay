@@ -30,7 +30,7 @@ class TaskNotificationService
         }
     }
 
-    private function checkAndNotify(Task $task): void
+    public function checkAndNotify(Task $task): void
     {
         if (!$task->dueDate()) {
             return;

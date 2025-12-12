@@ -376,19 +376,21 @@ export default function AccountPage() {
 
             {/* Create Account Dialog */}
             <Dialog open={createFormOpen} onOpenChange={setCreateFormOpen}>
-                <DialogContent>
+                <DialogContent className="max-h-[95vh] overflow-y-auto sm:max-w-[425px]">
                     <DialogHeader>
-                        <DialogTitle>Nouveau compte</DialogTitle>
+                        <DialogTitle className="text-base sm:text-lg">
+                            Nouveau compte
+                        </DialogTitle>
                     </DialogHeader>
                     <Form {...createForm}>
                         <form
                             onSubmit={createForm.handleSubmit(
                                 handleCreateSubmit,
                             )}
-                            className="space-y-4"
+                            className="space-y-3 sm:space-y-4"
                         >
                             {formError && (
-                                <div className="rounded-md bg-red-50 p-3 text-sm text-red-500">
+                                <div className="rounded-md bg-red-50 p-2.5 text-xs text-red-500 sm:p-3 sm:text-sm">
                                     {formError}
                                 </div>
                             )}
@@ -397,14 +399,17 @@ export default function AccountPage() {
                                 name="name"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Nom du compte</FormLabel>
+                                        <FormLabel className="text-xs sm:text-sm">
+                                            Nom du compte
+                                        </FormLabel>
                                         <FormControl>
                                             <Input
                                                 placeholder="Ex: Portefeuille Principal"
+                                                className="h-9 text-base sm:h-10"
                                                 {...field}
                                             />
                                         </FormControl>
-                                        <FormMessage />
+                                        <FormMessage className="text-xs" />
                                     </FormItem>
                                 )}
                             />
@@ -413,13 +418,15 @@ export default function AccountPage() {
                                 name="type"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Type</FormLabel>
+                                        <FormLabel className="text-xs sm:text-sm">
+                                            Type
+                                        </FormLabel>
                                         <Select
                                             onValueChange={field.onChange}
                                             value={field.value}
                                         >
                                             <FormControl>
-                                                <SelectTrigger>
+                                                <SelectTrigger className="h-9 text-base sm:h-10">
                                                     <SelectValue />
                                                 </SelectTrigger>
                                             </FormControl>
@@ -434,25 +441,25 @@ export default function AccountPage() {
                                                 ))}
                                             </SelectContent>
                                         </Select>
-                                        <FormMessage />
+                                        <FormMessage className="text-xs" />
                                     </FormItem>
                                 )}
                             />
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-2 gap-3 sm:gap-4">
                                 <FormField
                                     control={createForm.control}
                                     name="initial_currency"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>
-                                                Devise Initiale
+                                            <FormLabel className="text-xs sm:text-sm">
+                                                Devise
                                             </FormLabel>
                                             <Select
                                                 onValueChange={field.onChange}
                                                 value={field.value}
                                             >
                                                 <FormControl>
-                                                    <SelectTrigger>
+                                                    <SelectTrigger className="h-9 text-base sm:h-10">
                                                         <SelectValue />
                                                     </SelectTrigger>
                                                 </FormControl>
@@ -467,7 +474,7 @@ export default function AccountPage() {
                                                     ))}
                                                 </SelectContent>
                                             </Select>
-                                            <FormMessage />
+                                            <FormMessage className="text-xs" />
                                         </FormItem>
                                     )}
                                 />
@@ -476,15 +483,19 @@ export default function AccountPage() {
                                     name="initial_balance"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>Solde Initial</FormLabel>
+                                            <FormLabel className="text-xs sm:text-sm">
+                                                Solde
+                                            </FormLabel>
                                             <FormControl>
                                                 <Input
                                                     type="number"
                                                     step="0.01"
+                                                    placeholder="0.00"
+                                                    className="h-9 text-base sm:h-10"
                                                     {...field}
                                                 />
                                             </FormControl>
-                                            <FormMessage />
+                                            <FormMessage className="text-xs" />
                                         </FormItem>
                                     )}
                                 />
@@ -494,14 +505,16 @@ export default function AccountPage() {
                                 name="color"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Couleur</FormLabel>
+                                        <FormLabel className="text-xs sm:text-sm">
+                                            Couleur
+                                        </FormLabel>
                                         <FormControl>
                                             <div className="flex flex-wrap gap-2">
                                                 {mockColors.map((color) => (
                                                     <button
                                                         key={color}
                                                         type="button"
-                                                        className={`h-8 w-8 rounded-full transition-transform ${field.value === color ? 'scale-110 ring-2 ring-primary ring-offset-2' : ''}`}
+                                                        className={`h-9 w-9 rounded-full transition-transform sm:h-10 sm:w-10 ${field.value === color ? 'scale-110 ring-2 ring-primary ring-offset-2' : ''}`}
                                                         style={{
                                                             backgroundColor:
                                                                 color,
@@ -515,26 +528,26 @@ export default function AccountPage() {
                                                 ))}
                                             </div>
                                         </FormControl>
-                                        <FormMessage />
+                                        <FormMessage className="text-xs" />
                                     </FormItem>
                                 )}
                             />
-                            <div className="flex gap-3 pt-4">
+                            <div className="flex gap-2 pt-3 sm:gap-3 sm:pt-4">
                                 <Button
                                     type="button"
                                     variant="outline"
-                                    className="flex-1"
+                                    className="h-9 flex-1 text-sm sm:h-10"
                                     onClick={() => setCreateFormOpen(false)}
                                 >
                                     Annuler
                                 </Button>
                                 <Button
                                     type="submit"
-                                    className="flex-1"
+                                    className="h-9 flex-1 text-sm sm:h-10"
                                     disabled={isSubmitting}
                                 >
                                     {isSubmitting && (
-                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin sm:h-4 sm:w-4" />
                                     )}
                                     Créer
                                 </Button>
@@ -546,19 +559,21 @@ export default function AccountPage() {
 
             {/* Add Currency Dialog */}
             <Dialog open={addCurrencyOpen} onOpenChange={setAddCurrencyOpen}>
-                <DialogContent>
+                <DialogContent className="max-h-[95vh] overflow-y-auto sm:max-w-[425px]">
                     <DialogHeader>
-                        <DialogTitle>Ajouter une devise</DialogTitle>
+                        <DialogTitle className="text-base sm:text-lg">
+                            Ajouter une devise
+                        </DialogTitle>
                     </DialogHeader>
                     <Form {...currencyForm}>
                         <form
                             onSubmit={currencyForm.handleSubmit(
                                 handleAddCurrencySubmit,
                             )}
-                            className="space-y-4"
+                            className="space-y-3 sm:space-y-4"
                         >
                             {formError && (
-                                <div className="rounded-md bg-red-50 p-3 text-sm text-red-500">
+                                <div className="rounded-md bg-red-50 p-2.5 text-xs text-red-500 sm:p-3 sm:text-sm">
                                     {formError}
                                 </div>
                             )}
@@ -567,13 +582,15 @@ export default function AccountPage() {
                                 name="currency_code"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Devise</FormLabel>
+                                        <FormLabel className="text-xs sm:text-sm">
+                                            Devise
+                                        </FormLabel>
                                         <Select
                                             onValueChange={field.onChange}
                                             value={field.value}
                                         >
                                             <FormControl>
-                                                <SelectTrigger>
+                                                <SelectTrigger className="h-9 text-base sm:h-10">
                                                     <SelectValue />
                                                 </SelectTrigger>
                                             </FormControl>
@@ -588,7 +605,7 @@ export default function AccountPage() {
                                                 ))}
                                             </SelectContent>
                                         </Select>
-                                        <FormMessage />
+                                        <FormMessage className="text-xs" />
                                     </FormItem>
                                 )}
                             />
@@ -597,34 +614,38 @@ export default function AccountPage() {
                                 name="initial_balance"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Solde Initial</FormLabel>
+                                        <FormLabel className="text-xs sm:text-sm">
+                                            Solde Initial
+                                        </FormLabel>
                                         <FormControl>
                                             <Input
                                                 type="number"
                                                 step="0.01"
+                                                placeholder="0.00"
+                                                className="h-9 text-base sm:h-10"
                                                 {...field}
                                             />
                                         </FormControl>
-                                        <FormMessage />
+                                        <FormMessage className="text-xs" />
                                     </FormItem>
                                 )}
                             />
-                            <div className="flex gap-3 pt-4">
+                            <div className="flex gap-2 pt-3 sm:gap-3 sm:pt-4">
                                 <Button
                                     type="button"
                                     variant="outline"
-                                    className="flex-1"
+                                    className="h-9 flex-1 text-sm sm:h-10"
                                     onClick={() => setAddCurrencyOpen(false)}
                                 >
                                     Annuler
                                 </Button>
                                 <Button
                                     type="submit"
-                                    className="flex-1"
+                                    className="h-9 flex-1 text-sm sm:h-10"
                                     disabled={isSubmitting}
                                 >
                                     {isSubmitting && (
-                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin sm:h-4 sm:w-4" />
                                     )}
                                     Ajouter
                                 </Button>

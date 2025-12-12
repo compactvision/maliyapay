@@ -322,6 +322,7 @@ export default function RoutinePage() {
                             onClick={() => openRoutineForm(selectedRoutine)}
                             variant="outline"
                             className="gap-2"
+                            disabled
                         >
                             <Settings className="h-4 w-4" />
                             Modifier
@@ -448,9 +449,9 @@ export default function RoutinePage() {
 
                 {/* Task Form Dialog */}
                 <Dialog open={taskFormOpen} onOpenChange={closeTaskForm}>
-                    <DialogContent className="max-w-md">
+                    <DialogContent className="max-h-[95vh] overflow-y-auto sm:max-w-md">
                         <DialogHeader>
-                            <DialogTitle>
+                            <DialogTitle className="text-base sm:text-lg">
                                 {editTaskId
                                     ? 'Modifier la tâche'
                                     : 'Nouvelle tâche'}
@@ -461,21 +462,24 @@ export default function RoutinePage() {
                                 onSubmit={taskForm.handleSubmit(
                                     handleTaskSubmit,
                                 )}
-                                className="space-y-4"
+                                className="space-y-3 sm:space-y-4"
                             >
                                 <FormField
                                     control={taskForm.control}
                                     name="title"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>Titre</FormLabel>
+                                            <FormLabel className="text-xs sm:text-sm">
+                                                Titre
+                                            </FormLabel>
                                             <FormControl>
                                                 <Input
                                                     placeholder="Ex: Réunion d'équipe"
+                                                    className="h-9 text-[16px] sm:h-10"
                                                     {...field}
                                                 />
                                             </FormControl>
-                                            <FormMessage />
+                                            <FormMessage className="text-xs" />
                                         </FormItem>
                                     )}
                                 />
@@ -484,16 +488,17 @@ export default function RoutinePage() {
                                     name="description"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>
+                                            <FormLabel className="text-xs sm:text-sm">
                                                 Description (optionnel)
                                             </FormLabel>
                                             <FormControl>
                                                 <Textarea
                                                     placeholder="Détails de la tâche..."
+                                                    className="h-16 resize-none text-[16px] sm:h-20 sm:text-sm"
                                                     {...field}
                                                 />
                                             </FormControl>
-                                            <FormMessage />
+                                            <FormMessage className="text-xs" />
                                         </FormItem>
                                     )}
                                 />
@@ -502,7 +507,9 @@ export default function RoutinePage() {
                                     name="dayOfWeek"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>Jour</FormLabel>
+                                            <FormLabel className="text-xs sm:text-sm">
+                                                Jour
+                                            </FormLabel>
                                             <Select
                                                 onValueChange={(value) =>
                                                     field.onChange(
@@ -512,7 +519,7 @@ export default function RoutinePage() {
                                                 value={field.value.toString()}
                                             >
                                                 <FormControl>
-                                                    <SelectTrigger>
+                                                    <SelectTrigger className="h-9 text-[16px] sm:h-10">
                                                         <SelectValue
                                                             placeholder={
                                                                 DAYS.find(
@@ -520,7 +527,7 @@ export default function RoutinePage() {
                                                                         d.value ===
                                                                         field.value,
                                                                 )?.label ||
-                                                                'Sélectionner un jour'
+                                                                'Sélectionner'
                                                             }
                                                         />
                                                     </SelectTrigger>
@@ -536,26 +543,27 @@ export default function RoutinePage() {
                                                     ))}
                                                 </SelectContent>
                                             </Select>
-                                            <FormMessage />
+                                            <FormMessage className="text-xs" />
                                         </FormItem>
                                     )}
                                 />
-                                <div className="grid grid-cols-2 gap-4">
+                                <div className="grid grid-cols-2 gap-3 sm:gap-4">
                                     <FormField
                                         control={taskForm.control}
                                         name="timeStart"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel>
-                                                    Heure début
+                                                <FormLabel className="text-xs sm:text-sm">
+                                                    Début
                                                 </FormLabel>
                                                 <FormControl>
                                                     <Input
                                                         type="time"
+                                                        className="h-9 text-[16px] sm:h-10"
                                                         {...field}
                                                     />
                                                 </FormControl>
-                                                <FormMessage />
+                                                <FormMessage className="text-xs" />
                                             </FormItem>
                                         )}
                                     />
@@ -564,14 +572,17 @@ export default function RoutinePage() {
                                         name="timeEnd"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel>Heure fin</FormLabel>
+                                                <FormLabel className="text-xs sm:text-sm">
+                                                    Fin
+                                                </FormLabel>
                                                 <FormControl>
                                                     <Input
                                                         type="time"
+                                                        className="h-9 text-[16px] sm:h-10"
                                                         {...field}
                                                     />
                                                 </FormControl>
-                                                <FormMessage />
+                                                <FormMessage className="text-xs" />
                                             </FormItem>
                                         )}
                                     />
@@ -581,13 +592,15 @@ export default function RoutinePage() {
                                     name="priority"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>Priorité</FormLabel>
+                                            <FormLabel className="text-xs sm:text-sm">
+                                                Priorité
+                                            </FormLabel>
                                             <Select
                                                 onValueChange={field.onChange}
                                                 value={field.value}
                                             >
                                                 <FormControl>
-                                                    <SelectTrigger>
+                                                    <SelectTrigger className="h-9 text-[16px] sm:h-10">
                                                         <SelectValue
                                                             placeholder={
                                                                 PRIORITIES.find(
@@ -595,7 +608,7 @@ export default function RoutinePage() {
                                                                         p.value ===
                                                                         field.value,
                                                                 )?.label ||
-                                                                'Sélectionner une priorité'
+                                                                'Sélectionner'
                                                             }
                                                         />
                                                     </SelectTrigger>
@@ -611,26 +624,27 @@ export default function RoutinePage() {
                                                     ))}
                                                 </SelectContent>
                                             </Select>
-                                            <FormMessage />
+                                            <FormMessage className="text-xs" />
                                         </FormItem>
                                     )}
                                 />
-                                <div className="flex gap-3 pt-4">
+                                <div className="flex gap-2 pt-3 sm:gap-3 sm:pt-4">
                                     <Button
                                         type="button"
                                         variant="outline"
-                                        className="flex-1"
+                                        className="h-9 flex-1 text-sm sm:h-10"
                                         onClick={closeTaskForm}
                                     >
                                         Annuler
                                     </Button>
                                     <Button
                                         type="submit"
-                                        className="flex-1"
+                                        className="h-9 flex-1 text-sm sm:h-10"
                                         disabled={isSubmitting}
+                                        variant="primary"
                                     >
                                         {isSubmitting && (
-                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                            <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin sm:h-4 sm:w-4" />
                                         )}
                                         {editTaskId ? 'Modifier' : 'Créer'}
                                     </Button>
@@ -683,10 +697,7 @@ export default function RoutinePage() {
                             Gérez vos routines hebdomadaires
                         </p>
                     </div>
-                    <Button
-                        onClick={() => openRoutineForm()}
-                        className="gap-2 bg-emerald-600 hover:bg-emerald-700"
-                    >
+                    <Button onClick={() => openRoutineForm()} variant="primary">
                         <Plus className="h-4 w-4" />
                         Nouvelle routine
                     </Button>
@@ -715,13 +726,13 @@ export default function RoutinePage() {
                                             }}
                                         />
                                     )}
-                                    <CardHeader className="pb-3">
-                                        <div className="flex items-start justify-between">
-                                            <CardTitle className="text-lg">
+                                    <CardHeader className="pb-2 sm:pb-3">
+                                        <div className="flex items-start justify-between gap-2">
+                                            <CardTitle className="text-base sm:text-lg">
                                                 {routine.name}
                                             </CardTitle>
                                             <div
-                                                className="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100"
+                                                className="flex gap-1 sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100"
                                                 onClick={(e) =>
                                                     e.stopPropagation()
                                                 }
@@ -729,39 +740,39 @@ export default function RoutinePage() {
                                                 <Button
                                                     variant="ghost"
                                                     size="icon"
-                                                    className="h-8 w-8"
+                                                    className="h-7 w-7 sm:h-8 sm:w-8"
                                                     onClick={() =>
                                                         openRoutineForm(routine)
                                                     }
                                                 >
-                                                    <Edit2 className="h-4 w-4" />
+                                                    <Edit2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                                                 </Button>
                                                 <Button
                                                     variant="ghost"
                                                     size="icon"
-                                                    className="h-8 w-8"
+                                                    className="h-7 w-7 sm:h-8 sm:w-8"
                                                     onClick={() =>
                                                         handleToggle(routine.id)
                                                     }
                                                 >
-                                                    <Power className="h-4 w-4" />
+                                                    <Power className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                                                 </Button>
                                                 <Button
                                                     variant="ghost"
                                                     size="icon"
-                                                    className="h-8 w-8 text-destructive hover:text-destructive"
+                                                    className="h-7 w-7 text-destructive hover:text-destructive sm:h-8 sm:w-8"
                                                     onClick={() =>
                                                         setDeleteId(routine.id)
                                                     }
                                                 >
-                                                    <Trash2 className="h-4 w-4" />
+                                                    <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                                                 </Button>
                                             </div>
                                         </div>
                                     </CardHeader>
-                                    <CardContent>
-                                        <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                                            <Calendar className="h-4 w-4" />
+                                    <CardContent className="pt-2">
+                                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground sm:gap-2 sm:text-sm">
+                                            <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                                             <span>Cliquez pour configurer</span>
                                         </div>
                                     </CardContent>
@@ -846,9 +857,9 @@ export default function RoutinePage() {
 
             {/* Routine Form Dialog */}
             <Dialog open={formOpen} onOpenChange={closeRoutineForm}>
-                <DialogContent>
+                <DialogContent className="max-h-[95vh] overflow-y-auto sm:max-w-[425px]">
                     <DialogHeader>
-                        <DialogTitle>
+                        <DialogTitle className="text-base sm:text-lg">
                             {editRoutineId
                                 ? 'Modifier la routine'
                                 : 'Nouvelle routine'}
@@ -859,21 +870,24 @@ export default function RoutinePage() {
                             onSubmit={routineForm.handleSubmit(
                                 handleRoutineSubmit,
                             )}
-                            className="space-y-4"
+                            className="space-y-3 sm:space-y-4"
                         >
                             <FormField
                                 control={routineForm.control}
                                 name="name"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Nom</FormLabel>
+                                        <FormLabel className="text-xs sm:text-sm">
+                                            Nom
+                                        </FormLabel>
                                         <FormControl>
                                             <Input
                                                 placeholder="Ex: Travail, Sport, Maison"
+                                                className="h-9 text-[16px] sm:h-10"
                                                 {...field}
                                             />
                                         </FormControl>
-                                        <FormMessage />
+                                        <FormMessage className="text-xs" />
                                     </FormItem>
                                 )}
                             />
@@ -882,14 +896,16 @@ export default function RoutinePage() {
                                 name="color"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Couleur</FormLabel>
-                                        <div className="flex gap-2">
+                                        <FormLabel className="text-xs sm:text-sm">
+                                            Couleur
+                                        </FormLabel>
+                                        <div className="flex flex-wrap gap-2">
                                             {COLORS.map((color) => (
                                                 <button
                                                     key={color}
                                                     type="button"
                                                     className={cn(
-                                                        'h-10 w-10 rounded-full border-2 transition-all',
+                                                        'h-9 w-9 rounded-full border-2 transition-all sm:h-10 sm:w-10',
                                                         field.value === color
                                                             ? 'scale-110 border-foreground'
                                                             : 'border-transparent hover:scale-105',
@@ -903,26 +919,27 @@ export default function RoutinePage() {
                                                 />
                                             ))}
                                         </div>
-                                        <FormMessage />
+                                        <FormMessage className="text-xs" />
                                     </FormItem>
                                 )}
                             />
-                            <div className="flex gap-3 pt-4">
+                            <div className="flex gap-2 pt-3 sm:gap-3 sm:pt-4">
                                 <Button
                                     type="button"
                                     variant="outline"
-                                    className="flex-1"
+                                    className="h-9 flex-1 text-sm sm:h-10"
                                     onClick={closeRoutineForm}
                                 >
                                     Annuler
                                 </Button>
                                 <Button
                                     type="submit"
-                                    className="flex-1"
+                                    className="h-9 flex-1 text-sm sm:h-10"
                                     disabled={isSubmitting}
+                                    variant="primary"
                                 >
                                     {isSubmitting && (
-                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin sm:h-4 sm:w-4" />
                                     )}
                                     {editRoutineId ? 'Modifier' : 'Créer'}
                                 </Button>

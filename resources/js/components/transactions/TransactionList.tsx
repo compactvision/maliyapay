@@ -113,62 +113,96 @@ export function TransactionList({
                                     <div
                                         key={transaction.id}
                                         className={cn(
-                                            'group animate-fade-in flex items-center gap-4 rounded-lg border bg-card p-4 transition-all',
+                                            'group animate-fade-in flex items-start gap-3 rounded-lg border bg-card p-3 transition-all sm:items-center sm:gap-4 sm:p-4',
                                             'border-border transition-all duration-200',
                                             'hover:border-accent-foreground hover:bg-accent/50 hover:shadow-md',
                                             'dark:border-white/20 dark:bg-white/10 dark:backdrop-blur-xl',
                                         )}
                                     >
+                                        {/* Icône */}
                                         <div
                                             className={cn(
-                                                'flex h-10 w-10 shrink-0 items-center justify-center rounded-full',
+                                                'flex h-9 w-9 shrink-0 items-center justify-center rounded-full sm:h-10 sm:w-10',
                                                 transaction.type === 'income'
                                                     ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400'
                                                     : 'bg-red-100 text-red-600 dark:bg-red-500/20 dark:text-red-400',
                                             )}
                                         >
                                             {transaction.type === 'income' ? (
-                                                <TrendingUp className="h-5 w-5" />
+                                                <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5" />
                                             ) : (
-                                                <TrendingDown className="h-5 w-5" />
+                                                <TrendingDown className="h-4 w-4 sm:h-5 sm:w-5" />
                                             )}
                                         </div>
 
+                                        {/* Contenu principal - responsive layout */}
                                         <div className="min-w-0 flex-1">
-                                            <p className="truncate font-medium">
-                                                {transaction.description}
-                                            </p>
-                                            <p className="text-sm text-muted-foreground">
-                                                {getCategoryName(
-                                                    transaction.category_id,
-                                                )}{' '}
-                                                •{' '}
-                                                {getAccountName(
-                                                    transaction.account_id,
-                                                )}
-                                            </p>
+                                            <div className="flex items-start justify-between gap-2">
+                                                {/* Description et infos */}
+                                                <div className="min-w-0 flex-1">
+                                                    <p className="truncate text-sm font-medium sm:text-base">
+                                                        {
+                                                            transaction.description
+                                                        }
+                                                    </p>
+                                                    <p className="truncate text-xs text-muted-foreground sm:text-sm">
+                                                        {getCategoryName(
+                                                            transaction.category_id,
+                                                        )}
+                                                        {' • '}
+                                                        {getAccountName(
+                                                            transaction.account_id,
+                                                        )}
+                                                    </p>
+                                                </div>
+
+                                                {/* Montant */}
+                                                <p
+                                                    className={cn(
+                                                        'shrink-0 text-sm font-semibold whitespace-nowrap sm:text-base',
+                                                        transaction.type ===
+                                                            'income'
+                                                            ? 'text-emerald-600 dark:text-emerald-400'
+                                                            : 'text-red-600 dark:text-red-400',
+                                                    )}
+                                                >
+                                                    {formatAmount(
+                                                        transaction.amount,
+                                                        transaction.type,
+                                                        transaction.currency,
+                                                    )}
+                                                </p>
+                                            </div>
+
+                                            {/* Actions en dessous sur mobile */}
+                                            <div className="mt-2 flex gap-1 sm:hidden">
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-7 w-7 transition-transform hover:scale-110"
+                                                    onClick={() =>
+                                                        onEdit(transaction)
+                                                    }
+                                                >
+                                                    <Edit2 className="h-3.5 w-3.5" />
+                                                </Button>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-7 w-7 text-red-600 transition-transform hover:scale-110 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                                                    onClick={() =>
+                                                        setDeleteId(
+                                                            transaction.id,
+                                                        )
+                                                    }
+                                                >
+                                                    <Trash2 className="h-3.5 w-3.5" />
+                                                </Button>
+                                            </div>
                                         </div>
 
-                                        <div className="text-right">
-                                            <p
-                                                className={cn(
-                                                    'font-semibold',
-                                                    transaction.type ===
-                                                        'income'
-                                                        ? 'text-emerald-600 dark:text-emerald-400'
-                                                        : 'text-red-600 dark:text-red-400',
-                                                )}
-                                            >
-                                                {formatAmount(
-                                                    transaction.amount,
-                                                    transaction.type,
-                                                    transaction.currency,
-                                                )}
-                                            </p>
-                                        </div>
-
-                                        <div className="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-                                            {/* Edit not fully implemented in backend yet, but UI ready */}
+                                        {/* Actions au hover sur desktop */}
+                                        <div className="hidden gap-1 opacity-0 transition-opacity group-hover:opacity-100 sm:flex">
                                             <Button
                                                 variant="ghost"
                                                 size="icon"

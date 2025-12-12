@@ -18,12 +18,17 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
+use App\Modules\Notification\Domain\Services\BudgetNotificationService;
+// use App\Modules\Transaction\Application\Handlers\CreateTransactionHandler;
+use App\Modules\Transaction\Infrastructure\Repositories\EloquentTransactionRepository;
+
 class TransactionController extends Controller
 {
     public function __construct(
         private readonly CreateTransactionHandler $createHandler,
         private readonly DeleteTransactionHandler $deleteHandler,
-        private readonly TransactionRepositoryInterface $repository
+        private readonly EloquentTransactionRepository $repository,
+        private readonly BudgetNotificationService $budgetNotificationService
     ) {
     }
 

@@ -1,4 +1,5 @@
 // resources/js/pages/Profile/Partials/PasswordChangeForm.tsx
+
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -67,7 +68,6 @@ export function PasswordChangeForm() {
             onSuccess: () => {
                 toast.success('Mot de passe mis à jour avec succès !');
                 reset();
-                // Reset password requirements state implicitly by clearing inputs
             },
             onError: (errors) => {
                 if (errors.current_password) {
@@ -120,7 +120,7 @@ export function PasswordChangeForm() {
                                 }
                                 required
                                 autoComplete="current-password"
-                                className="pr-10"
+                                className="h-11 pr-10 text-base"
                             />
                             <Button
                                 type="button"
@@ -155,7 +155,7 @@ export function PasswordChangeForm() {
                                 }
                                 required
                                 autoComplete="new-password"
-                                className="pr-10"
+                                className="h-11 pr-10 text-base"
                             />
                             <Button
                                 type="button"
@@ -172,7 +172,7 @@ export function PasswordChangeForm() {
                             </Button>
                         </div>
                         {/* Password Requirements List */}
-                        <div className="space-y-2 rounded-md bg-muted/50 p-3 text-sm">
+                        <div className="space-y-2 rounded-md bg-muted/50 p-3 text-sm dark:bg-muted/30">
                             <p className="font-medium text-muted-foreground">
                                 Critères de sécurité :
                             </p>
@@ -219,7 +219,7 @@ export function PasswordChangeForm() {
                                 }
                                 required
                                 autoComplete="new-password"
-                                className="pr-10"
+                                className="h-11 pr-10 text-base"
                             />
                             <Button
                                 type="button"
@@ -247,7 +247,7 @@ export function PasswordChangeForm() {
                     <Button
                         type="submit"
                         disabled={processing || !isPasswordValid}
-                        className="w-full sm:w-auto"
+                        className="h-11 w-full sm:w-auto" 
                     >
                         {processing && (
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -265,7 +265,7 @@ function RequirementItem({ met, text }: { met: boolean; text: string }) {
         <li
             className={cn(
                 'flex items-center gap-2 transition-colors duration-200',
-                met ? 'text-green-600' : 'text-muted-foreground',
+                met ? 'text-green-700 dark:text-green-400' : 'text-muted-foreground',
             )}
         >
             {met ? (
