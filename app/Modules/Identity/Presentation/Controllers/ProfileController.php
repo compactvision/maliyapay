@@ -31,6 +31,7 @@ class ProfileController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users')->ignore($request->user()?->id)],
             'avatar' => ['nullable', 'image', 'max:2048'], // Max 2MB
+            'play_notification_sound' => ['boolean'],
         ]);
 
         // On retire l'avatar des données validées pour ne pas écraser l'existant avec null par mégarde

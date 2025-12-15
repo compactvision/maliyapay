@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { useAuth } from '@/hooks/useAuth';
 import { User } from '@/types/auth';
 import { useForm } from '@inertiajs/react';
@@ -27,6 +28,7 @@ export function ProfileInfoForm({ user }: ProfileInfoFormProps) {
         useForm({
             name: user?.name ?? '',
             email: user?.email ?? '',
+            play_notification_sound: user?.play_notification_sound ?? true,
             avatar: null as File | null,
             _method: 'PATCH',
         });
@@ -39,6 +41,7 @@ export function ProfileInfoForm({ user }: ProfileInfoFormProps) {
                 ...prev,
                 name: user.name,
                 email: user.email,
+                play_notification_sound: user.play_notification_sound ?? true,
             }));
         }
     }, [user]);
@@ -159,6 +162,33 @@ export function ProfileInfoForm({ user }: ProfileInfoFormProps) {
                         {errors.email && (
                             <p className="text-sm text-destructive">
                                 {errors.email}
+                            </p>
+                        )}
+                    </div>
+
+                    <div className="flex flex-col gap-2">
+                        <Label htmlFor="play_notification_sound">
+                            Sons de notification
+                        </Label>
+                        <div className="flex items-center space-x-2">
+                            <Switch
+                                id="play_notification_sound"
+                                checked={!!data.play_notification_sound}
+                                onCheckedChange={(checked) =>
+                                    setData('play_notification_sound', checked)
+                                }
+                            />
+                            <Label
+                                htmlFor="play_notification_sound"
+                                className="font-normal"
+                            >
+                                Jouer un son lors de la réception d'une
+                                notification
+                            </Label>
+                        </div>
+                        {errors.play_notification_sound && (
+                            <p className="text-sm text-destructive">
+                                {errors.play_notification_sound}
                             </p>
                         )}
                     </div>

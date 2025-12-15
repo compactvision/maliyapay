@@ -9,10 +9,11 @@ import {
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { Edit2, Loader2, Trash2, TrendingDown, TrendingUp } from 'lucide-react';
+import { Edit2, Trash2, TrendingDown, TrendingUp } from 'lucide-react';
 import { useState } from 'react';
 
 interface Transaction {
@@ -76,8 +77,23 @@ export function TransactionList({
 
     if (isLoading) {
         return (
-            <div className="flex h-64 items-center justify-center">
-                <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
+            <div className="space-y-4">
+                <div className="space-y-2">
+                    <Skeleton className="h-4 w-32" />
+                    {Array.from({ length: 3 }).map((_, i) => (
+                        <div
+                            key={i}
+                            className="flex items-center gap-4 rounded-lg border p-4"
+                        >
+                            <Skeleton className="h-10 w-10 rounded-full" />
+                            <div className="flex-1 space-y-2">
+                                <Skeleton className="h-4 w-[200px]" />
+                                <Skeleton className="h-3 w-[150px]" />
+                            </div>
+                            <Skeleton className="h-5 w-[80px]" />
+                        </div>
+                    ))}
+                </div>
             </div>
         );
     }

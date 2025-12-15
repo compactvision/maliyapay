@@ -2,6 +2,7 @@ import { TransactionForm } from '@/components/transactions/TransactionForm';
 import { TransactionList } from '@/components/transactions/TransactionList';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 import { StatCard } from '@/components/ui/stat-card';
 import { AppLayout } from '@/layouts/AppLayout';
 import { Link, usePage } from '@inertiajs/react';
@@ -168,103 +169,158 @@ export default function Welcome() {
 
                 {/* Stats Grid */}
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                    <StatCard
-                        title="Solde total"
-                        value={renderMultiCurrencyValue(
-                            calculateTotalBalance(),
-                        )}
-                        subtitle={`${accounts.length} compte${accounts.length > 1 ? 's' : ''}`}
-                        icon={<Wallet className="h-5 w-5 text-primary" />}
-                        variant="primary"
-                    />
-                    <StatCard
-                        title="Revenus du mois"
-                        value={renderMultiCurrencyValue(stats.income, 'income')}
-                        icon={<TrendingUp className="text-success h-5 w-5" />}
-                        variant="income"
-                    />
-                    <StatCard
-                        title="Dépenses du mois"
-                        value={renderMultiCurrencyValue(
-                            stats.expenses,
-                            'expense',
-                        )}
-                        icon={
-                            <TrendingDown className="h-5 w-5 text-destructive" />
-                        }
-                        variant="expense"
-                    />
-                    <StatCard
-                        title="Balance Mensuelle"
-                        value={renderMultiCurrencyValue(
-                            calculateBalanceStats(),
-                            'balance',
-                        )}
-                        icon={<ArrowUpRight className="h-5 w-5 text-primary" />}
-                    />
+                    {isLoading ? (
+                        <>
+                            {Array.from({ length: 4 }).map((_, i) => (
+                                <Card key={i}>
+                                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                        <Skeleton className="h-4 w-[100px]" />
+                                        <Skeleton className="h-4 w-4 rounded-full" />
+                                    </CardHeader>
+                                    <CardContent>
+                                        <Skeleton className="mt-2 h-8 w-[120px]" />
+                                        <Skeleton className="mt-1 h-3 w-[80px]" />
+                                    </CardContent>
+                                </Card>
+                            ))}
+                        </>
+                    ) : (
+                        <>
+                            <StatCard
+                                title="Solde total"
+                                value={renderMultiCurrencyValue(
+                                    calculateTotalBalance(),
+                                )}
+                                subtitle={`${accounts.length} compte${accounts.length > 1 ? 's' : ''}`}
+                                icon={
+                                    <Wallet className="h-5 w-5 text-primary" />
+                                }
+                                variant="primary"
+                            />
+                            <StatCard
+                                title="Revenus du mois"
+                                value={renderMultiCurrencyValue(
+                                    stats.income,
+                                    'income',
+                                )}
+                                icon={
+                                    <TrendingUp className="text-success h-5 w-5" />
+                                }
+                                variant="income"
+                            />
+                            <StatCard
+                                title="Dépenses du mois"
+                                value={renderMultiCurrencyValue(
+                                    stats.expenses,
+                                    'expense',
+                                )}
+                                icon={
+                                    <TrendingDown className="h-5 w-5 text-destructive" />
+                                }
+                                variant="expense"
+                            />
+                            <StatCard
+                                title="Balance Mensuelle"
+                                value={renderMultiCurrencyValue(
+                                    calculateBalanceStats(),
+                                    'balance',
+                                )}
+                                icon={
+                                    <ArrowUpRight className="h-5 w-5 text-primary" />
+                                }
+                            />
+                        </>
+                    )}
                 </div>
 
                 {/* Accounts Overview */}
-                {accounts.length > 0 && (
+                {isLoading ? (
                     <Card>
                         <CardHeader>
-                            <CardTitle className="text-lg">
-                                Mes comptes
-                            </CardTitle>
+                            <Skeleton className="h-6 w-[150px]" />
                         </CardHeader>
                         <CardContent>
                             <div className="grid gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
-                                {accounts.map((account) => (
+                                {Array.from({ length: 3 }).map((_, i) => (
                                     <div
-                                        key={account.id}
-                                        className="flex items-center justify-between gap-3 rounded-lg border p-3 transition-colors hover:bg-accent/50 sm:p-4"
+                                        key={i}
+                                        className="flex h-[88px] items-center gap-3 rounded-lg border p-3 sm:p-4"
                                     >
-                                        {/* Icône et nom - flex-1 pour éviter le débordement */}
-                                        <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
-                                            <div
-                                                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full sm:h-10 sm:w-10"
-                                                style={{
-                                                    backgroundColor: `${account.color}20`,
-                                                }}
-                                            >
-                                                <Wallet
-                                                    className="h-4 w-4 sm:h-5 sm:w-5"
-                                                    style={{
-                                                        color: account.color,
-                                                    }}
-                                                />
-                                            </div>
-                                            <div className="min-w-0 flex-1">
-                                                <p className="truncate text-sm font-medium sm:text-base">
-                                                    {account.name}
-                                                </p>
-                                                <p className="text-xs text-muted-foreground capitalize sm:text-sm">
-                                                    {account.type}
-                                                </p>
-                                            </div>
+                                        <Skeleton className="h-10 w-10 rounded-full" />
+                                        <div className="space-y-2">
+                                            <Skeleton className="h-4 w-[100px]" />
+                                            <Skeleton className="h-3 w-[60px]" />
                                         </div>
-
-                                        {/* Solde à droite */}
-                                        <div className="shrink-0 text-right">
-                                            {account.balances.map(
-                                                (bal: any) => (
-                                                    <div
-                                                        key={bal.currency}
-                                                        className="text-sm font-semibold whitespace-nowrap sm:text-base"
-                                                    >
-                                                        {formatCurrency(
-                                                            bal.amount,
-                                                            bal.currency,
-                                                        )}
-                                                    </div>
-                                                ),
-                                            )}
+                                        <div className="ml-auto">
+                                            <Skeleton className="h-5 w-[80px]" />
                                         </div>
                                     </div>
                                 ))}
                             </div>
                         </CardContent>
                     </Card>
+                ) : (
+                    accounts.length > 0 && (
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="text-lg">
+                                    Mes comptes
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="grid gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
+                                    {accounts.map((account) => (
+                                        <div
+                                            key={account.id}
+                                            className="flex items-center justify-between gap-3 rounded-lg border p-3 transition-colors hover:bg-accent/50 sm:p-4"
+                                        >
+                                            {/* Icône et nom - flex-1 pour éviter le débordement */}
+                                            <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
+                                                <div
+                                                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full sm:h-10 sm:w-10"
+                                                    style={{
+                                                        backgroundColor: `${account.color}20`,
+                                                    }}
+                                                >
+                                                    <Wallet
+                                                        className="h-4 w-4 sm:h-5 sm:w-5"
+                                                        style={{
+                                                            color: account.color,
+                                                        }}
+                                                    />
+                                                </div>
+                                                <div className="min-w-0 flex-1">
+                                                    <p className="truncate text-sm font-medium sm:text-base">
+                                                        {account.name}
+                                                    </p>
+                                                    <p className="text-xs text-muted-foreground capitalize sm:text-sm">
+                                                        {account.type}
+                                                    </p>
+                                                </div>
+                                            </div>
+
+                                            {/* Solde à droite */}
+                                            <div className="shrink-0 text-right">
+                                                {account.balances.map(
+                                                    (bal: any) => (
+                                                        <div
+                                                            key={bal.currency}
+                                                            className="text-sm font-semibold whitespace-nowrap sm:text-base"
+                                                        >
+                                                            {formatCurrency(
+                                                                bal.amount,
+                                                                bal.currency,
+                                                            )}
+                                                        </div>
+                                                    ),
+                                                )}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )
                 )}
 
                 {/* Recent Transactions */}

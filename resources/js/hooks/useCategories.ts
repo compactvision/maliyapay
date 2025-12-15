@@ -1,4 +1,4 @@
-                                                                                                                        /**
+/**
  * useCategories Hook
  *
  * Custom React hook for managing categories with react-hook-form
@@ -21,9 +21,7 @@ const categorySchema = z.object({
         .string()
         .min(2, 'Le nom doit contenir au moins 2 caractères')
         .max(100, 'Le nom ne peut pas dépasser 100 caractères'),
-    type: z.enum(['income', 'expense'], {
-        required_error: 'Le type est requis',
-    }),
+    type: z.enum(['income', 'expense']),
     color: z
         .string()
         .regex(

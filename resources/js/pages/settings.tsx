@@ -9,7 +9,7 @@ import {
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { AppLayout } from '@/layouts/AppLayout';
-import { Head, useForm, usePage } from '@inertiajs/react';
+import { Head, router, useForm, usePage } from '@inertiajs/react';
 import { Bell, Shield } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -38,22 +38,36 @@ export default function Settings({ user }: PageProps) {
 
     const handleNotificationChange = (checked: boolean) => {
         setData('receive_notifications', checked);
-        // On soumet automatiquement le changement
-        patch(route('settings.notifications.update'), {
-            preserveScroll: true,
-            onSuccess: () => {
-                toast.success(
-                    checked
-                        ? 'Notifications activées'
-                        : 'Notifications désactivées',
-                );
+
+        // Use router.patch via the form helper manually or Inertia router
+        // Since useForm's patch sends 'data', which is stale here.
+        // We can pass data to processing options? No.
+        // Best approach: Use router.visit or just manually update before sending?
+        // Actually, let's use the transform prop of useForm temporarily? No.
+
+        // Simple fix: router.patch specific payload
+        router.patch(
+            route('settings.notifications.update'),
+            {
+                receive_notifications: checked,
             },
-            onError: () => {
-                toast.error('Erreur lors de la mise à jour des préférences');
-                // Revert
-                setData('receive_notifications', !checked);
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    toast.success(
+                        checked
+                            ? 'Notifications activées'
+                            : 'Notifications désactivées',
+                    );
+                },
+                onError: () => {
+                    toast.error(
+                        'Erreur lors de la mise à jour des préférences',
+                    );
+                    setData('receive_notifications', !checked);
+                },
             },
-        });
+        );
     };
 
     return (

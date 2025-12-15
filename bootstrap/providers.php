@@ -10,4 +10,5 @@ return [
     App\Modules\Task\TaskServiceProvider::class,
     App\Modules\Routine\RoutineServiceProvider::class,
     App\Modules\Notification\NotificationServiceProvider::class,
+    App\Modules\HabitPerformance\HabitPerformanceServiceProvider::class,
 ];

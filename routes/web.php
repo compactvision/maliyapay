@@ -25,6 +25,11 @@ Route::get('/statistic', [PageController::class, 'statistic'])->name('statistic'
 Route::get('/task', [PageController::class, 'task'])->name('task');
 Route::get('/routine', [PageController::class, 'routine'])->name('routine');
 Route::get('/notification', [PageController::class, 'notification'])->name('notification');
+Route::group(['middleware' => ['auth:sanctum', 'verified']], function () {
+    Route::get('/habits', [\App\Modules\HabitPerformance\Presentation\Controllers\HabitPerformanceController::class, 'index'])->name('habit-performance.index');
+    Route::post('/habits/bonus', [\App\Modules\HabitPerformance\Presentation\Controllers\HabitPerformanceController::class, 'claimBonus'])->name('habit-performance.bonus');
+    Route::post('/habits/shop', [\App\Modules\HabitPerformance\Presentation\Controllers\HabitPerformanceController::class, 'purchaseReward'])->name('habit-performance.shop');
+});
 Route::get('/profile', [\App\Modules\Identity\Presentation\Controllers\ProfileController::class, 'show'])->name('profile.show');
 Route::patch('/profile', [\App\Modules\Identity\Presentation\Controllers\ProfileController::class, 'update'])
     ->middleware('auth:sanctum') // Utilisation de Sanctum pour supporter l'auth par token

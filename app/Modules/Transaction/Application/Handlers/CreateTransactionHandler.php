@@ -84,5 +84,14 @@ class CreateTransactionHandler
         );
 
         $this->transactionRepository->save($transaction);
+
+        \App\Modules\Transaction\Domain\Events\TransactionCreated::dispatch(
+            $transaction->id(),
+            $transaction->userId(),
+            $transaction->amount(),
+            $transaction->categoryId(),
+            $transaction->type(),
+            $transaction->date()
+        );
     }
 }

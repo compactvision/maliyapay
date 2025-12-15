@@ -1,6 +1,11 @@
 import { Button } from '@/components/ui/button';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import {
+    Carousel,
+    CarouselContent,
+    CarouselItem,
+} from '@/components/ui/carousel';
+import {
     Dialog,
     DialogContent,
     DialogHeader,
@@ -31,12 +36,14 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ui/use-toast';
 import { cn } from '@/lib/utils';
+import { Account } from '@/types/account';
+import { Category } from '@/types/category';
 import { zodResolver } from '@hookform/resolvers/zod';
 import axios from 'axios';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { AlertCircle, Calendar, Loader2 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
@@ -73,8 +80,16 @@ export function TransactionForm({
     onSuccess,
 }: TransactionFormProps) {
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [accounts, setAccounts] = useState<any[]>([]);
-    const [categories, setCategories] = useState<any[]>([]);
+    const [availableCurrencies, setAvailableCurrencies] = useState<string[]>(
+        [],
+    );
+    const [accounts, setAccounts] = useState<Account[]>([]);
+    const accountsRef = useRef(accounts);
+    const [categories, setCategories] = useState<Category[]>([]);
+
+    useEffect(() => {
+        accountsRef.current = accounts;
+    }, [accounts]);
     const { toast } = useToast();
 
     const form = useForm<FormValues>({
@@ -135,6 +150,32 @@ export function TransactionForm({
     };
 
     const transactionType = form.watch('type');
+    const selectedAccountId = form.watch('accountId');
+
+    // Update available currencies when account changes
+    useEffect(() => {
+        if (!selectedAccountId) {
+            setAvailableCurrencies([]);
+            return;
+        }
+
+        const account = accounts.find((a) => a.id === selectedAccountId);
+        if (account && account.balances) {
+            const currencies = account.balances.map((b) => b.currency_code);
+            setAvailableCurrencies(currencies);
+
+            const currentCurrency = form.getValues('currency');
+            if (
+                currencies.length > 0 &&
+                !currencies.includes(currentCurrency)
+            ) {
+                form.setValue('currency', currencies[0]);
+            }
+        } else {
+            setAvailableCurrencies([]);
+        }
+    }, [selectedAccountId, accounts, form]);
+
     const filteredCategories = categories.filter(
         (c) => c.type === transactionType,
     );
@@ -200,7 +241,7 @@ export function TransactionForm({
                 <Form {...form}>
                     <div className="flex-1 space-y-2 overflow-y-auto px-3 pb-2 sm:space-y-4 sm:px-6 sm:pb-4">
                         {form.formState.errors.root && (
-                            <div className="rounded-md bg-destructive/15 p-2 text-xs text-destructive dark:bg-destructive/10 sm:p-3 sm:text-sm">
+                            <div className="rounded-md bg-destructive/15 p-2 text-xs text-destructive sm:p-3 sm:text-sm dark:bg-destructive/10">
                                 <div className="flex gap-2">
                                     <AlertCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                                     <span>
@@ -209,7 +250,7 @@ export function TransactionForm({
                                 </div>
                             </div>
                         )}
-                        
+
                         <FormField
                             control={form.control}
                             name="type"
@@ -225,18 +266,185 @@ export function TransactionForm({
                                         <TabsList className="grid h-8 w-full grid-cols-2 sm:h-9">
                                             <TabsTrigger
                                                 value="expense"
-                                                className="text-xs sm:text-sm data-[state=active]:bg-red-500 data-[state=active]:text-white"
+                                                className="text-xs data-[state=active]:bg-red-500 data-[state=active]:text-white sm:text-sm"
                                             >
                                                 Dépense
                                             </TabsTrigger>
                                             <TabsTrigger
                                                 value="income"
-                                                className="text-xs sm:text-sm data-[state=active]:bg-emerald-500 data-[state=active]:text-white"
+                                                className="text-xs data-[state=active]:bg-emerald-500 data-[state=active]:text-white sm:text-sm"
                                             >
                                                 Revenu
                                             </TabsTrigger>
                                         </TabsList>
                                     </Tabs>
+                                </FormItem>
+                            )}
+                        />
+
+                        {/* Swipeable Account Cards */}
+                        <FormField
+                            control={form.control}
+                            name="accountId"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel className="text-xs">
+                                        Compte
+                                    </FormLabel>
+                                    <FormControl>
+                                        <div className="w-full px-1">
+                                            <Carousel
+                                                opts={{
+                                                    align: 'start',
+                                                }}
+                                                className="w-full"
+                                                setApi={(api) => {
+                                                    // Sync Carousel with Form State (Initial Load)
+                                                    if (api && field.value) {
+                                                        const index =
+                                                            accounts.findIndex(
+                                                                (a) =>
+                                                                    a.id ===
+                                                                    field.value,
+                                                            );
+                                                        if (index !== -1)
+                                                            api.scrollTo(index);
+                                                    }
+
+                                                    // Sync Form State with Carousel (User Swipe)
+                                                    if (api) {
+                                                        api.on('select', () => {
+                                                            const selectedIndex =
+                                                                api.selectedScrollSnap();
+                                                            const selectedAccount =
+                                                                accountsRef
+                                                                    .current[
+                                                                    selectedIndex
+                                                                ];
+                                                            if (
+                                                                selectedAccount
+                                                            ) {
+                                                                field.onChange(
+                                                                    selectedAccount.id,
+                                                                );
+                                                            }
+                                                        });
+                                                    }
+                                                }}
+                                            >
+                                                <CarouselContent className="-ml-2">
+                                                    {accounts.map((account) => (
+                                                        <CarouselItem
+                                                            key={account.id}
+                                                            className="basis-1/2 pl-2 sm:basis-1/3 md:basis-1/2"
+                                                        >
+                                                            <div
+                                                                className={cn(
+                                                                    'relative cursor-pointer overflow-hidden rounded-xl border p-4 transition-all duration-300',
+                                                                    field.value ===
+                                                                        account.id
+                                                                        ? 'ring-2 ring-offset-2'
+                                                                        : 'opacity-80 hover:opacity-100',
+                                                                )}
+                                                                style={
+                                                                    {
+                                                                        backgroundColor: `${account.color}15`, // ~8% opacity
+                                                                        borderColor: `${account.color}30`,
+                                                                        backdropFilter:
+                                                                            'blur(8px)',
+                                                                        WebkitBackdropFilter:
+                                                                            'blur(8px)',
+                                                                        boxShadow:
+                                                                            field.value ===
+                                                                            account.id
+                                                                                ? `0 4px 12px ${account.color}25`
+                                                                                : 'none',
+                                                                        ['--ring-color' as any]:
+                                                                            account.color,
+                                                                    } as React.CSSProperties
+                                                                }
+                                                                onClick={() =>
+                                                                    field.onChange(
+                                                                        account.id,
+                                                                    )
+                                                                }
+                                                            >
+                                                                {/* Background splash effect */}
+                                                                <div
+                                                                    className="absolute -top-4 -right-4 h-16 w-16 rounded-full blur-2xl"
+                                                                    style={{
+                                                                        backgroundColor:
+                                                                            account.color,
+                                                                        opacity: 0.15,
+                                                                    }}
+                                                                />
+
+                                                                <div className="relative z-10 mb-3 flex items-center gap-2">
+                                                                    <div
+                                                                        className="flex h-8 w-8 items-center justify-center rounded-full shadow-sm"
+                                                                        style={{
+                                                                            backgroundColor:
+                                                                                account.color,
+                                                                            color: '#fff',
+                                                                        }}
+                                                                    >
+                                                                        <span className="text-xs font-bold">
+                                                                            {account.name
+                                                                                .charAt(
+                                                                                    0,
+                                                                                )
+                                                                                .toUpperCase()}
+                                                                        </span>
+                                                                    </div>
+                                                                    <span className="truncate text-sm font-bold text-foreground">
+                                                                        {
+                                                                            account.name
+                                                                        }
+                                                                    </span>
+                                                                </div>
+
+                                                                <div className="relative z-10 space-y-1">
+                                                                    {account.balances.map(
+                                                                        (
+                                                                            bal: any,
+                                                                        ) => (
+                                                                            <div
+                                                                                key={
+                                                                                    bal.currency_code
+                                                                                }
+                                                                                className="flex items-center justify-between text-sm"
+                                                                            >
+                                                                                <span className="text-xs font-medium text-muted-foreground">
+                                                                                    {
+                                                                                        bal.currency_code
+                                                                                    }
+                                                                                </span>
+                                                                                <span className="font-mono font-bold text-foreground">
+                                                                                    {bal.amount.toFixed(
+                                                                                        2,
+                                                                                    )}
+                                                                                </span>
+                                                                            </div>
+                                                                        ),
+                                                                    )}
+                                                                    {account
+                                                                        .balances
+                                                                        .length ===
+                                                                        0 && (
+                                                                        <div className="text-xs text-muted-foreground italic">
+                                                                            Solde:
+                                                                            0.00
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        </CarouselItem>
+                                                    ))}
+                                                </CarouselContent>
+                                            </Carousel>
+                                        </div>
+                                    </FormControl>
+                                    <FormMessage className="text-[10px] sm:text-xs" />
                                 </FormItem>
                             )}
                         />
@@ -274,19 +482,32 @@ export function TransactionForm({
                                         <Select
                                             onValueChange={field.onChange}
                                             value={field.value}
+                                            disabled={!form.watch('accountId')}
                                         >
                                             <FormControl>
                                                 <SelectTrigger className="h-8 text-base sm:h-10">
-                                                    <SelectValue />
+                                                    <SelectValue
+                                                        placeholder={
+                                                            !form.watch(
+                                                                'accountId',
+                                                            )
+                                                                ? 'Choisir compte'
+                                                                : 'Devise'
+                                                        }
+                                                    />
                                                 </SelectTrigger>
                                             </FormControl>
                                             <SelectContent>
-                                                <SelectItem value="CDF">
-                                                    CDF
-                                                </SelectItem>
-                                                <SelectItem value="USD">
-                                                    USD
-                                                </SelectItem>
+                                                {availableCurrencies.map(
+                                                    (curr) => (
+                                                        <SelectItem
+                                                            key={curr}
+                                                            value={curr}
+                                                        >
+                                                            {curr}
+                                                        </SelectItem>
+                                                    ),
+                                                )}
                                             </SelectContent>
                                         </Select>
                                         <FormMessage className="text-[10px] sm:text-xs" />
@@ -316,39 +537,6 @@ export function TransactionForm({
                         />
 
                         <div className="grid grid-cols-2 gap-2 sm:gap-4">
-                            <FormField
-                                control={form.control}
-                                name="accountId"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel className="text-xs">
-                                            Compte
-                                        </FormLabel>
-                                        <Select
-                                            onValueChange={field.onChange}
-                                            value={field.value}
-                                        >
-                                            <FormControl>
-                                                <SelectTrigger className="h-8 text-base sm:h-10">
-                                                    <SelectValue placeholder="Sélect." />
-                                                </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                                {accounts.map((account) => (
-                                                    <SelectItem
-                                                        key={account.id}
-                                                        value={account.id}
-                                                    >
-                                                        {account.name}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                        <FormMessage className="text-[10px] sm:text-xs" />
-                                    </FormItem>
-                                )}
-                            />
-
                             <FormField
                                 control={form.control}
                                 name="categoryId"
@@ -383,56 +571,56 @@ export function TransactionForm({
                                     </FormItem>
                                 )}
                             />
-                        </div>
 
-                        <FormField
-                            control={form.control}
-                            name="date"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel className="text-xs">
-                                        Date
-                                    </FormLabel>
-                                    <Popover>
-                                        <PopoverTrigger asChild>
-                                            <FormControl>
-                                                <Button
-                                                    variant="outline"
-                                                    className={cn(
-                                                        'h-8 w-full justify-start text-left text-base font-normal sm:h-10 sm:text-sm',
-                                                        !field.value &&
-                                                            'text-muted-foreground',
-                                                    )}
-                                                >
-                                                    <Calendar className="mr-2 h-3 w-3 sm:h-4 sm:w-4" />
-                                                    {field.value ? (
-                                                        format(
-                                                            field.value,
-                                                            'dd/MM/yyyy',
-                                                        )
-                                                    ) : (
-                                                        <span>Choisir</span>
-                                                    )}
-                                                </Button>
-                                            </FormControl>
-                                        </PopoverTrigger>
-                                        <PopoverContent
-                                            className="w-auto p-0"
-                                            align="start"
-                                        >
-                                            <CalendarComponent
-                                                mode="single"
-                                                selected={field.value}
-                                                onSelect={field.onChange}
-                                                initialFocus
-                                                locale={fr}
-                                            />
-                                        </PopoverContent>
-                                    </Popover>
-                                    <FormMessage className="text-[10px] sm:text-xs" />
-                                </FormItem>
-                            )}
-                        />
+                            <FormField
+                                control={form.control}
+                                name="date"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel className="text-xs">
+                                            Date
+                                        </FormLabel>
+                                        <Popover>
+                                            <PopoverTrigger asChild>
+                                                <FormControl>
+                                                    <Button
+                                                        variant="outline"
+                                                        className={cn(
+                                                            'h-8 w-full justify-start text-left text-base font-normal sm:h-10 sm:text-sm',
+                                                            !field.value &&
+                                                                'text-muted-foreground',
+                                                        )}
+                                                    >
+                                                        <Calendar className="mr-2 h-3 w-3 sm:h-4 sm:w-4" />
+                                                        {field.value ? (
+                                                            format(
+                                                                field.value,
+                                                                'dd/MM/yyyy',
+                                                            )
+                                                        ) : (
+                                                            <span>Choisir</span>
+                                                        )}
+                                                    </Button>
+                                                </FormControl>
+                                            </PopoverTrigger>
+                                            <PopoverContent
+                                                className="w-auto p-0"
+                                                align="start"
+                                            >
+                                                <CalendarComponent
+                                                    mode="single"
+                                                    selected={field.value}
+                                                    onSelect={field.onChange}
+                                                    initialFocus
+                                                    locale={fr}
+                                                />
+                                            </PopoverContent>
+                                        </Popover>
+                                        <FormMessage className="text-[10px] sm:text-xs" />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
 
                         <FormField
                             control={form.control}

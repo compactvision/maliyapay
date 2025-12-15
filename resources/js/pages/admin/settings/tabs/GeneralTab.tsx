@@ -16,7 +16,12 @@ interface GeneralTabProps {
 }
 
 export function GeneralTab({ settings }: GeneralTabProps) {
-    const { data, setData, post, processing, hasErrors, errors } = useForm({
+    const { data, setData, post, processing, hasErrors, errors } = useForm<{
+        app_name: string;
+        app_desc: string;
+        app_url: string;
+        logo: File | null;
+    }>({
         app_name: settings.app_name || '',
         app_desc: settings.app_desc || '',
         app_url: settings.app_url || '',

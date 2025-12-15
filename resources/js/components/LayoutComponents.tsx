@@ -115,6 +115,7 @@ const mainNavItems = [
     { title: 'Statistiques', url: '/statistic', icon: BarChart3 },
     { title: 'Tâches', url: '/task', icon: CheckSquare },
     { title: 'Routine', url: '/routine', icon: CheckSquare },
+    { title: 'Performance', url: '/habits', icon: CheckSquare },
 ];
 
 const mobileNavItems = [
@@ -123,6 +124,7 @@ const mobileNavItems = [
     { title: 'Comptes', url: '/account', icon: Wallet },
     { title: 'Tâches', url: '/task', icon: CheckSquare },
     { title: 'Activité', url: '/statistic', icon: BarChart3 },
+    { title: 'Performance', url: '/habits', icon: CheckSquare },
 ];
 
 // --- Composant Toggle pour le Thème ---

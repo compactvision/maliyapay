@@ -48,6 +48,7 @@ class HandleInertiaRequests extends Middleware
                     'name' => $request->user()->name,
                     'email' => $request->user()->email,
                     'avatar' => $request->user()->avatar,
+                    'play_notification_sound' => $request->user()->play_notification_sound, // Share preference
                     'roles' => $request->user()->getRoleNames(), // Share roles
                 ] : null,
             ],

@@ -26,6 +26,8 @@ class CreateNotificationCommandHandler
 
         $this->notificationRepository->save($notification);
 
+        \App\Events\NotificationCreated::dispatch($notification);
+
         return $notification;
     }
 }

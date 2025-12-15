@@ -29,5 +29,13 @@ class ToggleTaskCompletionCommandHandler
         $task->toggleCompletion();
 
         $this->taskRepository->save($task);
+
+        if ($task->completed()) {
+            \App\Modules\Task\Domain\Events\TaskCompleted::dispatch(
+                $task->id(),
+                $task->userId(),
+                new \DateTimeImmutable()
+            );
+        }
     }
 }

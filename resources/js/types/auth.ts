@@ -14,6 +14,7 @@ export interface User {
     created_at: string;
     updated_at: string;
     avatar?: string;
+    play_notification_sound?: boolean;
 }
 
 export interface LoginCredentials {

@@ -6,7 +6,7 @@ use App\Http\Controllers\Settings\TwoFactorAuthenticationController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
-Route::middleware('auth')->group(function () {
+Route::middleware('auth:sanctum')->group(function () {
     // Route::redirect('settings', '/profile'); // On remplace la redirection par la vraie page
     // Route::redirect('settings/profile', '/profile'); // On garde celle-ci si on veut
      Route::get('settings', [\App\Http\Controllers\SettingsController::class, 'index'])->name('settings.index');

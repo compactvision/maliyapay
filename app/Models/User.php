@@ -24,7 +24,8 @@ class User extends Authenticatable implements MustVerifyEmail
         'name',
         'email',
         'avatar',
-        'receive_notifications',
+            'receive_notifications',
+        'play_notification_sound',
         'password',
     ];
 
@@ -51,6 +52,7 @@ class User extends Authenticatable implements MustVerifyEmail
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'receive_notifications' => 'boolean',
+            'play_notification_sound' => 'boolean',
             'two_factor_confirmed_at' => 'datetime',
         ];
     }

@@ -141,15 +141,18 @@ final class Account
     {
         foreach ($this->balances as $balance) {
             if ($balance->currencyCode() === $currency) {
+                if ($balance->amount() < $amount) {
+                    throw new \DomainException("Pas assez de fonds dans ce portefeuille pour effectuer cette transaction.");
+                }
+
                 $newAmount = $balance->amount() - $amount;
                 $newBalance = new Balance($currency, $newAmount);
                 $this->updateBalance($newBalance);
                 return;
             }
         }
-        // If currency doesn't exist, we can create it with negative balance or throw.
-        // Let's create with negative.
-        $this->addBalance(new Balance($currency, -$amount));
+        
+        throw new \DomainException("La devise choisie pour ce portefeuille n'existe pas.");
     }
 
     private function updateBalance(Balance $newBalance): void

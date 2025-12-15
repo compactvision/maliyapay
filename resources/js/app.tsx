@@ -3,15 +3,19 @@ import '../css/app.css';
 import { createInertiaApp } from '@inertiajs/react';
 import axios from 'axios';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
-import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { AuthGuard } from './components/auth/AuthGuard';
 import { GuestGuard } from './components/auth/GuestGuard';
+import ErrorBoundary from './components/ErrorBoundary';
+import { LayoutProvider } from './components/LayoutComponents';
+import { Toaster } from './components/ui/sonner';
 import { AuthProvider } from './contexts/AuthContext';
+import { NotificationProvider } from './contexts/NotificationContext';
 
 // --- Axios Configuration ---
-axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
-axios.defaults.withCredentials = true;
+window.axios = axios;
+window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
+window.axios.defaults.withCredentials = true;
 
 axios.interceptors.request.use((config) => {
     // Add CSRF token
@@ -79,11 +83,16 @@ createInertiaApp({
         const root = createRoot(el);
 
         root.render(
-            <StrictMode>
+            <ErrorBoundary>
                 <AuthProvider>
-                    <App {...props} />
+                    <NotificationProvider>
+                        <LayoutProvider>
+                            <App {...props} />
+                            <Toaster />
+                        </LayoutProvider>
+                    </NotificationProvider>
                 </AuthProvider>
-            </StrictMode>,
+            </ErrorBoundary>,
         );
     },
     progress: {
@@ -93,6 +102,7 @@ createInertiaApp({
 
 // PWA Service Worker Registration
 import { registerSW } from 'virtual:pwa-register';
+import './echo';
 
 if ('serviceWorker' in navigator) {
     registerSW({
