@@ -121,7 +121,6 @@ const mainNavItems = [
 const mobileNavItems = [
     { title: 'Accueil', url: '/', icon: LayoutDashboard },
     { title: 'Transactions', url: '/transaction', icon: ArrowUpDown },
-    { title: 'Comptes', url: '/account', icon: Wallet },
     { title: 'Tâches', url: '/task', icon: CheckSquare },
     { title: 'Activité', url: '/statistic', icon: BarChart3 },
     { title: 'Performance', url: '/habits', icon: CheckSquare },
@@ -383,6 +382,14 @@ export const RightMenu = () => {
                     >
                         <BarChart3 />
                         Budgets
+                    </Link>
+                    <Link
+                        href="/account"
+                        onClick={closeRightMenu}
+                        className="flex items-center gap-3 rounded-lg px-3 py-2 text-gray-600 transition-colors hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"
+                    >
+                        <Wallet />
+                        Comptes
                     </Link>
                     <Link
                         href="/category"
