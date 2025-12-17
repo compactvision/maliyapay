@@ -7,8 +7,10 @@ namespace App\Modules\Account\Presentation\Controllers;
 use App\Http\Controllers\Controller;
 use App\Modules\Account\Application\Commands\AddCurrencyToAccountCommand;
 use App\Modules\Account\Application\Commands\CreateAccountCommand;
+use App\Modules\Account\Application\Commands\DeleteAccountCommand;
 use App\Modules\Account\Application\Handlers\AddCurrencyToAccountHandler;
 use App\Modules\Account\Application\Handlers\CreateAccountHandler;
+use App\Modules\Account\Application\Handlers\DeleteAccountHandler;
 use App\Modules\Account\Application\Handlers\GetAccountByIdHandler;
 use App\Modules\Account\Application\Handlers\GetAllAccountsHandler;
 use App\Modules\Account\Application\Queries\GetAccountByIdQuery;
@@ -27,7 +29,8 @@ class AccountController extends Controller
         private readonly CreateAccountHandler $createHandler,
         private readonly AddCurrencyToAccountHandler $addCurrencyHandler,
         private readonly GetAllAccountsHandler $getAllHandler,
-        private readonly GetAccountByIdHandler $getByIdHandler
+        private readonly GetAccountByIdHandler $getByIdHandler,
+        private readonly DeleteAccountHandler $deleteHandler
     ) {
     }
 
@@ -116,6 +119,31 @@ class AccountController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'message' => 'Failed to add currency',
+                'error' => $e->getMessage(),
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function destroy(string $id): JsonResponse
+    {
+        try {
+            $command = new DeleteAccountCommand(
+                accountId: Uuid::fromString($id),
+                userId: (string) auth()->id()
+            );
+
+            $this->deleteHandler->handle($command);
+
+            return response()->json([
+                'message' => 'Account deleted successfully',
+            ], Response::HTTP_OK);
+        } catch (\DomainException $e) {
+            return response()->json([
+                'message' => $e->getMessage(),
+            ], Response::HTTP_BAD_REQUEST);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Failed to delete account',
                 'error' => $e->getMessage(),
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
