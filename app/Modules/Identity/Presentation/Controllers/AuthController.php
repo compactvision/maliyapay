@@ -206,8 +206,12 @@ class AuthController extends Controller
      */
     public function logout(Request $request): JsonResponse
     {
-        // Revoke current token
-        $request->user()->currentAccessToken()->delete();
+        // Revoke current token if it exists and is deletable (not a TransientToken)
+        $token = $request->user()->currentAccessToken();
+        
+        if ($token && method_exists($token, 'delete')) {
+            $token->delete();
+        }
 
         return response()->json([
             'message' => 'Déconnexion réussie',

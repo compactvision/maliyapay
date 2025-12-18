@@ -75,28 +75,51 @@ export const LayoutProvider = ({ children }: { children: React.ReactNode }) => {
         }
     }, [isDarkMode]);
 
-    const toggleSidebar = () => setSidebarIsOpen(!sidebarIsOpen);
-    const toggleRightMenu = () => setRightMenuIsOpen(!rightMenuIsOpen);
-    const closeRightMenu = () => setRightMenuIsOpen(false);
-    const toggleTheme = () => {
-        const newMode = !isDarkMode;
-        setIsDarkMode(newMode);
-        localStorage.setItem('theme', newMode ? 'dark' : 'light');
-        document.documentElement.classList.toggle('dark', newMode);
-    };
+    const toggleSidebar = React.useCallback(
+        () => setSidebarIsOpen((prev) => !prev),
+        [],
+    );
+    const toggleRightMenu = React.useCallback(
+        () => setRightMenuIsOpen((prev) => !prev),
+        [],
+    );
+    const closeRightMenu = React.useCallback(
+        () => setRightMenuIsOpen(false),
+        [],
+    );
+
+    const toggleTheme = React.useCallback(() => {
+        setIsDarkMode((prev) => {
+            const newMode = !prev;
+            localStorage.setItem('theme', newMode ? 'dark' : 'light');
+            document.documentElement.classList.toggle('dark', newMode);
+            return newMode;
+        });
+    }, []);
+
+    const value = React.useMemo(
+        () => ({
+            sidebarIsOpen,
+            toggleSidebar,
+            rightMenuIsOpen,
+            toggleRightMenu,
+            closeRightMenu,
+            isDarkMode,
+            toggleTheme,
+        }),
+        [
+            sidebarIsOpen,
+            toggleSidebar,
+            rightMenuIsOpen,
+            toggleRightMenu,
+            closeRightMenu,
+            isDarkMode,
+            toggleTheme,
+        ],
+    );
 
     return (
-        <LayoutContext.Provider
-            value={{
-                sidebarIsOpen,
-                toggleSidebar,
-                rightMenuIsOpen,
-                toggleRightMenu,
-                closeRightMenu,
-                isDarkMode,
-                toggleTheme,
-            }}
-        >
+        <LayoutContext.Provider value={value}>
             {children}
         </LayoutContext.Provider>
     );

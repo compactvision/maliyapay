@@ -11,6 +11,7 @@ import {
     createContext,
     useCallback,
     useEffect,
+    useMemo,
     useState,
     type ReactNode,
 } from 'react';
@@ -231,20 +232,36 @@ export function AuthProvider({ children }: AuthProviderProps) {
         }
     };
 
-    const value: AuthContextValue = {
-        user,
-        isLoading,
-        isAuthenticated,
-        error,
-        login,
-        loginTwoFactor,
-        register,
-        logout,
-        refreshUser,
-        sendVerificationEmail,
-        forgotPassword,
-        resetPassword,
-    };
+    const value: AuthContextValue = useMemo(
+        () => ({
+            user,
+            isLoading,
+            isAuthenticated,
+            error,
+            login,
+            loginTwoFactor,
+            register,
+            logout,
+            refreshUser,
+            sendVerificationEmail,
+            forgotPassword,
+            resetPassword,
+        }),
+        [
+            user,
+            isLoading,
+            isAuthenticated,
+            error,
+            login,
+            loginTwoFactor,
+            register,
+            logout,
+            refreshUser,
+            sendVerificationEmail,
+            forgotPassword,
+            resetPassword,
+        ],
+    );
 
     return (
         <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
