@@ -20,9 +20,25 @@ import axios from 'axios';
 import { Pencil, Trash2 } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 
+interface Permission {
+    id: number;
+    name: string;
+}
+
+interface Role {
+    id: number;
+    name: string;
+    permissions?: Permission[];
+}
+
+interface RoleForm {
+    name: string;
+    permissions: string[];
+}
+
 export function RolesTab() {
-    const [roles, setRoles] = useState<any[]>([]);
-    const [allPermissions, setAllPermissions] = useState<any[]>([]);
+    const [roles, setRoles] = useState<Role[]>([]);
+    const [allPermissions, setAllPermissions] = useState<Permission[]>([]);
 
     // Fetch data via generic API resource or passed props.
     // Since we didn't implement an API endpoint for fetching roles explicitly in the plan (we did resource routes),
@@ -124,18 +140,19 @@ function RoleDialog({
     allPermissions,
     trigger,
 }: {
-    role?: any;
+    role?: Role;
     onSuccess: () => void;
-    allPermissions: any[];
+    allPermissions: Permission[];
     trigger?: React.ReactNode;
 }) {
     const isEdit = !!role;
-    const { data, setData, post, put, reset, processing, errors } = useForm({
-        name: role?.name || '',
-        permissions: role?.permissions
-            ? role.permissions.map((p: any) => p.name)
-            : [],
-    });
+    const { data, setData, post, put, reset, processing, errors } =
+        useForm<RoleForm>({
+            name: role?.name || '',
+            permissions: role?.permissions
+                ? role.permissions.map((p) => p.name)
+                : [],
+        });
     const [open, setOpen] = useState(false);
 
     const submit = (e: React.FormEvent) => {
