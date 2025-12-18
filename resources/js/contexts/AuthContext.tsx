@@ -20,7 +20,11 @@ interface AuthContextValue {
     isLoading: boolean;
     isAuthenticated: boolean;
     error: string | null;
-    login: (credentials: LoginCredentials) => Promise<void>;
+    login: (credentials: LoginCredentials) => Promise<any>;
+    loginTwoFactor: (data: {
+        code?: string;
+        recovery_code?: string;
+    }) => Promise<void>;
     register: (data: RegisterData) => Promise<void>;
     logout: () => Promise<void>;
     refreshUser: () => Promise<void>;
@@ -68,15 +72,38 @@ export function AuthProvider({ children }: AuthProviderProps) {
         checkAuth();
     }, []); // Empty dependency array = runs only once
 
-    const login = async (credentials: LoginCredentials): Promise<void> => {
+    const login = async (credentials: LoginCredentials): Promise<any> => {
         try {
             setError(null);
             const response = await authApi.login(credentials);
+
+            if (response.two_factor) {
+                return response;
+            }
+
+            setUser(response.user);
+            setIsAuthenticated(true);
+            return response;
+        } catch (err) {
+            const errorMessage =
+                err instanceof Error ? err.message : 'Erreur de connexion';
+            setError(errorMessage);
+            throw new Error(errorMessage);
+        }
+    };
+
+    const loginTwoFactor = async (data: {
+        code?: string;
+        recovery_code?: string;
+    }): Promise<void> => {
+        try {
+            setError(null);
+            const response = await authApi.loginTwoFactor(data);
             setUser(response.user);
             setIsAuthenticated(true);
         } catch (err) {
             const errorMessage =
-                err instanceof Error ? err.message : 'Erreur de connexion';
+                err instanceof Error ? err.message : 'Code invalide';
             setError(errorMessage);
             throw new Error(errorMessage);
         }
@@ -210,6 +237,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         isAuthenticated,
         error,
         login,
+        loginTwoFactor,
         register,
         logout,
         refreshUser,

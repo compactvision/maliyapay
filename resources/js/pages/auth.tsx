@@ -11,7 +11,7 @@ import {
 import { IconInput } from '@/components/ui/icon-input';
 import { useAuth, useLoginForm, useRegisterForm } from '@/hooks/useAuth';
 import { Link } from '@inertiajs/react';
-import { Loader2, Lock, Mail, Sparkles, User, Eye, EyeOff } from 'lucide-react'; // <-- Importer Eye et EyeOff
+import { Eye, EyeOff, Loader2, Lock, Mail, User } from 'lucide-react'; // <-- Importer Eye et EyeOff
 import { useState } from 'react';
 
 export default function Auth() {
@@ -23,7 +23,8 @@ export default function Auth() {
     // États pour la visibilité des mots de passe
     const [showLoginPassword, setShowLoginPassword] = useState(false);
     const [showRegisterPassword, setShowRegisterPassword] = useState(false);
-    const [showRegisterConfirmPassword, setShowRegisterConfirmPassword] = useState(false);
+    const [showRegisterConfirmPassword, setShowRegisterConfirmPassword] =
+        useState(false);
 
     const loginForm = useLoginForm();
     const registerForm = useRegisterForm();
@@ -32,7 +33,12 @@ export default function Auth() {
         setIsLoading(true);
         setError(null);
         try {
-            await login(values);
+            const response = await login(values);
+            if (response?.two_factor) {
+                // Redirect to 2FA challenge page
+                window.location.href = '/two-factor-challenge';
+                return;
+            }
             window.location.href = '/';
         } catch (err) {
             setError(
@@ -63,23 +69,29 @@ export default function Auth() {
             <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-slate-950">
                 <div className="absolute inset-0">
                     <div className="absolute top-0 -left-4 h-72 w-72 animate-pulse rounded-full bg-emerald-500 opacity-20 blur-xl"></div>
-                    <div className="absolute -bottom-8 left-20 h-72 w-72 animate-pulse rounded-full bg-sky-500 opacity-20 blur-xl animation-delay-2000"></div>
-                    <div className="absolute bottom-0 right-0 top-72 h-72 w-72 animate-pulse rounded-full bg-teal-500 opacity-20 blur-xl animation-delay-4000"></div>
+                    <div className="animation-delay-2000 absolute -bottom-8 left-20 h-72 w-72 animate-pulse rounded-full bg-sky-500 opacity-20 blur-xl"></div>
+                    <div className="animation-delay-4000 absolute top-72 right-0 bottom-0 h-72 w-72 animate-pulse rounded-full bg-teal-500 opacity-20 blur-xl"></div>
                 </div>
 
-                <div className="relative z-10 w-full max-w-xl p-4"> {/* MODIFICATION: max-w-lg -> max-w-xl */}
-                    <div className="mb-8 text-center">
-                        <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-sky-400 shadow-2xl shadow-emerald-500/25">
-                            <img src="/maliya-logo.png" alt="Maliya Logo" className="h-10 w-10" />
+                <div className="relative z-10 w-full max-w-xl p-4">
+                    {' '}
+                    {/* MODIFICATION: max-w-lg -> max-w-xl */}
+                    <div className="mb-6 text-center">
+                        <div className="mx-auto mb-3 flex justify-center">
+                            <img
+                                src="/logo.png"
+                                alt="Maliya Logo"
+                                className="h-40 w-auto drop-shadow-xl"
+                            />
                         </div>
+
                         <h1 className="text-4xl font-extrabold tracking-tight text-white">
-                            MaliyaPay
+                            MaliyaFlow
                         </h1>
                         <p className="mt-2 text-lg text-white/60">
                             Gérez vos finances en toute simplicité
                         </p>
                     </div>
-
                     <div className="rounded-2xl border border-white/10 bg-white/5 p-1 shadow-2xl backdrop-blur-xl">
                         <div className="rounded-xl bg-slate-900/80 p-6">
                             {error && (
@@ -105,15 +117,27 @@ export default function Auth() {
 
                             {isLogin && (
                                 <Form {...loginForm}>
-                                    <form onSubmit={loginForm.handleSubmit(onLogin)} className="space-y-5">
+                                    <form
+                                        onSubmit={loginForm.handleSubmit(
+                                            onLogin,
+                                        )}
+                                        className="space-y-5"
+                                    >
                                         <FormField
                                             control={loginForm.control}
                                             name="email"
                                             render={({ field }) => (
                                                 <FormItem>
-                                                    <FormLabel className="text-white/80">Email</FormLabel>
+                                                    <FormLabel className="text-white/80">
+                                                        Email
+                                                    </FormLabel>
                                                     <FormControl>
-                                                        <IconInput icon={Mail} type="email" placeholder="vous@exemple.com" {...field} />
+                                                        <IconInput
+                                                            icon={Mail}
+                                                            type="email"
+                                                            placeholder="vous@exemple.com"
+                                                            {...field}
+                                                        />
                                                     </FormControl>
                                                     <FormMessage />
                                                 </FormItem>
@@ -125,13 +149,27 @@ export default function Auth() {
                                             name="password"
                                             render={({ field }) => (
                                                 <FormItem>
-                                                    <FormLabel className="text-white/80">Mot de passe</FormLabel>
+                                                    <FormLabel className="text-white/80">
+                                                        Mot de passe
+                                                    </FormLabel>
                                                     <FormControl>
                                                         <IconInput
                                                             icon={Lock}
-                                                            trailingIcon={showLoginPassword ? EyeOff : Eye}
-                                                            onTrailingIconClick={() => setShowLoginPassword(!showLoginPassword)}
-                                                            type={showLoginPassword ? 'text' : 'password'}
+                                                            trailingIcon={
+                                                                showLoginPassword
+                                                                    ? EyeOff
+                                                                    : Eye
+                                                            }
+                                                            onTrailingIconClick={() =>
+                                                                setShowLoginPassword(
+                                                                    !showLoginPassword,
+                                                                )
+                                                            }
+                                                            type={
+                                                                showLoginPassword
+                                                                    ? 'text'
+                                                                    : 'password'
+                                                            }
                                                             placeholder="•••••••"
                                                             {...field}
                                                         />
@@ -142,17 +180,22 @@ export default function Auth() {
                                         />
 
                                         <div className="flex items-center justify-end">
-                                            <Link href="/forgot-password" className="text-sm text-emerald-400 hover:underline">
+                                            <Link
+                                                href="/forgot-password"
+                                                className="text-sm text-emerald-400 hover:underline"
+                                            >
                                                 Mot de passe oublié ?
                                             </Link>
                                         </div>
 
                                         <Button
                                             type="submit"
-                                            className="w-full h-12 bg-gradient-to-r from-emerald-500 to-sky-400 text-base font-semibold text-white shadow-lg shadow-emerald-500/25 transition-all duration-300 hover:shadow-xl hover:shadow-emerald-500/40 active:scale-95"
+                                            className="h-12 w-full bg-gradient-to-r from-emerald-500 to-sky-400 text-base font-semibold text-white shadow-lg shadow-emerald-500/25 transition-all duration-300 hover:shadow-xl hover:shadow-emerald-500/40 active:scale-95"
                                             disabled={isLoading}
                                         >
-                                            {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : null}
+                                            {isLoading ? (
+                                                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                                            ) : null}
                                             Se connecter
                                         </Button>
                                     </form>
@@ -161,15 +204,26 @@ export default function Auth() {
 
                             {!isLogin && (
                                 <Form {...registerForm}>
-                                    <form onSubmit={registerForm.handleSubmit(onRegister)} className="space-y-5">
+                                    <form
+                                        onSubmit={registerForm.handleSubmit(
+                                            onRegister,
+                                        )}
+                                        className="space-y-5"
+                                    >
                                         <FormField
                                             control={registerForm.control}
                                             name="name"
                                             render={({ field }) => (
                                                 <FormItem>
-                                                    <FormLabel className="text-white/80">Nom</FormLabel>
+                                                    <FormLabel className="text-white/80">
+                                                        Nom
+                                                    </FormLabel>
                                                     <FormControl>
-                                                        <IconInput icon={User} placeholder="Votre nom" {...field} />
+                                                        <IconInput
+                                                            icon={User}
+                                                            placeholder="Votre nom"
+                                                            {...field}
+                                                        />
                                                     </FormControl>
                                                     <FormMessage />
                                                 </FormItem>
@@ -180,9 +234,16 @@ export default function Auth() {
                                             name="email"
                                             render={({ field }) => (
                                                 <FormItem>
-                                                    <FormLabel className="text-white/80">Email</FormLabel>
+                                                    <FormLabel className="text-white/80">
+                                                        Email
+                                                    </FormLabel>
                                                     <FormControl>
-                                                        <IconInput icon={Mail} type="email" placeholder="vous@exemple.com" {...field} />
+                                                        <IconInput
+                                                            icon={Mail}
+                                                            type="email"
+                                                            placeholder="vous@exemple.com"
+                                                            {...field}
+                                                        />
                                                     </FormControl>
                                                     <FormMessage />
                                                 </FormItem>
@@ -193,13 +254,27 @@ export default function Auth() {
                                             name="password"
                                             render={({ field }) => (
                                                 <FormItem>
-                                                    <FormLabel className="text-white/80">Mot de passe</FormLabel>
+                                                    <FormLabel className="text-white/80">
+                                                        Mot de passe
+                                                    </FormLabel>
                                                     <FormControl>
                                                         <IconInput
                                                             icon={Lock}
-                                                            trailingIcon={showRegisterPassword ? EyeOff : Eye}
-                                                            onTrailingIconClick={() => setShowRegisterPassword(!showRegisterPassword)}
-                                                            type={showRegisterPassword ? 'text' : 'password'}
+                                                            trailingIcon={
+                                                                showRegisterPassword
+                                                                    ? EyeOff
+                                                                    : Eye
+                                                            }
+                                                            onTrailingIconClick={() =>
+                                                                setShowRegisterPassword(
+                                                                    !showRegisterPassword,
+                                                                )
+                                                            }
+                                                            type={
+                                                                showRegisterPassword
+                                                                    ? 'text'
+                                                                    : 'password'
+                                                            }
                                                             placeholder="•••••••"
                                                             {...field}
                                                         />
@@ -213,13 +288,28 @@ export default function Auth() {
                                             name="password_confirmation"
                                             render={({ field }) => (
                                                 <FormItem>
-                                                    <FormLabel className="text-white/80">Confirmer le mot de passe</FormLabel>
+                                                    <FormLabel className="text-white/80">
+                                                        Confirmer le mot de
+                                                        passe
+                                                    </FormLabel>
                                                     <FormControl>
                                                         <IconInput
                                                             icon={Lock}
-                                                            trailingIcon={showRegisterConfirmPassword ? EyeOff : Eye}
-                                                            onTrailingIconClick={() => setShowRegisterConfirmPassword(!showRegisterConfirmPassword)}
-                                                            type={showRegisterConfirmPassword ? 'text' : 'password'}
+                                                            trailingIcon={
+                                                                showRegisterConfirmPassword
+                                                                    ? EyeOff
+                                                                    : Eye
+                                                            }
+                                                            onTrailingIconClick={() =>
+                                                                setShowRegisterConfirmPassword(
+                                                                    !showRegisterConfirmPassword,
+                                                                )
+                                                            }
+                                                            type={
+                                                                showRegisterConfirmPassword
+                                                                    ? 'text'
+                                                                    : 'password'
+                                                            }
                                                             placeholder="•••••••"
                                                             {...field}
                                                         />
@@ -230,10 +320,12 @@ export default function Auth() {
                                         />
                                         <Button
                                             type="submit"
-                                            className="w-full h-12 bg-gradient-to-r from-emerald-500 to-sky-400 text-base font-semibold text-white shadow-lg shadow-emerald-500/25 transition-all duration-300 hover:shadow-xl hover:shadow-emerald-500/40 active:scale-95"
+                                            className="h-12 w-full bg-gradient-to-r from-emerald-500 to-sky-400 text-base font-semibold text-white shadow-lg shadow-emerald-500/25 transition-all duration-300 hover:shadow-xl hover:shadow-emerald-500/40 active:scale-95"
                                             disabled={isLoading}
                                         >
-                                            {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : null}
+                                            {isLoading ? (
+                                                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                                            ) : null}
                                             Créer un compte
                                         </Button>
                                     </form>
@@ -241,7 +333,6 @@ export default function Auth() {
                             )}
                         </div>
                     </div>
-
                     <p className="mt-8 text-center text-sm text-white/40">
                         Application sécurisée • Vos données sont chiffrées
                     </p>

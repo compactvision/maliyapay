@@ -7,16 +7,25 @@ import {
     CardTitle,
 } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { AppLayout } from '@/layouts/AppLayout';
 import { Head, router, useForm, usePage } from '@inertiajs/react';
-import { Bell, Shield } from 'lucide-react';
+import { Bell, Languages, Shield } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface User {
     id: number;
     name: string;
     email: string;
+    language: string;
+    two_factor_enabled?: boolean;
     receive_notifications: boolean | number; // Laravel DB might return 0/1 or false/true
 }
 
@@ -34,7 +43,29 @@ export default function Settings({ user }: PageProps) {
 
     const { data, setData, patch, processing, recentlySuccessful } = useForm({
         receive_notifications: initialNotificationState,
+        language: user.language || 'fr',
     });
+
+    const handleLanguageChange = (value: string) => {
+        setData('language', value);
+
+        router.patch(
+            route('settings.language.update'),
+            {
+                language: value,
+            },
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    toast.success('Langue mise à jour');
+                },
+                onError: () => {
+                    toast.error('Erreur lors de la mise à jour de la langue');
+                    setData('language', data.language);
+                },
+            },
+        );
+    };
 
     const handleNotificationChange = (checked: boolean) => {
         setData('receive_notifications', checked);
@@ -123,6 +154,49 @@ export default function Settings({ user }: PageProps) {
                     <Card>
                         <CardHeader>
                             <div className="flex items-center gap-2">
+                                <Languages className="h-5 w-5 text-purple-500" />
+                                <CardTitle>Langue (Language)</CardTitle>
+                            </div>
+                            <CardDescription>
+                                Choisissez la langue d'affichage de
+                                l'application.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="flex items-center justify-between rounded-lg border p-4">
+                                <div className="space-y-0.5">
+                                    <Label className="text-base font-semibold">
+                                        Langue préférée
+                                    </Label>
+                                    <p className="text-sm text-muted-foreground">
+                                        Basculer entre le Français et l'Anglais.
+                                    </p>
+                                </div>
+                                <Select
+                                    value={data.language}
+                                    onValueChange={handleLanguageChange}
+                                    disabled={processing}
+                                >
+                                    <SelectTrigger className="w-[180px]">
+                                        <SelectValue placeholder="Choisir une langue" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="fr">
+                                            Français
+                                        </SelectItem>
+                                        <SelectItem value="en">
+                                            English
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    {/* Section Sécurité (Exemple) */}
+                    <Card>
+                        <CardHeader>
+                            <div className="flex items-center gap-2">
                                 <Shield className="h-5 w-5 text-green-500" />
                                 <CardTitle>Sécurité</CardTitle>
                             </div>
@@ -145,11 +219,39 @@ export default function Settings({ user }: PageProps) {
                                 <Button
                                     variant="outline"
                                     onClick={() =>
-                                        (window.location.href =
-                                            route('user-password.edit'))
+                                        router.visit(
+                                            route('user-password.edit'),
+                                        )
                                     }
                                 >
                                     Mettre à jour
+                                </Button>
+                            </div>
+
+                            <div className="flex items-center justify-between rounded-lg border p-4">
+                                <div className="space-y-0.5">
+                                    <Label className="text-base font-semibold">
+                                        Double Authentification
+                                    </Label>
+                                    <div className="flex items-center gap-2">
+                                        <p className="text-sm text-muted-foreground">
+                                            Sécurisez votre compte avec un
+                                            deuxième facteur.
+                                        </p>
+                                        {user.two_factor_enabled && (
+                                            <span className="flex items-center gap-1 rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] font-bold text-emerald-700 uppercase dark:bg-emerald-900/30 dark:text-emerald-400">
+                                                Active
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+                                <Button
+                                    variant="outline"
+                                    onClick={() =>
+                                        router.visit(route('two-factor.show'))
+                                    }
+                                >
+                                    Gérer
                                 </Button>
                             </div>
                         </CardContent>

@@ -31,13 +31,17 @@
             }
         </style>
 
-        <title inertia>{{ config('app.name', 'Laravel') }}</title>
+        <title inertia>{{ config('app.name', 'MaliyaPay') }}</title>
 
-        <link rel="icon" href="/logo.png" sizes="any">
-        <link rel="icon" href="/logo.png" type="image/svg+xml">
+        <link rel="icon" type="image/png" href="/logo.png">
+        <link rel="icon" type="image/svg+xml" href="/logo.png">
         <link rel="apple-touch-icon" href="/logo.png">
         <link rel="manifest" href="/build/manifest.webmanifest">
-        <meta name="theme-color" content="#ffffff">
+        <meta name="theme-color" content="#0f172a">
+        <meta name="mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+        <meta name="apple-mobile-web-app-title" content="MaliyaPay">
 
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600" rel="stylesheet" />

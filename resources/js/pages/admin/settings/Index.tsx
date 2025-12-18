@@ -1,6 +1,7 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AppLayout } from '@/layouts/AppLayout';
 import { Head } from '@inertiajs/react';
+import { FeaturesTab } from './tabs/FeaturesTab';
 import { GeneralTab } from './tabs/GeneralTab';
 import { MaintenanceTab } from './tabs/MaintenanceTab';
 import { PermissionsTab } from './tabs/PermissionsTab';
@@ -44,6 +45,12 @@ export default function MaliyaSettings({ settings, stats }: Props) {
                             Général
                         </TabsTrigger>
                         <TabsTrigger
+                            value="features"
+                            className="border bg-white/50 data-[state=active]:bg-white data-[state=active]:shadow"
+                        >
+                            Fonctionnalités
+                        </TabsTrigger>
+                        <TabsTrigger
                             value="maintenance"
                             className="border bg-white/50 data-[state=active]:bg-white data-[state=active]:shadow"
                         >
@@ -75,6 +82,10 @@ export default function MaliyaSettings({ settings, stats }: Props) {
 
                     <TabsContent value="general">
                         <GeneralTab settings={settings} />
+                    </TabsContent>
+
+                    <TabsContent value="features">
+                        <FeaturesTab settings={settings} />
                     </TabsContent>
 
                     <TabsContent value="maintenance">

@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/form';
 import { IconInput } from '@/components/ui/icon-input'; // <-- Utilisez notre composant
 import { useAuth, useForgotPasswordForm } from '@/hooks/useAuth';
-import { CheckCircle2, Loader2, Mail, Sparkles } from 'lucide-react';
+import { CheckCircle2, Loader2, Mail } from 'lucide-react';
 import { useState } from 'react';
 
 export default function ForgotPassword() {
@@ -47,15 +47,15 @@ export default function ForgotPassword() {
                 {/* Background animé avec la palette émeraude/sky-blue */}
                 <div className="absolute inset-0">
                     <div className="absolute top-0 -left-4 h-72 w-72 animate-pulse rounded-full bg-emerald-500 opacity-20 blur-xl"></div>
-                    <div className="absolute -bottom-8 left-20 h-72 w-72 animate-pulse rounded-full bg-sky-500 opacity-20 blur-xl animation-delay-2000"></div>
-                    <div className="absolute bottom-0 right-0 top-72 h-72 w-72 animate-pulse rounded-full bg-teal-500 opacity-20 blur-xl animation-delay-4000"></div>
+                    <div className="animation-delay-2000 absolute -bottom-8 left-20 h-72 w-72 animate-pulse rounded-full bg-sky-500 opacity-20 blur-xl"></div>
+                    <div className="animation-delay-4000 absolute top-72 right-0 bottom-0 h-72 w-72 animate-pulse rounded-full bg-teal-500 opacity-20 blur-xl"></div>
                 </div>
 
                 <div className="relative z-10 w-full max-w-xl p-4">
                     {/* Header avec le logo et le titre */}
                     <div className="mb-8 text-center">
                         <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-sky-400 shadow-2xl shadow-emerald-500/25">
-                            <img src="/maliya-logo.png" alt="" />
+                            <img src="/logo.png" alt="" />
                         </div>
                         <h1 className="text-4xl font-extrabold tracking-tight text-white">
                             MaliyaPay
@@ -74,10 +74,12 @@ export default function ForgotPassword() {
                                     <div className="flex items-center gap-2">
                                         <CheckCircle2 className="h-5 w-5" />
                                         <div>
-                                            <p className="text-sm font-medium">Email envoyé !</p>
+                                            <p className="text-sm font-medium">
+                                                Email envoyé !
+                                            </p>
                                             <p className="text-xs opacity-80">
-                                                Vérifiez votre boîte mail pour le lien de
-                                                réinitialisation.
+                                                Vérifiez votre boîte mail pour
+                                                le lien de réinitialisation.
                                             </p>
                                         </div>
                                     </div>
@@ -93,13 +95,17 @@ export default function ForgotPassword() {
                             {/* Formulaire */}
                             {!success && (
                                 <Form {...form}>
-                                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+                                    <form
+                                        onSubmit={form.handleSubmit(onSubmit)}
+                                        className="space-y-5"
+                                    >
                                         <div className="text-center">
                                             <h2 className="text-2xl font-semibold text-white">
                                                 Mot de passe oublié ?
                                             </h2>
                                             <p className="mt-2 text-sm text-white/60">
-                                                Entrez votre e-mail pour recevoir un lien de
+                                                Entrez votre e-mail pour
+                                                recevoir un lien de
                                                 réinitialisation.
                                             </p>
                                         </div>
@@ -109,7 +115,9 @@ export default function ForgotPassword() {
                                             name="email"
                                             render={({ field }) => (
                                                 <FormItem>
-                                                    <FormLabel className="text-white/80">E-mail</FormLabel>
+                                                    <FormLabel className="text-white/80">
+                                                        E-mail
+                                                    </FormLabel>
                                                     <FormControl>
                                                         <IconInput
                                                             icon={Mail}
@@ -125,7 +133,7 @@ export default function ForgotPassword() {
 
                                         <Button
                                             type="submit"
-                                            className="w-full h-12 bg-gradient-to-r from-emerald-500 to-sky-400 text-base font-semibold text-white shadow-lg shadow-emerald-500/25 transition-all duration-300 hover:shadow-xl hover:shadow-emerald-500/40 active:scale-95"
+                                            className="h-12 w-full bg-gradient-to-r from-emerald-500 to-sky-400 text-base font-semibold text-white shadow-lg shadow-emerald-500/25 transition-all duration-300 hover:shadow-xl hover:shadow-emerald-500/40 active:scale-95"
                                             disabled={isLoading}
                                         >
                                             {isLoading ? (

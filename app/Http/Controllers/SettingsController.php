@@ -34,4 +34,20 @@ class SettingsController extends Controller
 
         return back()->with('status', 'settings-updated');
     }
+
+    /**
+     * Met à jour la langue de l'utilisateur.
+     */
+    public function updateLanguage(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'language' => 'required|string|in:fr,en',
+        ]);
+
+        $user = $request->user();
+        $user->language = $request->language;
+        $user->save();
+
+        return back()->with('status', 'language-updated');
+    }
 }

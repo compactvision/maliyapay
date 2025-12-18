@@ -9,11 +9,12 @@ import {
     Calendar,
     CheckSquare,
     LayoutDashboard,
+    LineChart,
     LogOut,
     Moon,
     PiggyBank,
+    Repeat,
     Settings,
-    Sparkles,
     Sun,
     Tags,
     User,
@@ -114,16 +115,16 @@ const mainNavItems = [
     { title: 'Budgets', url: '/budget', icon: PiggyBank },
     { title: 'Statistiques', url: '/statistic', icon: BarChart3 },
     { title: 'Tâches', url: '/task', icon: CheckSquare },
-    { title: 'Routine', url: '/routine', icon: CheckSquare },
-    { title: 'Performance', url: '/habits', icon: CheckSquare },
+    { title: 'Routine', url: '/routine', icon: Repeat },
+    { title: 'Performance', url: '/habits', icon: LineChart },
 ];
 
 const mobileNavItems = [
     { title: 'Accueil', url: '/', icon: LayoutDashboard },
     { title: 'Transactions', url: '/transaction', icon: ArrowUpDown },
     { title: 'Tâches', url: '/task', icon: CheckSquare },
-    { title: 'Activité', url: '/statistic', icon: BarChart3 },
-    { title: 'Performance', url: '/habits', icon: CheckSquare },
+    { title: 'Statistiques', url: '/statistic', icon: BarChart3 },
+    { title: 'Performance', url: '/habits', icon: LineChart },
 ];
 
 // --- Composant Toggle pour le Thème ---
@@ -165,16 +166,22 @@ export const DesktopSidebar = () => {
             <div className="flex h-16 items-center border-b border-gray-200 px-4 dark:border-gray-700">
                 <div
                     className={cn(
-                        'flex items-center gap-2',
+                        'flex items-center gap-3',
                         !sidebarIsOpen && 'justify-center',
                     )}
                 >
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 text-white shadow-lg">
-                        <Sparkles className="h-4 w-4" />
+                    {/* Logo */}
+                    <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl bg-white shadow-md">
+                        <img
+                            src="/logo.png"
+                            alt="MaliyaFlow"
+                            className="h-8 w-8 object-contain"
+                        />
                     </div>
+
                     {sidebarIsOpen && (
-                        <span className="text-lg font-bold text-gray-900 dark:text-white">
-                            MindWallet
+                        <span className="text-xl font-bold tracking-tight text-gray-900 dark:text-white">
+                            MaliyaFlow
                         </span>
                     )}
                 </div>

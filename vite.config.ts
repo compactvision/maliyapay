@@ -23,26 +23,31 @@ export default defineConfig({
         }),
         VitePWA({
             registerType: 'autoUpdate',
-            includeAssets: [
-                'favicon.ico',
-                'apple-touch-icon.png',
-                'favicon.svg',
-            ],
+            includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'logo.svg'],
             manifest: {
-                name: 'MindWallet',
-                short_name: 'MindWallet',
+                name: 'MaliyaPay',
+                short_name: 'MaliyaPay',
                 description:
                     'Votre gestionnaire de budget et routines intelligent',
-                theme_color: '#ffffff',
+                theme_color: '#0f172a',
+                background_color: '#0f172a',
+                display: 'standalone',
+                orientation: 'portrait',
                 icons: [
                     {
-                        src: 'pwa-192x192.png',
-                        sizes: '192x192',
+                        src: '/logo.png',
+                        sizes: '1024x1024',
+                        type: 'image/png',
+                        purpose: 'any maskable',
+                    },
+                    {
+                        src: '/logo.png',
+                        sizes: '512x512',
                         type: 'image/png',
                     },
                     {
-                        src: 'pwa-512x512.png',
-                        sizes: '512x512',
+                        src: '/icons/pwa-192x192.png',
+                        sizes: '192x192',
                         type: 'image/png',
                     },
                 ],
@@ -56,7 +61,7 @@ export default defineConfig({
     //     host: '0.0.0.0',
     //     port: 5173,
     //     hmr: {
-    //         host: '192.168.0.169', 
+    //         host: '192.168.0.169',
     //     },
     // },
 });
