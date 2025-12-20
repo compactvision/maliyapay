@@ -95,6 +95,76 @@ export default defineConfig({
             },
             workbox: {
                 navigateFallback: null,
+                runtimeCaching: [
+                    {
+                        urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
+                        handler: 'CacheFirst',
+                        options: {
+                            cacheName: 'google-fonts-cache',
+                            expiration: {
+                                maxEntries: 10,
+                                maxAgeSeconds: 60 * 60 * 24 * 365, // <== 365 days
+                            },
+                            cacheableResponse: {
+                                statuses: [0, 200],
+                            },
+                        },
+                    },
+                    {
+                        urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
+                        handler: 'CacheFirst',
+                        options: {
+                            cacheName: 'gstatic-fonts-cache',
+                            expiration: {
+                                maxEntries: 10,
+                                maxAgeSeconds: 60 * 60 * 24 * 365, // <== 365 days
+                            },
+                            cacheableResponse: {
+                                statuses: [0, 200],
+                            },
+                        },
+                    },
+                    {
+                        urlPattern: ({ request }) =>
+                            request.destination === 'image',
+                        handler: 'StaleWhileRevalidate',
+                        options: {
+                            cacheName: 'images-cache',
+                            expiration: {
+                                maxEntries: 50,
+                                maxAgeSeconds: 30 * 24 * 60 * 60, // 30 Days
+                            },
+                        },
+                    },
+                    {
+                        // Cache page navigation (HTML)
+                        urlPattern: ({ request }) =>
+                            request.mode === 'navigate',
+                        handler: 'NetworkFirst',
+                        options: {
+                            cacheName: 'pages-cache',
+                            expiration: {
+                                maxEntries: 50,
+                                maxAgeSeconds: 24 * 60 * 60, // 24 hours
+                            },
+                        },
+                    },
+                    {
+                        // Cache Inertia Data requests (API) in case of SPA navigation
+                        urlPattern: ({ url, request }) =>
+                            !url.pathname.match(
+                                /\.(js|css|png|jpg|jpeg|svg|gif|webp|ico|json|woff2)$/,
+                            ) && request.destination !== 'document',
+                        handler: 'NetworkFirst',
+                        options: {
+                            cacheName: 'inertia-data-cache',
+                            expiration: {
+                                maxEntries: 50,
+                                maxAgeSeconds: 24 * 60 * 60, // 24 hours
+                            },
+                        },
+                    },
+                ],
             },
         }),
     ],
