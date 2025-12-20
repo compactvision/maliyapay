@@ -11,6 +11,9 @@ use App\Modules\Task\Presentation\Controllers\TaskController;
 use App\Modules\Routine\Presentation\Controllers\RoutineController;
 use App\Modules\Routine\Presentation\Controllers\RoutineTaskController;
 use App\Modules\Notification\Presentation\Controllers\NotificationController;
+use Illuminate\Support\Facades\Broadcast;
+
+Broadcast::routes(['middleware' => ['auth:sanctum']]);
 
 Route::get('/user', function (Request $request) {
     return $request->user();
