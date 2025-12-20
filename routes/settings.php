@@ -14,14 +14,14 @@ Route::middleware(['auth:sanctum', 'permission:view settings'])->group(function 
      Route::patch('settings/language', [\App\Http\Controllers\SettingsController::class, 'updateLanguage'])->middleware('permission:edit settings')->name('settings.language.update');
 
     // Route::get('settings/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('settings/profile', [ProfileController::class, 'update'])->middleware('permission:edit settings')->name('profile.update');
-    Route::delete('settings/profile', [ProfileController::class, 'destroy'])->middleware('permission:edit settings')->name('profile.destroy');
+    Route::patch('settings/profile', [ProfileController::class, 'update'])->middleware('permission:edit settings')->name('settings.profile.update');
+    Route::delete('settings/profile', [ProfileController::class, 'destroy'])->middleware('permission:edit settings')->name('settings.profile.destroy');
 
     Route::get('settings/password', [PasswordController::class, 'edit'])->name('user-password.edit');
 
     Route::put('settings/password', [PasswordController::class, 'update'])
         ->middleware(['throttle:6,1', 'permission:edit settings'])
-        ->name('user-password.update');
+        ->name('settings.password.update');
 
     Route::get('settings/appearance', function () {
         return Inertia::render('settings/appearance');

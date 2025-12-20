@@ -29,11 +29,11 @@ Route::post('/email/verification-notification', [AuthController::class, 'sendVer
 // Password Reset
 Route::post('/forgot-password', [AuthController::class, 'forgotPassword'])
     ->middleware('guest')
-    ->name('password.email');
+    ->name('api.password.email');
 
 Route::post('/reset-password', [AuthController::class, 'resetPassword'])
     ->middleware('guest')
-    ->name('password.update');
+    ->name('api.password.update');
 
 // Protected Routes
 Route::middleware(['auth:sanctum'])->group(function () {

@@ -31,7 +31,7 @@ export default function Password() {
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
 
-        put(route('user-password.update'), {
+        put(route('settings.password.update'), {
             preserveScroll: true,
             onSuccess: () => {
                 reset();
