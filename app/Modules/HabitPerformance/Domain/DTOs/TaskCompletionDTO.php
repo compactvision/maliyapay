@@ -42,21 +42,21 @@ class TaskCompletionDTO
     private static function generateAdvice(float $rate, bool $allCompleted): string
     {
         if ($allCompleted) {
-            return "🎉 Excellent travail! Toutes vos tâches sont complétées. Vous êtes très discipliné!";
+            return "🎉 Formidable ! Discipline exemplaire : 100% des tâches accomplies.";
         }
         
         if ($rate >= 0.8) {
-            return "Très bien! Encore quelques tâches et vous aurez tout terminé!";
+            return "💪 Presque fini ! Un dernier effort pour atteindre la perfection.";
         }
         
         if ($rate >= 0.5) {
-            return "Bon début! Continuez sur cette lancée pour terminer vos tâches.";
+            return "📈 Vous avancez bien. Ne lâchez pas pour finir la journée en beauté.";
         }
         
         if ($rate > 0) {
-            return "⚠️ Attention! Il vous reste beaucoup de tâches. Concentrez-vous!";
+            return "⏳ Ne prenez pas de retard. Chaque tâche complétée compte !";
         }
         
-        return "Aucune tâche complétée aujourd'hui. Commencez maintenant!";
+        return "🚀 Allez ! Le premier pas est le plus dur. Accomplissez une tâche maintenant.";
     }
 }

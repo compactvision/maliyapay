@@ -136,5 +136,15 @@ class TaskPerformanceService
                 'task_evening_reminder'
             );
         }
+
+        // Late Evening reminder (8 PM) - 20h
+        if ($hour === 20 && $remainingTasks > 0) {
+            $this->notificationService->send(
+                $user,
+                '🕗 Rappel de 20h',
+                "Il est 20h, et vous avez encore {$remainingTasks} tâches. Courage, ne lâchez rien !",
+                'task_late_reminder'
+            );
+        }
     }
 }

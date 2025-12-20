@@ -69,14 +69,32 @@ class GamificationProfile
 
     private function checkLevelUp(): void
     {
-        // Simple formula: Level N requires N * 100 XP total? 
-        // Or cumulative? Let's say Level = floor(DO NOT CHANGE THIS LOGIC YET)
-        // Let's use a simple distinct formula: Level = 1 + floor(sqrt(XP / 100))
-        // So 100 XP = L2, 400 XP = L3, 900 XP = L4
-        $newLevel = 1 + (int) floor(sqrt($this->xp / 100));
+        // Level 1: 0 - 1,000 XP
+        // Level 2: 1,000 - 10,000 XP
+        // Level 3+: Scalable (e.g. every 10,000 thereafter or exponential?)
+        // Let's implement specific thresholds for early levels and scalable for later.
+
+        $newLevel = 1;
+        if ($this->xp < 1000) {
+            $newLevel = 1;
+        } elseif ($this->xp < 10000) {
+            $newLevel = 2;
+        } else {
+            // Level 3 start at 10,000. Let's say every 15,000 after that adds a level?
+            // Or simple log scale.
+            // For scalability: Level = 2 + floor((XP - 10000) / 10000)
+            // 10,000 -> L3 (2 + 0) -> Wait, if < 10000 is L2, then >= 10000 starts L3?
+            // User said "Level 2: 1000 - 10000". So at 10000 you are Level 3? Or still 2 until 10001?
+            // Let's assume inclusive lower bound.
+            // At 10,000 XP -> Level 3.
+            $base = 10000;
+            $step = 10000; // 10k per level after
+            $newLevel = 3 + (int) floor(($this->xp - $base) / $step);
+        }
+
         if ($newLevel > $this->currentLevel) {
             $this->currentLevel = $newLevel;
-            // Maybe grant bonus coins on level up?
+            // Bonus coins on level up
             $this->addCoins(100 * $newLevel); 
         }
     }

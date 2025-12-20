@@ -131,21 +131,35 @@ const HabitPerformanceIndex: React.FC<Props> = ({ performanceData }) => {
     };
 
     const getLevelInfo = (score: number) => {
+        // Status based on Score/Performance
         if (score >= 90) return { name: 'Légende', emoji: '👑' };
-        if (score >= 80) return { name: 'Maître', emoji: '🏆' };
-        if (score >= 70) return { name: 'Expert', emoji: '⭐' };
-        if (score >= 60) return { name: 'Avancé', emoji: '🚀' };
-        if (score >= 50) return { name: 'Intermédiaire', emoji: '💪' };
-        return { name: 'Débutant', emoji: '🌱' };
+        if (score >= 80) return { name: 'Maître Stratège', emoji: '🏆' };
+        if (score >= 70) return { name: 'Constant', emoji: '⭐' };
+        if (score >= 60) return { name: 'Discipliné', emoji: '🚀' };
+        if (score >= 50) return { name: 'En progression', emoji: '💪' };
+        return { name: 'Novice', emoji: '🌱' };
     };
 
-    // Calculate Progress to next level: simple formula based on 100 XP per level derived from Entity logic?
-    // Entity: Level = 1 + floor(sqrt(XP / 100)).
-    // Inverse: XP = ((Level - 1)^2) * 100.
-    // Next Level XP = (Level^2) * 100.
-    // Current Level Base XP = ((Level-1)^2) * 100.
-    const currentLevelBaseXp = Math.pow(level - 1, 2) * 100; // e.g. L1->0, L2->100, L3->400
-    const nextLevelXp = Math.pow(level, 2) * 100; // e.g. L1->100, L2->400, L3->900
+    // Calculate Progress properly for irregular levels
+    // Level 1: 0 - 1000
+    // Level 2: 1000 - 10000
+    // Level 3+: 10000 + 10000 per level
+    let currentLevelBaseXp = 0;
+    let nextLevelXp = 1000;
+
+    if (level === 1) {
+        currentLevelBaseXp = 0;
+        nextLevelXp = 1000;
+    } else if (level === 2) {
+        currentLevelBaseXp = 1000;
+        nextLevelXp = 10000;
+    } else {
+        // Level 3 starts at 10000. L3 -> L4 needs +10000.
+        // Formula: Base = 10000 + (Level - 3) * 10000
+        currentLevelBaseXp = 10000 + (level - 3) * 10000;
+        nextLevelXp = currentLevelBaseXp + 10000;
+    }
+
     const xpProgress = Math.min(
         100,
         Math.max(

@@ -60,22 +60,61 @@ class FinancialPerformanceService
 
             $totalSpent += $categorySpending;
 
-            // Check if over budget
-            if ($categorySpending > $budget->amount()) {
-                $categoriesOverBudget[] = [
-                    'category_id' => $budget->categoryId(),
-                    'name' => $budget->categoryName() ?? 'Unknown',
-                    'budget' => $budget->amount(),
-                    'spent' => $categorySpending,
-                    'overage' => $categorySpending - $budget->amount()
-                ];
-            }
+        // Check if over budget
+        if ($categorySpending > $budget->amount()) {
+            $categoriesOverBudget[] = [
+                'category_id' => $budget->categoryId(),
+                'name' => $budget->categoryName() ?? 'Unknown',
+                'budget' => $budget->amount(),
+                'spent' => $categorySpending,
+                'overage' => $categorySpending - $budget->amount()
+            ];
         }
+    }
+
+        // Calculate Income for Balance Context
+        $totalIncome = $transactions
+            ->filter(fn($t) => $t->type() === TransactionType::INCOME)
+            ->sum(fn($t) => $t->amount());
+
+        $balanceAvailable = $totalIncome > 0 ? $totalIncome : $totalBudget; // Fallback to budget if no income tracked
+
+        // Advice Generation Logic
+        $advice = [];
+        $today = (int) Carbon::now()->format('d');
+        $daysInMonth = (int) $endOfMonth->format('d');
+        $monthProgress = $today / $daysInMonth;
+        
+        $spendingRatio = $balanceAvailable > 0 ? $totalSpent / $balanceAvailable : 0;
+
+        if ($spendingRatio > 0.5) {
+            if ($monthProgress < 0.5) {
+                // Critical
+                $advice[] = "⚠️ Alerte : Vous avez consommé 50% de vos ressources avant la mi-mois.";
+                $advice[] = "Réduisez les dépenses immédiatement.";
+            } else {
+                 if ($spendingRatio > 0.9) {
+                     $advice[] = "🚨 Attention, budget presque épuisé.";
+                 } else {
+                     $advice[] = "Info: Vous avez passé le cap des 50%.";
+                 }
+            }
+        } elseif ($monthProgress > 0.8 && $spendingRatio < 0.5) {
+             $advice[] = "🌟 Excellent ! Fin de mois proche et moins de 50% dépensé.";
+             $advice[] = "Discipline financière récompensée.";
+        }
+
+        if (empty($advice)) {
+            $advice[] = "Votre gestion est stable.";
+        }
+        
+        $adviceString = implode(" ", $advice);
 
         return BudgetPerformanceDTO::create(
             totalBudget: $totalBudget,
             totalSpent: $totalSpent,
-            categoriesOverBudget: $categoriesOverBudget
+            categoriesOverBudget: $categoriesOverBudget,
+            advice: $adviceString
         );
     }
 

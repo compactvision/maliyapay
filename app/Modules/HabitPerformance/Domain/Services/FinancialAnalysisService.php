@@ -92,36 +92,66 @@ class FinancialAnalysisService
         $monthlyBalance = $totalIncome - $totalSpent;
 
         // Generate personalized financial advice
+        // Generate personalized financial advice & Rules
         $advice = [];
+        $financialStatus = 'Neutral';
+
+        // 1. Rule: Balance 50% check
+        // We need "Balance Mensuelle Disponible". Assuming this means Income for the month?
+        // Or "Beginning Balance + Income"? 
+        // User says: "Comparer les dépenses à la balance mensuelle disponible"
+        // Let's assume Balance Available = Total Income.
+        $balanceAvailable = $totalIncome; // Simplified for this context
         
+        $spendingRatio = 0.0;
+        if ($balanceAvailable > 0) {
+            $spendingRatio = $totalSpent / $balanceAvailable;
+        }
+
+        // Current day of month for context (e.g. if 50% spent on day 2, that's bad)
+        $today = (int) (new DateTimeImmutable())->format('d');
+        $daysInMonth = (int) $endOfMonth->format('d');
+        $monthProgress = $today / $daysInMonth;
+
+        if ($spendingRatio > 0.5) {
+            // Already spent > 50%
+            if ($monthProgress < 0.5) {
+                // Critical: Spent > 50% before mid-month
+                $advice[] = "⚠️ Alerte : Vous avez déjà consommé plus de 50% de vos revenus alors que le mois n'est pas fini.";
+                $advice[] = "💡 Conseil : Réduisez drastiquement les dépenses non essentielles.";
+                $financialStatus = 'Danger';
+            } else {
+                // Normal usage? 
+                if ($spendingRatio > 0.8 && $monthProgress < 0.8) {
+                     $advice[] = "⚠️ Attention : Vos dépenses accélèrent trop vite.";
+                } else {
+                     $advice[] = "ℹ️ Vous avez utilisé plus de la moitié de votre budget.";
+                }
+            }
+        } elseif ($spendingRatio < 0.5 && $monthProgress > 0.8) {
+             // End of month approaching and still < 50% spent? Excellent!
+             $advice[] = "🌟 Excellent ! Vous avez dépensé moins de 50% de vos revenus ce mois-ci.";
+             $advice[] = "💰 C'est le moment idéal pour mettre de côté ou investir.";
+             $financialStatus = 'Saver';
+        }
+
         // Balance feedback
         if ($monthlyBalance > 0) {
-            $advice[] = "💰 Bravo ! Vous épargnez " . number_format($monthlyBalance, 2) . " ce mois-ci.";
-            if ($monthlyBalance > $totalIncome * 0.2) {
-                $advice[] = "🌟 Excellent ! Vous épargnez plus de 20% de vos revenus.";
-            }
+            $advice[] = "✅ Balance positive : +" . number_format($monthlyBalance, 2);
         } elseif ($monthlyBalance < 0) {
-            $advice[] = "⚠️ Attention ! Vos dépenses dépassent vos revenus de " . number_format(abs($monthlyBalance), 2) . ".";
-            $advice[] = "💡 Réduisez vos dépenses non essentielles pour équilibrer votre budget.";
-        } else {
-            $advice[] = "⚖️ Votre budget est équilibré, mais essayez d'épargner un peu.";
+            $advice[] = "🛑 Balance négative : " . number_format($monthlyBalance, 2);
         }
 
         // Budget compliance
         if (count($budgets) > 0) {
-            if ($budgetCompliedCount === count($budgets)) {
-                $advice[] = "🏆 Parfait ! Tous vos budgets sont respectés.";
+            $overBudgetCount = count($budgets) - $budgetCompliedCount;
+            if ($overBudgetCount === 0) {
+                 $advice[] = "🏆 Tous vos budgets sont respectés. Continuez ainsi !";
             } else {
-                $exceededCount = count($budgets) - $budgetCompliedCount;
-                if ($exceededCount === 1) {
-                    $advice[] = "🚨 Vous avez dépassé le budget pour 1 catégorie.";
-                } else {
-                    $advice[] = "🚨 Vous avez dépassé le budget pour $exceededCount catégories.";
-                }
-                $advice[] = "🔍 Identifiez vos dépenses excessives et ajustez vos habitudes.";
+                 $advice[] = "🚨 $overBudgetCount catégories ont dépassé leur budget.";
             }
         } else {
-            $advice[] = "📊 Définissez des budgets par catégorie pour mieux contrôler vos finances.";
+            $advice[] = "conseil : Définissez des budgets pour mieux suivre vos dépenses.";
         }
 
         // Score (0-100)
@@ -141,7 +171,8 @@ class FinancialAnalysisService
             'totalIncome' => $totalIncome,
             'totalExpenses' => $totalSpent,
             'categories' => $categoriesReport,
-            'advice' => $advice
+            'advice' => $advice,
+            'financialStatus' => $financialStatus
         ];
     }
 }

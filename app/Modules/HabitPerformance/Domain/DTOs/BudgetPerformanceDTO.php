@@ -20,7 +20,8 @@ class BudgetPerformanceDTO
     public static function create(
         float $totalBudget,
         float $totalSpent,
-        array $categoriesOverBudget
+        array $categoriesOverBudget,
+        ?string $advice = null
     ): self {
         $spendingRatio = $totalBudget > 0 ? $totalSpent / $totalBudget : 0;
         $isOverBudget = $spendingRatio > 1.0;
@@ -36,8 +37,10 @@ class BudgetPerformanceDTO
             default => 0                   // 125%+ = critical
         };
 
-        // Generate advice
-        $advice = self::generateAdvice($spendingRatio, $categoriesOverBudget);
+        // Generate advice if not provided
+        if ($advice === null) {
+            $advice = self::generateAdvice($spendingRatio, $categoriesOverBudget);
+        }
 
         return new self(
             totalBudget: $totalBudget,
