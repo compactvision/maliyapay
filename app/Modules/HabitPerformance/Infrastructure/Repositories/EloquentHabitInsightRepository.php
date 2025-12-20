@@ -45,7 +45,7 @@ class EloquentHabitInsightRepository implements HabitInsightRepositoryInterface
             id: Uuid::fromString($model->id),
             type: InsightType::from($model->type),
             period: Period::from($model->period),
-            score: Score::fromInt($model->score),
+            score: Score::fromInt((int) $model->score),
             summary: $model->summary,
             createdAt: $model->created_at->toImmutable()
         );
