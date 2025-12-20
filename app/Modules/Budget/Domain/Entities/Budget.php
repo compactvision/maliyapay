@@ -18,7 +18,8 @@ final class Budget
         private string $currency,
         private BudgetPeriod $period,
         private DateTimeImmutable $createdAt,
-        private DateTimeImmutable $updatedAt
+        private DateTimeImmutable $updatedAt,
+        private ?string $categoryName = null
     ) {
     }
 
@@ -39,7 +40,8 @@ final class Budget
             $currency,
             $period,
             $now,
-            $now
+            $now,
+            null
         );
     }
     
@@ -51,7 +53,8 @@ final class Budget
         string $currency,
         BudgetPeriod $period,
         DateTimeImmutable $createdAt,
-        DateTimeImmutable $updatedAt
+        DateTimeImmutable $updatedAt,
+        ?string $categoryName = null
     ): self {
         return new self(
             $id,
@@ -61,7 +64,8 @@ final class Budget
             $currency,
             $period,
             $createdAt,
-            $updatedAt
+            $updatedAt,
+            $categoryName
         );
     }
 
@@ -73,4 +77,5 @@ final class Budget
     public function period(): BudgetPeriod { return $this->period; }
     public function createdAt(): DateTimeImmutable { return $this->createdAt; }
     public function updatedAt(): DateTimeImmutable { return $this->updatedAt; }
+    public function categoryName(): ?string { return $this->categoryName; }
 }

@@ -10,6 +10,8 @@ use App\Modules\Transaction\Domain\Repositories\TransactionRepositoryInterface;
 use App\Modules\HabitPerformance\Domain\DTOs\BudgetPerformanceDTO;
 use App\Modules\HabitPerformance\Domain\Repositories\GamificationProfileRepositoryInterface;
 use App\Modules\Notification\Domain\Services\NotificationService;
+use App\Modules\Budget\Domain\ValueObjects\BudgetPeriod;
+use App\Modules\Transaction\Domain\ValueObjects\TransactionType;
 use Carbon\Carbon;
 
 class FinancialPerformanceService
@@ -29,14 +31,14 @@ class FinancialPerformanceService
         $endOfMonth = $month->copy()->endOfMonth();
 
         // Get all budgets for the user
-        $budgets = $this->budgetRepository->findByUserId($user->id);
+        $budgets = $this->budgetRepository->findAllByUser((string) $user->id);
         
         // Get all transactions for the month
-        $transactions = $this->transactionRepository->findByUserIdAndDateRange(
-            $user->id,
-            $startOfMonth,
-            $endOfMonth
-        );
+        $transactions = collect($this->transactionRepository->findByUserAndPeriod(
+            (string) $user->id,
+            $startOfMonth->toDateTimeImmutable(),
+            $endOfMonth->toDateTimeImmutable()
+        ));
 
         $totalBudget = 0;
         $totalSpent = 0;
@@ -44,28 +46,28 @@ class FinancialPerformanceService
 
         foreach ($budgets as $budget) {
             // Only consider monthly budgets for now
-            if ($budget->period !== 'monthly') {
+            if ($budget->period() !== BudgetPeriod::MONTHLY) {
                 continue;
             }
 
-            $totalBudget += $budget->amount;
+            $totalBudget += $budget->amount();
 
             // Calculate spending for this category
             $categorySpending = $transactions
-                ->where('category_id', $budget->category_id)
-                ->where('type', 'expense')
-                ->sum('amount');
+                ->filter(fn($t) => $t->categoryId() === $budget->categoryId())
+                ->filter(fn($t) => $t->type() === TransactionType::EXPENSE)
+                ->sum(fn($t) => $t->amount());
 
             $totalSpent += $categorySpending;
 
             // Check if over budget
-            if ($categorySpending > $budget->amount) {
+            if ($categorySpending > $budget->amount()) {
                 $categoriesOverBudget[] = [
-                    'category_id' => $budget->category_id,
-                    'name' => $budget->category->name ?? 'Unknown',
-                    'budget' => $budget->amount,
+                    'category_id' => $budget->categoryId(),
+                    'name' => $budget->categoryName() ?? 'Unknown',
+                    'budget' => $budget->amount(),
                     'spent' => $categorySpending,
-                    'overage' => $categorySpending - $budget->amount
+                    'overage' => $categorySpending - $budget->amount()
                 ];
             }
         }

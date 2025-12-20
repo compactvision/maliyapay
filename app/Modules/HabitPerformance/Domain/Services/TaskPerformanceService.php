@@ -26,14 +26,14 @@ class TaskPerformanceService
         $startOfDay = $date->copy()->startOfDay();
         $endOfDay = $date->copy()->endOfDay();
 
-        $tasks = $this->taskRepository->findByUserIdAndDateRange(
+        $tasks = collect($this->taskRepository->findByUserIdAndDateRange(
             $user->id,
             $startOfDay,
             $endOfDay
-        );
+        ));
 
         $totalTasks = $tasks->count();
-        $completedTasks = $tasks->where('status', 'completed')->count();
+        $completedTasks = $tasks->filter(fn($task) => $task->completed())->count();
 
         return TaskCompletionDTO::create($totalTasks, $completedTasks);
     }
@@ -43,14 +43,14 @@ class TaskPerformanceService
         $weekStart = $weekStart ?? Carbon::now()->startOfWeek();
         $weekEnd = $weekStart->copy()->endOfWeek();
 
-        $tasks = $this->taskRepository->findByUserIdAndDateRange(
+        $tasks = collect($this->taskRepository->findByUserIdAndDateRange(
             $user->id,
             $weekStart,
             $weekEnd
-        );
+        ));
 
         $totalTasks = $tasks->count();
-        $completedTasks = $tasks->where('status', 'completed')->count();
+        $completedTasks = $tasks->filter(fn($task) => $task->completed())->count();
 
         return TaskCompletionDTO::create($totalTasks, $completedTasks);
     }

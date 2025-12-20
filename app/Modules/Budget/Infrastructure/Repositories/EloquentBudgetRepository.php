@@ -35,13 +35,14 @@ class EloquentBudgetRepository implements BudgetRepositoryInterface
 
     public function findById(UuidInterface $id): ?Budget
     {
-        $model = $this->model->find($id->toString());
+        $model = $this->model->with(['category'])->find($id->toString());
         return $model ? $this->toDomainEntity($model) : null;
     }
 
     public function findByCategory(string $userId, string $categoryId): ?Budget
     {
         $model = $this->model
+            ->with(['category'])
             ->where('user_id', $userId)
             ->where('category_id', $categoryId)
             ->first();
@@ -74,7 +75,8 @@ class EloquentBudgetRepository implements BudgetRepositoryInterface
             currency: $model->currency,
             period: BudgetPeriod::fromString($model->period),
             createdAt: DateTimeImmutable::createFromMutable($model->created_at),
-            updatedAt: DateTimeImmutable::createFromMutable($model->updated_at)
+            updatedAt: DateTimeImmutable::createFromMutable($model->updated_at),
+            categoryName: $model->category->name ?? null
         );
     }
 }
