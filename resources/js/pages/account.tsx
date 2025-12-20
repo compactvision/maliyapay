@@ -156,6 +156,10 @@ export default function AccountPage() {
         },
     });
 
+    // Auto-scroll to first error
+    useFormErrorScroll(createForm.formState.errors);
+    useFormErrorScroll(currencyForm.formState.errors);
+
     // --- Handlers ---
     const handleCreateSubmit = async (values: any) => {
         setIsSubmitting(true);

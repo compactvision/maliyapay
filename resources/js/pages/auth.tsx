@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/form';
 import { IconInput } from '@/components/ui/icon-input';
 import { useAuth, useLoginForm, useRegisterForm } from '@/hooks/useAuth';
+import { useFormErrorScroll } from '@/hooks/useFormErrorScroll';
 import { Link } from '@inertiajs/react';
 import { Eye, EyeOff, Loader2, Lock, Mail, User } from 'lucide-react'; // <-- Importer Eye et EyeOff
 import { useState } from 'react';
@@ -27,6 +28,10 @@ export default function Auth() {
 
     const loginForm = useLoginForm();
     const registerForm = useRegisterForm();
+
+    // Auto-scroll to first error
+    useFormErrorScroll(loginForm.formState.errors);
+    useFormErrorScroll(registerForm.formState.errors);
 
     const onLogin = async (values: any) => {
         setIsLoading(true);

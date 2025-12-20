@@ -18,7 +18,12 @@ class GamificationProfile
         private int $streakCount,
         private ?DateTimeImmutable $lastActivityDate,
         private ?DateTimeImmutable $lastDailyBonusClaimedAt,
-        private DateTimeImmutable $updatedAt
+        private DateTimeImmutable $updatedAt,
+        private int $financialScore = 0,
+        private int $taskScore = 0,
+        private int $overallScore = 0,
+        private int $level = 1,
+        private int $streakDays = 0
     ) {
     }
 
@@ -48,6 +53,11 @@ class GamificationProfile
     public function streakCount(): int { return $this->streakCount; }
     public function lastActivityDate(): ?DateTimeImmutable { return $this->lastActivityDate; }
     public function lastDailyBonusClaimedAt(): ?DateTimeImmutable { return $this->lastDailyBonusClaimedAt; }
+    public function financialScore(): int { return $this->financialScore; }
+    public function taskScore(): int { return $this->taskScore; }
+    public function overallScore(): int { return $this->overallScore; }
+    public function level(): int { return $this->level; }
+    public function streakDays(): int { return $this->streakDays; }
 
     // Logic
     public function addXp(int $amount): void
@@ -127,5 +137,52 @@ class GamificationProfile
             return true;
         }
         return false;
+    }
+
+    public function updateFinancialScore(int $score): void
+    {
+        $this->financialScore = max(0, min(100, $score));
+        $this->recalculateOverallScore();
+        $this->updatedAt = new DateTimeImmutable();
+    }
+
+    public function updateTaskScore(int $score): void
+    {
+        $this->taskScore = max(0, min(100, $score));
+        $this->recalculateOverallScore();
+        $this->updatedAt = new DateTimeImmutable();
+    }
+
+    private function recalculateOverallScore(): void
+    {
+        // Weighted average: 60% financial, 40% tasks
+        $this->overallScore = (int) round(
+            ($this->financialScore * 0.6) + ($this->taskScore * 0.4)
+        );
+        $this->updateLevel();
+    }
+
+    private function updateLevel(): void
+    {
+        // Level based on overall score
+        $this->level = match (true) {
+            $this->overallScore >= 90 => 5, // Légende
+            $this->overallScore >= 80 => 4, // Maître
+            $this->overallScore >= 70 => 3, // Expert
+            $this->overallScore >= 60 => 2, // Avancé
+            default => 1 // Débutant
+        };
+    }
+
+    public function incrementStreakDays(): void
+    {
+        $this->streakDays++;
+        $this->updatedAt = new DateTimeImmutable();
+    }
+
+    public function resetStreakDays(): void
+    {
+        $this->streakDays = 0;
+        $this->updatedAt = new DateTimeImmutable();
     }
 }

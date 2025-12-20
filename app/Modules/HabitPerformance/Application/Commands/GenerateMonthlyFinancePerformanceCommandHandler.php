@@ -17,46 +17,39 @@ class GenerateMonthlyFinancePerformanceCommandHandler
 {
     public function __construct(
         private HabitInsightRepositoryInterface $habitInsightRepository,
-        private PerformanceMetricRepositoryInterface $performanceMetricRepository
+        private \App\Modules\HabitPerformance\Domain\Services\FinancialPerformanceService $financialPerformanceService,
+        private \App\Modules\HabitPerformance\Domain\Repositories\GamificationProfileRepositoryInterface $gamificationRepository,
+        private \App\Models\User $userModel // Better to use a repository but this works for dependency injection if bound
     ) {
     }
 
     public function handle(GenerateMonthlyFinancePerformanceCommand $command): void
     {
-        $startOfMonth = new DateTimeImmutable('first day of this month');
-        $endOfMonth = new DateTimeImmutable('last day of this month');
+        $user = \App\Models\User::find($command->userId);
+        if (!$user) return;
+
+        $performance = $this->financialPerformanceService->calculateMonthlyPerformance($user);
         
-        $metrics = $this->performanceMetricRepository->findBetween(
-            InsightType::FINANCE,
-            $startOfMonth,
-            $endOfMonth
-        );
-
-        $totalSpent = 0.0;
-        foreach ($metrics as $metric) {
-            $totalSpent += $metric->achieved();
-        }
-
-        // Just mocking budget logic for now
-        $budgetLimit = 2000.0; // Assume global monthly budget
-
-        if ($totalSpent > $budgetLimit) {
-             $scoreVal = max(0, 100 - (int)(($totalSpent - $budgetLimit) / 10)); // Penalize overflow
-             $summary = "Attention, vous avez dépassé votre budget mensuel de " . ($totalSpent - $budgetLimit) . ".";
-        } else {
-            $savings = $budgetLimit - $totalSpent;
-            $scoreVal = 100;
-            $summary = "Félicitations ! Vous avez respecté votre budget et économisé " . $savings . ".";
-        }
-
+        // Update Insight
         $insight = HabitInsight::create(
             Uuid::uuid4(),
             InsightType::FINANCE,
             Period::MONTH,
-            Score::fromInt($scoreVal),
-            $summary
+            Score::fromInt($performance->adherenceScore),
+            $performance->advice
         );
-
         $this->habitInsightRepository->save($insight);
+
+        // Update Gamification Profile Score
+        $profile = $this->gamificationRepository->findByUserId($user->id);
+        if ($profile) {
+            $profile->updateFinancialScore($performance->adherenceScore);
+            // Also award points for staying within budget
+            $this->financialPerformanceService->awardFinancialPoints($user, $performance);
+            $this->gamificationRepository->save($profile);
+        }
+
+        // Check budget thresholds for notifications
+        $this->financialPerformanceService->checkBudgetThresholds($user);
     }
 }

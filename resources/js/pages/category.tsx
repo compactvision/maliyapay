@@ -32,6 +32,7 @@ import {
     useCategoryMutations,
     type CategoryFormValues,
 } from '@/hooks/useCategories';
+import { useFormErrorScroll } from '@/hooks/useFormErrorScroll';
 import { AppLayout } from '@/layouts/AppLayout';
 import type { Category } from '@/types/category';
 import {
@@ -79,6 +80,9 @@ export default function CategoryPage() {
         error: mutationError,
     } = useCategoryMutations();
     const form = useCategoryForm();
+
+    // Auto-scroll to first error
+    useFormErrorScroll(form.formState.errors);
 
     // --- State Management ---
     const [activeTab, setActiveTab] = useState<'income' | 'expense'>('expense');

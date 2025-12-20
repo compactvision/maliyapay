@@ -35,9 +35,6 @@ import { AppLayout } from '@/layouts/AppLayout';
 import { zodResolver } from '@hookform/resolvers/zod';
 import axios from 'axios';
 import { Loader2, Pencil, Plus, Trash2, Wallet } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { z } from 'zod';
 
 // Interfaces
 interface Category {
@@ -82,6 +79,9 @@ export default function Budget() {
             period: 'monthly',
         },
     });
+
+    // Auto-scroll to first error
+    useFormErrorScroll(form.formState.errors);
 
     const fetchData = async () => {
         try {

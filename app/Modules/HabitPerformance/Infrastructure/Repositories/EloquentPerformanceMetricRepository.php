@@ -24,6 +24,9 @@ class EloquentPerformanceMetricRepository implements PerformanceMetricRepository
                 'expected' => $metric->expected(),
                 'delta' => $metric->delta(),
                 'metadata' => $metric->metadata(),
+                'budget_adherence_score' => $metric->budgetAdherenceScore(),
+                'spending_vs_budget_ratio' => $metric->spendingVsBudgetRatio(),
+                'categories_over_budget' => $metric->categoriesOverBudget(),
             ]
         );
     }
@@ -56,7 +59,10 @@ class EloquentPerformanceMetricRepository implements PerformanceMetricRepository
             achieved: (float) $model->achieved,
             expected: (float) $model->expected,
             delta: (float) $model->delta,
-            metadata: $model->metadata
+            metadata: $model->metadata,
+            budgetAdherenceScore: (float) ($model->budget_adherence_score ?? 0),
+            spendingVsBudgetRatio: (float) ($model->spending_vs_budget_ratio ?? 0),
+            categoriesOverBudget: $model->categories_over_budget
         );
     }
 }

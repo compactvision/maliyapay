@@ -20,12 +20,18 @@ class PerformanceMetricModel extends Model
         'expected',
         'delta',
         'metadata',
+        'budget_adherence_score',
+        'spending_vs_budget_ratio',
+        'categories_over_budget',
     ];
 
     protected $casts = [
         'date' => 'date',
-        'achieved' => 'decimal:2',
-        'expected' => 'decimal:2',
-        'delta' => 'decimal:2',
+        'achieved' => 'float',
+        'expected' => 'float',
+        'delta' => 'float',
+        'budget_adherence_score' => 'float',
+        'spending_vs_budget_ratio' => 'float',
+        'categories_over_budget' => 'array',
     ];
 }
