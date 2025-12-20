@@ -36,7 +36,7 @@
         <link rel="icon" type="image/png" href="/logo.png">
         <link rel="icon" type="image/svg+xml" href="/logo.png">
         <link rel="apple-touch-icon" href="/logo.png">
-        <link rel="manifest" href="/build/manifest.webmanifest">
+        <link rel="manifest" href="/manifest.webmanifest">
         <meta name="theme-color" content="#0f172a">
         <meta name="mobile-web-app-capable" content="yes">
         <meta name="apple-mobile-web-app-capable" content="yes">

@@ -1,7 +1,9 @@
 /.phpunit.cache
 /bootstrap/ssr
 /node_modules
-/public/build
+public/build/*.map
+/storage/pail
+!public/build
 /public/hot
 /public/storage
 /resources/js/actions
@@ -26,3 +28,6 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
+deployment.tar.gz
+o2switch_key
+o2switch_key.pub
