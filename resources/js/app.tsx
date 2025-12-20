@@ -1,9 +1,10 @@
 import '../css/app.css';
 
-import { createInertiaApp } from '@inertiajs/react';
+import { createInertiaApp, router } from '@inertiajs/react';
 import axios from 'axios';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createRoot } from 'react-dom/client';
+import { toast } from 'sonner';
 import { AuthGuard } from './components/auth/AuthGuard';
 import { GuestGuard } from './components/auth/GuestGuard';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -35,6 +36,38 @@ axios.interceptors.request.use((config) => {
     return config;
 });
 
+axios.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        if (error.response?.status === 403) {
+            const isGet = error.config?.method?.toLowerCase() === 'get';
+            // Only show toast for non-GET requests (actions like POST/PUT/DELETE)
+            // Page transitions (GET) are handled by Inertia and our backend exception handler
+            if (!isGet) {
+                toast.error(
+                    "Vous n'êtes pas autorisé à effectuer cette action",
+                    {
+                        description:
+                            "Veuillez contacter un administrateur si vous pensez qu'il s'agit d'une erreur.",
+                    },
+                );
+            }
+        }
+        return Promise.reject(error);
+    },
+);
+
+// --- Inertia Global Listeners ---
+router.on('invalid', (event) => {
+    if (event.detail.response.status === 403) {
+        event.preventDefault();
+        toast.error("Vous n'êtes pas autorisé à effectuer cette action", {
+            description:
+                "Veuillez contacter un administrateur si vous pensez qu'il s'agit d'une erreur.",
+        });
+    }
+});
+
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
 createInertiaApp({
@@ -50,7 +83,12 @@ createInertiaApp({
         const isGuestPage =
             name === 'auth' ||
             name === 'forgot-password' ||
-            name === 'reset-password';
+            name === 'reset-password' ||
+            name === 'auth/login' ||
+            name === 'auth/register' ||
+            name === 'auth/forgot-password' ||
+            name === 'auth/reset-password' ||
+            name === 'auth/two-factor-challenge';
 
         // Special pages that manage their own guards or have specific requirements
         const isSpecialPage = name === 'verify-email';

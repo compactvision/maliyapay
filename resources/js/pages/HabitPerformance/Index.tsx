@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { AppLayout } from '@/layouts/AppLayout';
 import { Head, router } from '@inertiajs/react';
+import confetti from 'canvas-confetti';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
     Coins,
@@ -16,11 +17,8 @@ import {
     Trophy,
     Zap,
 } from 'lucide-react';
-import React, { useEffect, useState } from 'react';
-// Assuming toast is available or use console.log as fallback if not imported.
-// I will check if toast is imported in the file. It wasn't in the previous file content provided by user.
-// I will add import { toast } from 'sonner'; if I can.
-// Actually I'll just use router config
+import React, { useEffect, useRef, useState } from 'react';
+import { toast } from 'sonner';
 
 interface Props {
     performanceData: {
@@ -40,6 +38,10 @@ interface Props {
             level: number;
             coins: number;
             streak: number;
+            streakDays: number;
+            overallScore: number;
+            financialScore: number;
+            taskScore: number;
             dailyBonusAvailable: boolean;
         };
     };
@@ -57,19 +59,41 @@ const HabitPerformanceIndex: React.FC<Props> = ({ performanceData }) => {
     const [activeTab, setActiveTab] = useState<'tasks' | 'finance'>('tasks');
     const [selectedReward, setSelectedReward] = useState<number | null>(null);
     const [processing, setProcessing] = useState(false);
+    const audioRef = useRef<HTMLAudioElement | null>(null);
 
-    const totalScore = Math.round(
-        (performanceData.overview.taskScore +
-            performanceData.overview.financeScore) /
-            2,
-    );
+    const overallScore = gamification.overallScore;
 
     useEffect(() => {
-        if (totalScore >= 80) {
-            setShowConfetti(true);
-            setTimeout(() => setShowConfetti(false), 3000);
+        if (
+            overallScore >= 90 ||
+            (activeTab === 'tasks' &&
+                performanceData.overview.taskScore === 100)
+        ) {
+            // Success sound
+            if (!audioRef.current) {
+                audioRef.current = new Audio(
+                    'https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3',
+                );
+            }
+            audioRef.current.play().catch(() => {});
+
+            // Confetti
+            confetti({
+                particleCount: 150,
+                spread: 70,
+                origin: { y: 0.6 },
+                colors: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'],
+            });
+
+            toast.success('Excellent travail!', {
+                description:
+                    overallScore >= 90
+                        ? 'Vous êtes une véritable légende!'
+                        : 'Toutes vos tâches sont complétées!',
+                icon: '🎉',
+            });
         }
-    }, [totalScore]);
+    }, [overallScore, performanceData.overview.taskScore]);
 
     const claimDailyBonus = () => {
         if (!gamification.dailyBonusAvailable || processing) return;
@@ -107,21 +131,35 @@ const HabitPerformanceIndex: React.FC<Props> = ({ performanceData }) => {
     };
 
     const getLevelInfo = (score: number) => {
+        // Status based on Score/Performance
         if (score >= 90) return { name: 'Légende', emoji: '👑' };
-        if (score >= 80) return { name: 'Maître', emoji: '🏆' };
-        if (score >= 70) return { name: 'Expert', emoji: '⭐' };
-        if (score >= 60) return { name: 'Avancé', emoji: '🚀' };
-        if (score >= 50) return { name: 'Intermédiaire', emoji: '💪' };
-        return { name: 'Débutant', emoji: '🌱' };
+        if (score >= 80) return { name: 'Maître Stratège', emoji: '🏆' };
+        if (score >= 70) return { name: 'Constant', emoji: '⭐' };
+        if (score >= 60) return { name: 'Discipliné', emoji: '🚀' };
+        if (score >= 50) return { name: 'En progression', emoji: '💪' };
+        return { name: 'Novice', emoji: '🌱' };
     };
 
-    // Calculate Progress to next level: simple formula based on 100 XP per level derived from Entity logic?
-    // Entity: Level = 1 + floor(sqrt(XP / 100)).
-    // Inverse: XP = ((Level - 1)^2) * 100.
-    // Next Level XP = (Level^2) * 100.
-    // Current Level Base XP = ((Level-1)^2) * 100.
-    const currentLevelBaseXp = Math.pow(level - 1, 2) * 100; // e.g. L1->0, L2->100, L3->400
-    const nextLevelXp = Math.pow(level, 2) * 100; // e.g. L1->100, L2->400, L3->900
+    // Calculate Progress properly for irregular levels
+    // Level 1: 0 - 1000
+    // Level 2: 1000 - 10000
+    // Level 3+: 10000 + 10000 per level
+    let currentLevelBaseXp = 0;
+    let nextLevelXp = 1000;
+
+    if (level === 1) {
+        currentLevelBaseXp = 0;
+        nextLevelXp = 1000;
+    } else if (level === 2) {
+        currentLevelBaseXp = 1000;
+        nextLevelXp = 10000;
+    } else {
+        // Level 3 starts at 10000. L3 -> L4 needs +10000.
+        // Formula: Base = 10000 + (Level - 3) * 10000
+        currentLevelBaseXp = 10000 + (level - 3) * 10000;
+        nextLevelXp = currentLevelBaseXp + 10000;
+    }
+
     const xpProgress = Math.min(
         100,
         Math.max(
@@ -131,7 +169,7 @@ const HabitPerformanceIndex: React.FC<Props> = ({ performanceData }) => {
         ),
     );
 
-    const currentLevelInfo = getLevelInfo(totalScore); // keeping score based rank for display title
+    const currentLevelInfo = getLevelInfo(overallScore);
 
     const rewards = [
         { id: 1, name: "Boost d'énergie", cost: 100, icon: Zap },
@@ -217,8 +255,19 @@ const HabitPerformanceIndex: React.FC<Props> = ({ performanceData }) => {
                             <div className="text-3xl font-bold text-gray-900 dark:text-white">
                                 {performanceData.overview.taskScore}%
                             </div>
-                            <div className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-                                Tâches complétées
+                            <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-blue-100 dark:bg-blue-500/20">
+                                <motion.div
+                                    initial={{ width: 0 }}
+                                    animate={{
+                                        width: `${performanceData.overview.taskScore}%`,
+                                    }}
+                                    className="h-full bg-blue-600 dark:bg-blue-400"
+                                />
+                            </div>
+                            <div className="mt-1 text-xs text-gray-600 dark:text-gray-400">
+                                {performanceData.overview.taskScore === 100
+                                    ? 'Discipline parfaite !'
+                                    : 'Progression quotidienne'}
                             </div>
                         </motion.button>
 
@@ -227,23 +276,36 @@ const HabitPerformanceIndex: React.FC<Props> = ({ performanceData }) => {
                             onClick={() => setActiveTab('finance')}
                             className={`rounded-xl border-2 p-6 text-left backdrop-blur-xl transition-all ${
                                 activeTab === 'finance'
-                                    ? 'border-green-500 bg-green-50/80 dark:border-green-400 dark:bg-green-500/10'
+                                    ? 'border-emerald-500 bg-emerald-50/80 dark:border-emerald-400 dark:bg-emerald-500/10'
                                     : 'border-gray-200 bg-white/80 hover:border-gray-300 dark:border-white/10 dark:bg-white/5 dark:hover:border-white/20'
                             }`}
                         >
                             <div className="mb-3 flex items-center justify-between">
                                 <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                                    Santé
+                                    Santé Financière
                                 </span>
                                 <Heart
-                                    className={`h-5 w-5 ${activeTab === 'finance' ? 'text-green-600 dark:text-green-400' : 'text-gray-400 dark:text-gray-500'}`}
+                                    className={`h-5 w-5 ${activeTab === 'finance' ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-400 dark:text-gray-500'}`}
                                 />
                             </div>
                             <div className="text-3xl font-bold text-gray-900 dark:text-white">
                                 {performanceData.overview.financeScore}%
                             </div>
-                            <div className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-                                Objectifs financiers
+                            <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-emerald-100 dark:bg-emerald-500/20">
+                                <motion.div
+                                    initial={{ width: 0 }}
+                                    animate={{
+                                        width: `${performanceData.overview.financeScore}%`,
+                                    }}
+                                    className={`h-full ${performanceData.overview.financeScore < 50 ? 'bg-amber-500' : 'bg-emerald-600 dark:bg-emerald-400'}`}
+                                />
+                            </div>
+                            <div className="mt-1 text-xs text-gray-600 dark:text-gray-400">
+                                {performanceData.overview.financeScore > 90
+                                    ? 'Budget parfaitement géré !'
+                                    : performanceData.overview.financeScore < 50
+                                      ? 'Dépenses élevées...'
+                                      : 'Gestion saine'}
                             </div>
                         </motion.button>
                     </div>
@@ -446,7 +508,9 @@ const HabitPerformanceIndex: React.FC<Props> = ({ performanceData }) => {
                             <h3 className="font-semibold text-gray-900 dark:text-white">
                                 Défi de la Semaine
                             </h3>
-                            <Trophy className="h-5 w-5 text-amber-500" />
+                            <Trophy
+                                className={`h-5 w-5 ${gamification.streakDays >= 5 ? 'text-amber-500' : 'text-gray-400'}`}
+                            />
                         </div>
 
                         <div className="space-y-3">
@@ -463,26 +527,32 @@ const HabitPerformanceIndex: React.FC<Props> = ({ performanceData }) => {
                             <div>
                                 <div className="mb-2 flex items-center justify-between text-sm">
                                     <span className="text-gray-600 dark:text-gray-400">
-                                        Progression
+                                        Série actuelle
                                     </span>
                                     <span className="font-medium text-gray-600 dark:text-gray-400">
-                                        3/5 jours
+                                        {gamification.streakDays}/5 jours
                                     </span>
                                 </div>
-                                <Progress value={60} className="h-2" />
+                                <Progress
+                                    value={Math.min(
+                                        100,
+                                        (gamification.streakDays / 5) * 100,
+                                    )}
+                                    className="h-2"
+                                />
                             </div>
 
                             <div className="flex items-center gap-4 pt-2">
                                 <div className="flex items-center gap-1.5">
                                     <Coins className="h-4 w-4 text-amber-500" />
                                     <span className="text-sm font-semibold text-gray-900 dark:text-white">
-                                        +200
+                                        +500
                                     </span>
                                 </div>
                                 <div className="flex items-center gap-1.5">
                                     <Star className="h-4 w-4 text-amber-500" />
                                     <span className="text-sm font-semibold text-gray-900 dark:text-white">
-                                        +50 XP
+                                        +100 XP
                                     </span>
                                 </div>
                             </div>

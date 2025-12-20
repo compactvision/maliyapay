@@ -19,8 +19,17 @@ import axios from 'axios';
 import { Pencil, Trash2 } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 
+interface Permission {
+    id: number;
+    name: string;
+}
+
+interface PermissionFormData {
+    name: string;
+}
+
 export function PermissionsTab() {
-    const [permissions, setPermissions] = useState<any[]>([]);
+    const [permissions, setPermissions] = useState<Permission[]>([]);
 
     const fetchPermissions = async () => {
         try {
@@ -100,14 +109,15 @@ function PermissionDialog({
     onSuccess,
     trigger,
 }: {
-    perm?: any;
+    perm?: Permission;
     onSuccess: () => void;
     trigger?: React.ReactNode;
 }) {
     const isEdit = !!perm;
-    const { data, setData, post, put, reset, processing, errors } = useForm({
-        name: perm?.name || '',
-    });
+    const { data, setData, post, put, reset, processing, errors } =
+        useForm<PermissionFormData>({
+            name: perm?.name || '',
+        });
     const [open, setOpen] = useState(false);
 
     const submit = (e: React.FormEvent) => {

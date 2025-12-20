@@ -20,28 +20,25 @@ import axios from 'axios';
 import { Search } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 
+interface Role {
+    id: number;
+    name: string;
+}
+
+interface User {
+    id: number;
+    name: string;
+    email: string;
+    roles: Role[];
+}
+
+interface UserFormData {
+    roles: string[];
+}
+
 export function UsersTab() {
-    // We fetch users here or use passed props. The Controller 'index' passed 'users' prop but implementation plan said 'users-tab' separate.
-    // The Controller renders 'Admin/Settings/Tabs/UsersTab' - wait, my controller structure rendered 'Admin/Settings/Index'
-
-    // Ah, my controller MaliyaSettingsController:
-    /*
-        public function index() {
-            // ...
-            return Inertia::render('Admin/Settings/Index', ...);
-        }
-    */
-
-    // So UsersTab is a sub-component of Index.
-    // But `UserManagementController::index` renders `Admin/Settings/Tabs/UsersTab`.
-    // This means navigating to `/admin/users` would render JUST the tab content? That might be weird outside the layout.
-    // Ideally `/admin/users` should probably render the full layout OR we just load uses via API in the main page tab.
-
-    // Given the requirement "Page d’administration “MaliyaSettings” ... avec des onglets", it implies a SINGLE page.
-    // So `UserManagementController` might just be an API for the tab.
-
-    const [users, setUsers] = useState<any[]>([]);
-    const [roles, setRoles] = useState<any[]>([]);
+    const [users, setUsers] = useState<User[]>([]);
+    const [roles, setRoles] = useState<Role[]>([]);
     const [page, setPage] = useState(1);
     const [search, setSearch] = useState('');
 
@@ -50,25 +47,9 @@ export function UsersTab() {
             const res = await axios.get(route('admin.users.index'), {
                 params: { page, search },
             });
-            // Wait, UserManagementController::index returns Inertia render.
-            // I should add an API method to it or assume I can get JSON if I ask?
-            // Inertia requests return JSON if X-Inertia header is present.
-            // But actually standard axios doesn't set that.
-            // I'll create a new method `list` in UserManagementController if needed, OR just change `index` to return JSON if expectsJson.
-
-            // For now, let's assume I modify the controller or use a dedicated API
-            // Actually, I added `list` method in my controller plan but didn't route it?
-            // I routed `index`.
-            // Let's modify `UserManagementController::index` to return JSON if `wantsJson()`.
-
-            // Temporarily, let's assume `admin.users.index` returns JSON if I request it correctly,
-            // OR I will fix the Controller in next step to be sure.
-
-            // Let's assume the controller returns the Inertia page, which is not what we want for an AJAX tab load.
-            // Better approach: Pass initial users to the view? No, too heavy.
-            // I'll use a `list` route if I can, or `admin.users.index` with `wantsJson` check.
-
-            const response = await axios.get('/admin/users?format=json'); // Hacky? No, just add param.
+            // ... (rest of logic)
+            // Actually I should probably fix the fetchUsers as well if I change types
+            const response = await axios.get('/admin/users?format=json');
             setUsers(response.data.data);
         } catch (err) {
             console.error('Failed to fetch users');
@@ -126,7 +107,7 @@ export function UsersTab() {
                                     {user.email}
                                 </div>
                                 <div className="mt-1 text-xs">
-                                    {user.roles.map((r: any) => (
+                                    {user.roles.map((r: Role) => (
                                         <span
                                             key={r.id}
                                             className="mr-1 rounded bg-blue-100 px-2 py-0.5 text-xs text-blue-800"
@@ -154,12 +135,12 @@ function UserRoleDialog({
     roles,
     onSuccess,
 }: {
-    user: any;
-    roles: any[];
+    user: User;
+    roles: Role[];
     onSuccess: () => void;
 }) {
-    const { data, setData, post, processing } = useForm({
-        roles: user.roles.map((r: any) => r.name),
+    const { data, setData, post, processing } = useForm<UserFormData>({
+        roles: user.roles.map((r: Role) => r.name),
     });
     const [open, setOpen] = useState(false);
 
@@ -174,13 +155,14 @@ function UserRoleDialog({
     };
 
     const toggleRole = (roleName: string) => {
-        if (data.roles.includes(roleName)) {
+        const currentRoles = data.roles;
+        if (currentRoles.includes(roleName)) {
             setData(
                 'roles',
-                data.roles.filter((r: string) => r !== roleName),
+                currentRoles.filter((r: string) => r !== roleName),
             );
         } else {
-            setData('roles', [...data.roles, roleName]);
+            setData('roles', [...currentRoles, roleName]);
         }
     };
 

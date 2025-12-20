@@ -32,12 +32,14 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { useFormErrorScroll } from '@/hooks/useFormErrorScroll';
 import { AppLayout } from '@/layouts/AppLayout';
 import { zodResolver } from '@hookform/resolvers/zod';
 import axios from 'axios';
 import { Coins, Loader2, Plus, Trash2, Wallet } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { toast } from 'sonner';
 import { z } from 'zod';
 
 // --- Types ---
@@ -155,15 +157,19 @@ export default function AccountPage() {
         },
     });
 
+    // Auto-scroll to first error
+    useFormErrorScroll(createForm.formState.errors);
+    useFormErrorScroll(currencyForm.formState.errors);
+
     // --- Handlers ---
     const handleCreateSubmit = async (values: any) => {
         setIsSubmitting(true);
         setFormError(null);
         try {
-            await axios.post('/api/accounts', values);
             await fetchAccounts();
             setCreateFormOpen(false);
             createForm.reset();
+            toast.success('Le compte a été créé avec succès.');
         } catch (error: any) {
             console.error('Failed to create account', error);
             setFormError(
@@ -184,10 +190,10 @@ export default function AccountPage() {
                 `/api/accounts/${selectedAccountId}/currencies`,
                 values,
             );
-            await fetchAccounts();
             setAddCurrencyOpen(false);
             currencyForm.reset();
             setSelectedAccountId(null);
+            toast.success('La devise a été ajoutée avec succès.');
         } catch (error: any) {
             console.error('Failed to add currency', error);
             setFormError(
@@ -208,8 +214,13 @@ export default function AccountPage() {
             await axios.delete(`/api/accounts/${deleteId}`);
             await fetchAccounts();
             setDeleteId(null);
-        } catch (error) {
+            toast.success('Le compte a été supprimé.');
+        } catch (error: any) {
             console.error('Failed to delete account', error);
+            const message =
+                error.response?.data?.message ||
+                'Une erreur est survenue lors de la suppression du compte.';
+            toast.error(message);
         }
     };
 

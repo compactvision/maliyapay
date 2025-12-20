@@ -17,7 +17,8 @@ class OnTransactionCreated
 {
     public function __construct(
         private PerformanceMetricRepositoryInterface $metricRepository,
-        private GamificationProfileRepositoryInterface $gamificationRepository
+        private GamificationProfileRepositoryInterface $gamificationRepository,
+        private \App\Modules\HabitPerformance\Domain\Services\FinancialPerformanceService $financialPerformanceService
     ) {
     }
 
@@ -71,5 +72,11 @@ class OnTransactionCreated
         $profile->maintainStreak($event->date);
 
         $this->gamificationRepository->save($profile);
+
+        // 3. Real-time Budget Check
+        $user = \App\Models\User::find($event->userId);
+        if ($user) {
+            $this->financialPerformanceService->checkBudgetThresholds($user);
+        }
     }
 }

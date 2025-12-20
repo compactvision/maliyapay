@@ -17,48 +17,38 @@ class GenerateDailyTaskPerformanceCommandHandler
 {
     public function __construct(
         private HabitInsightRepositoryInterface $habitInsightRepository,
-        private PerformanceMetricRepositoryInterface $performanceMetricRepository
+        private \App\Modules\HabitPerformance\Domain\Services\TaskPerformanceService $taskPerformanceService,
+        private \App\Modules\HabitPerformance\Domain\Repositories\GamificationProfileRepositoryInterface $gamificationRepository
     ) {
     }
 
     public function handle(GenerateDailyTaskPerformanceCommand $command): void
     {
-        $today = new DateTimeImmutable('today');
+        $user = \App\Models\User::find($command->userId);
+        if (!$user) return;
+
+        $performance = $this->taskPerformanceService->calculateDailyCompletion($user);
         
-        $metric = $this->performanceMetricRepository->findByDate(
-            InsightType::TASK,
-            $today
-        );
-
-        if (!$metric) {
-            // No activity today
-            $scoreVal = 0;
-            $summary = "Aucune tâche complétée aujourd'hui.";
-        } else {
-            // Simple logic: if achieved >= 1, score 100 (MVP). 
-            // In real world: achieved / expected * 100.
-            // Since we don't track 'expected' accurately yet (need Routine integration),
-            // let's say 3 tasks is a "good day" (100%), 1 is 33%.
-            $target = 3.0; // Arbitrary target strictly for MVP demo
-            $scoreVal = (int) min(100, ($metric->achieved() / $target) * 100);
-            
-            if ($scoreVal >= 80) {
-                $summary = "Excellente productivité ! Tu as maintenu tes habitudes.";
-            } elseif ($scoreVal >= 50) {
-                $summary = "Bon travail, continue sur cette lancée.";
-            } else {
-                $summary = "Un peu de relâchement aujourd'hui, on reprend demain !";
-            }
-        }
-
+        // Update Insight
         $insight = HabitInsight::create(
             Uuid::uuid4(),
             InsightType::TASK,
             Period::DAY,
-            Score::fromInt($scoreVal),
-            $summary
+            Score::fromInt($performance->disciplineScore),
+            $performance->advice
         );
-
         $this->habitInsightRepository->save($insight);
+
+        // Update Gamification Profile Score
+        $profile = $this->gamificationRepository->findByUserId($user->id);
+        if ($profile) {
+            $profile->updateTaskScore($performance->disciplineScore);
+            // Award points for completion
+            $this->taskPerformanceService->awardTaskPoints($user, $performance);
+            $this->gamificationRepository->save($profile);
+        }
+
+        // Send task reminders
+        $this->taskPerformanceService->sendTaskReminders($user);
     }
 }

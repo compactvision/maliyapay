@@ -20,7 +20,6 @@ export default function ProfilePage() {
                     <TabsList className="grid w-full grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 h-auto p-1 bg-slate-100 dark:bg-slate-800">
                         <TabsTrigger value="info">Informations</TabsTrigger>
                         <TabsTrigger value="profile">Profil</TabsTrigger>
-                        <TabsTrigger value="password">Mot de passe</TabsTrigger>
                         <TabsTrigger value="danger">Zone à risque</TabsTrigger>
                     </TabsList>
 
@@ -31,10 +30,6 @@ export default function ProfilePage() {
 
                     <TabsContent value="profile" className="space-y-6">
                         <ProfileInfoForm user={user} />
-                    </TabsContent>
-
-                    <TabsContent value="password" className="space-y-6">
-                        <PasswordChangeForm />
                     </TabsContent>
 
                     <TabsContent value="danger" className="space-y-6">

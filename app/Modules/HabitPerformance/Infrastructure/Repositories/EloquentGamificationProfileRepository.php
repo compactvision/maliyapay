@@ -31,6 +31,11 @@ class EloquentGamificationProfileRepository implements GamificationProfileReposi
                 'streak_count' => $profile->streakCount(),
                 'last_activity_date' => $profile->lastActivityDate(),
                 'last_daily_bonus_claimed_at' => $profile->lastDailyBonusClaimedAt(),
+                'financial_score' => $profile->financialScore(),
+                'task_score' => $profile->taskScore(),
+                'overall_score' => $profile->overallScore(),
+                'level' => $profile->level(),
+                'streak_days' => $profile->streakDays(),
             ]
         );
     }
@@ -46,7 +51,12 @@ class EloquentGamificationProfileRepository implements GamificationProfileReposi
             (int) $model->streak_count,
             $model->last_activity_date ? DateTimeImmutable::createFromMutable($model->last_activity_date) : null,
             $model->last_daily_bonus_claimed_at ? DateTimeImmutable::createFromMutable($model->last_daily_bonus_claimed_at) : null,
-            DateTimeImmutable::createFromMutable($model->updated_at)
+            DateTimeImmutable::createFromMutable($model->updated_at),
+            (int) ($model->financial_score ?? 0),
+            (int) ($model->task_score ?? 0),
+            (int) ($model->overall_score ?? 0),
+            (int) ($model->level ?? 1),
+            (int) ($model->streak_days ?? 0)
         );
     }
 }

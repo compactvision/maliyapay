@@ -31,13 +31,14 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { useFormErrorScroll } from '@/hooks/useFormErrorScroll';
 import { AppLayout } from '@/layouts/AppLayout';
 import { zodResolver } from '@hookform/resolvers/zod';
 import axios from 'axios';
 import { Loader2, Pencil, Plus, Trash2, Wallet } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { z } from 'zod';
+import z from 'zod';
 
 // Interfaces
 interface Category {
@@ -82,6 +83,9 @@ export default function Budget() {
             period: 'monthly',
         },
     });
+
+    // Auto-scroll to first error
+    useFormErrorScroll(form.formState.errors);
 
     const fetchData = async () => {
         try {
@@ -190,88 +194,106 @@ export default function Budget() {
                         <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
                     </div>
                 ) : (
-                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                        {budgets.map((budget) => {
-                            const category = categories.find(
-                                (c) => c.id === budget.category_id,
-                            );
-                            // Use real spent amount from backend
-                            const spent = budget.spent_amount || 0;
-                            const percentage = Math.min(
-                                (spent / budget.amount) * 100,
-                                100,
-                            );
+                    <>
+                        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                            {budgets.map((budget) => {
+                                const category = categories.find(
+                                    (c) => c.id === budget.category_id,
+                                );
+                                // Use real spent amount from backend
+                                const spent = budget.spent_amount || 0;
+                                const percentage = Math.min(
+                                    (spent / budget.amount) * 100,
+                                    100,
+                                );
 
-                            return (
-                                <Card
-                                    key={budget.id}
-                                    className="transition-shadow hover:shadow-md"
-                                >
-                                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                        <CardTitle className="text-sm font-medium">
-                                            {category?.name ||
-                                                'Catégorie inconnue'}
-                                        </CardTitle>
-                                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-100 p-1.5 text-emerald-600">
-                                            <Wallet className="h-4 w-4" />
-                                        </div>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <div className="mb-1 text-2xl font-bold">
-                                            {budget.amount} {budget.currency}
-                                        </div>
-                                        <p className="mb-4 text-xs text-muted-foreground">
-                                            {periodLabels[budget.period]}
-                                        </p>
-
-                                        <div className="space-y-1">
-                                            <div className="flex justify-between text-xs text-muted-foreground">
-                                                <span>Dépensé</span>
-                                                <span>
-                                                    {spent} {budget.currency}
-                                                </span>
+                                return (
+                                    <Card
+                                        key={budget.id}
+                                        className="transition-shadow hover:shadow-md"
+                                    >
+                                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                            <CardTitle className="text-sm font-medium">
+                                                {category?.name ||
+                                                    'Catégorie inconnue'}
+                                            </CardTitle>
+                                            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-100 p-1.5 text-emerald-600">
+                                                <Wallet className="h-4 w-4" />
                                             </div>
-                                            <Progress
-                                                value={percentage}
-                                                className="h-2"
-                                                indicatorColor={category?.color}
-                                            />
-                                        </div>
-                                    </CardContent>
-                                    <CardFooter className="flex justify-end gap-2 border-t bg-gray-50/50 p-2 dark:bg-gray-800/50">
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            onClick={() => handleEdit(budget)}
-                                        >
-                                            <Pencil className="h-4 w-4 text-blue-600" />
-                                            <span className="sr-only">
-                                                Modifier
-                                            </span>
-                                        </Button>
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            onClick={() =>
-                                                setDeleteId(budget.id)
-                                            }
-                                        >
-                                            <Trash2 className="h-4 w-4 text-red-600" />
-                                            <span className="sr-only">
-                                                Supprimer
-                                            </span>
-                                        </Button>
-                                    </CardFooter>
-                                </Card>
-                            );
-                        })}
+                                        </CardHeader>
+                                        <CardContent>
+                                            <div className="mb-1 text-2xl font-bold">
+                                                {budget.amount}{' '}
+                                                {budget.currency}
+                                            </div>
+                                            <p className="mb-4 text-xs text-muted-foreground">
+                                                {periodLabels[budget.period]}
+                                            </p>
+
+                                            <div className="space-y-1">
+                                                <div className="flex justify-between text-xs text-muted-foreground">
+                                                    <span>Dépensé</span>
+                                                    <span>
+                                                        {spent}{' '}
+                                                        {budget.currency}
+                                                    </span>
+                                                </div>
+                                                <Progress
+                                                    value={percentage}
+                                                    className="h-2"
+                                                    indicatorColor={
+                                                        category?.color
+                                                    }
+                                                />
+                                            </div>
+                                        </CardContent>
+                                        <CardFooter className="flex justify-end gap-2 border-t bg-gray-50/50 p-2 dark:bg-gray-800/50">
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                onClick={() =>
+                                                    handleEdit(budget)
+                                                }
+                                            >
+                                                <Pencil className="h-4 w-4 text-blue-600" />
+                                                <span className="sr-only">
+                                                    Modifier
+                                                </span>
+                                            </Button>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                onClick={() =>
+                                                    setDeleteId(budget.id)
+                                                }
+                                            >
+                                                <Trash2 className="h-4 w-4 text-red-600" />
+                                                <span className="sr-only">
+                                                    Supprimer
+                                                </span>
+                                            </Button>
+                                        </CardFooter>
+                                    </Card>
+                                );
+                            })}
+                        </div>
                         {budgets.length === 0 && (
-                            <div className="col-span-full flex flex-col items-center justify-center py-12 text-center text-muted-foreground">
-                                <Wallet className="h-12 w-12 opacity-20" />
-                                <p className="mt-4">Aucun budget défini</p>
-                            </div>
+                            <Card>
+                                <CardContent className="flex flex-col items-center justify-center py-12">
+                                    <div className="mb-4 rounded-full bg-muted p-4">
+                                        <Wallet className="h-8 w-8 text-muted-foreground" />
+                                    </div>
+                                    <h3 className="text-lg font-semibold">
+                                        Aucun budget
+                                    </h3>
+                                    <p className="mt-1 text-sm text-muted-foreground">
+                                        Créez votre premier budget pour
+                                        commencer
+                                    </p>
+                                </CardContent>
+                            </Card>
                         )}
-                    </div>
+                    </>
                 )}
 
                 <Dialog open={open} onOpenChange={setOpen}>

@@ -1,0 +1,95 @@
+name: Deploy to o2switch
+
+on:
+  push:
+    branches: [ "developp" ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.4'
+        extensions: mbstring, intl, pdo_mysql
+        coverage: none
+
+    - name: Install Composer Dependencies
+      run: composer install --no-ansi --no-interaction --no-progress --prefer-dist --optimize-autoloader --no-dev
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+
+    - name: Install NPM Dependencies
+      run: npm ci
+
+    - name: Build Frontend Assets
+      run: npm run build
+
+    - name: Prepare Deployment Artifacts
+      run: |
+        tar -czf deployment.tar.gz . \
+          --exclude=.git \
+          --exclude=.github \
+          --exclude=node_modules \
+          --exclude=tests \
+          --exclude=storage \
+          --exclude=.env \
+          --exclude=.editorconfig \
+          --exclude=.gitattributes \
+          --exclude=.gitignore \
+          --exclude=README.md \
+          --exclude=phpunit.xml
+
+    - name: Deploy to Server
+      uses: appleboy/scp-action@master
+      with:
+        host: ${{ secrets.SSH_HOST }}
+        username: ${{ secrets.SSH_USERNAME }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        port: ${{ secrets.SSH_PORT || '22' }}
+        source: "deployment.tar.gz"
+        target: "${{ secrets.DEPLOY_PATH }}"
+        strip_components: 0
+
+    - name: Extract and Finalize on Server
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.SSH_HOST }}
+        username: ${{ secrets.SSH_USERNAME }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        port: ${{ secrets.SSH_PORT || '22' }}
+        script: |
+          cd ${{ secrets.DEPLOY_PATH }}
+          
+          # Extract files
+          tar -xzf deployment.tar.gz
+          rm deployment.tar.gz
+          
+          # Ensure storage directories exist and have permissions
+          # Note: On shared hosting, we typically don't have sudo, so we assume the user owns the files
+          mkdir -p storage/framework/{sessions,views,cache}
+          mkdir -p storage/logs
+          chmod -R 775 storage bootstrap/cache
+          
+          # Link storage
+          php artisan storage:link
+          
+          # Run migrations
+          # Note: Ensure DB credentials in .env are correct on the server
+          php artisan migrate --force
+          
+          # Optimize
+          php artisan config:cache
+          php artisan route:cache
+          php artisan view:cache
+          
+          # Restart queue (if supervisor is used, otherwise this might be skipped or adapted)
+          # php artisan queue:restart
