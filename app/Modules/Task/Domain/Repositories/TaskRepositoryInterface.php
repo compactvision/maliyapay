@@ -23,4 +23,9 @@ interface TaskRepositoryInterface
      * @return Task[]
      */
     public function findAllActive(): array;
+
+    /**
+     * @return Task[]
+     */
+    public function findByUserIdAndDateRange(int $userId, \DateTimeInterface $startDate, \DateTimeInterface $endDate): array;
 }

@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Bell, CheckCheck } from 'lucide-react';
 import { NotificationItem } from './NotificationItem';
+import { router } from '@inertiajs/react';
 
 interface NotificationPanelProps {
     notifications: Notification[];
@@ -69,7 +70,7 @@ export function NotificationPanel({
                     variant="ghost"
                     className="w-full justify-center text-sm"
                     onClick={() => {
-                        window.location.href = route('notification');
+                        router.visit(route('notification'));
                     }}
                 >
                     Voir toutes les notifications

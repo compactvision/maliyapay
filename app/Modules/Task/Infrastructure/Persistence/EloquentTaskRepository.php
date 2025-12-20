@@ -96,4 +96,18 @@ class EloquentTaskRepository implements TaskRepositoryInterface
 
         return $rows->map(fn($row) => $this->hydrate($row))->all();
     }
+
+    public function findByUserIdAndDateRange(int $userId, \DateTimeInterface $startDate, \DateTimeInterface $endDate): array
+    {
+        $rows = DB::table('tasks')
+            ->where('user_id', $userId)
+            ->whereBetween('due_date', [
+                $startDate->format('Y-m-d'),
+                $endDate->format('Y-m-d')
+            ])
+            ->orderBy('due_date', 'ASC')
+            ->get();
+
+        return $rows->map(fn($row) => $this->hydrate($row))->all();
+    }
 }

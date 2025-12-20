@@ -19,6 +19,7 @@ Route::get('/user', function (Request $request) {
 // Auth Routes (from previous context, though they might be in AuthController)
 Route::post('/auth/register', [AuthController::class, 'register']);
 Route::post('/auth/login', [AuthController::class, 'login']);
+Route::post('/auth/two-factor-challenge', [AuthController::class, 'twoFactorLogin']);
 Route::post('/auth/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
 
 // Email Verification
@@ -37,53 +38,94 @@ Route::post('/reset-password', [AuthController::class, 'resetPassword'])
 // Protected Routes
 Route::middleware(['auth:sanctum'])->group(function () {
     // Categories
-    Route::apiResource('categories', CategoryController::class);
+    Route::middleware('permission:view categories')->group(function () {
+        Route::get('categories', [CategoryController::class, 'index']);
+        Route::get('categories/{id}', [CategoryController::class, 'show']);
+    });
+    Route::post('categories', [CategoryController::class, 'store'])->middleware('permission:create categories');
+    Route::put('categories/{id}', [CategoryController::class, 'update'])->middleware('permission:edit categories');
+    Route::delete('categories/{id}', [CategoryController::class, 'destroy'])->middleware('permission:delete categories');
     
     // Accounts
-    Route::apiResource('accounts', AccountController::class);
-    Route::post('/accounts/{id}/currencies', [AccountController::class, 'addCurrency']);
+    Route::middleware('permission:view accounts')->group(function () {
+        Route::get('accounts', [AccountController::class, 'index']);
+        Route::get('accounts/{id}', [AccountController::class, 'show']);
+    });
+    Route::middleware('permission:create accounts')->post('accounts', [AccountController::class, 'store']);
+    Route::middleware('permission:edit accounts')->group(function () {
+        Route::put('accounts/{id}', [AccountController::class, 'update']);
+        Route::post('/accounts/{id}/currencies', [AccountController::class, 'addCurrency']);
+    });
+    Route::delete('accounts/{id}', [AccountController::class, 'destroy'])->middleware('permission:delete accounts');
 
     // Budgets
-    Route::apiResource('budgets', \App\Modules\Budget\Presentation\Controllers\BudgetController::class);
+    Route::middleware('permission:view budgets')->group(function () {
+        Route::get('budgets', [BudgetController::class, 'index']);
+        Route::get('budgets/{id}', [BudgetController::class, 'show']);
+    });
+    Route::post('budgets', [BudgetController::class, 'store'])->middleware('permission:create budgets');
+    Route::put('budgets/{id}', [BudgetController::class, 'update'])->middleware('permission:edit budgets');
+    Route::delete('budgets/{id}', [BudgetController::class, 'destroy'])->middleware('permission:delete budgets');
 
     // Dashboard
-    Route::get('/dashboard', [\App\Modules\Dashboard\Presentation\Controllers\DashboardController::class, 'index']);
+    Route::get('/dashboard', [\App\Modules\Dashboard\Presentation\Controllers\DashboardController::class, 'index'])
+        ->middleware('permission:view dashboard');
 
     // Statistics
-    Route::get('statistics', [\App\Modules\Statistic\Presentation\Controllers\StatisticController::class, 'index']);
+    Route::get('statistics', [\App\Modules\Statistic\Presentation\Controllers\StatisticController::class, 'index'])
+        ->middleware('permission:view statistics');
 
     // Transactions
-    Route::get('transactions', [TransactionController::class, 'index']);
-    Route::post('transactions', [TransactionController::class, 'store']);
-    Route::put('transactions/{id}', [TransactionController::class, 'update']);
-    Route::delete('transactions/{id}', [TransactionController::class, 'destroy']);
+    Route::middleware('permission:view transactions')->get('transactions', [TransactionController::class, 'index']);
+    Route::post('transactions', [TransactionController::class, 'store'])->middleware('permission:create transactions');
+    Route::put('transactions/{id}', [TransactionController::class, 'update'])->middleware('permission:edit transactions');
+    Route::delete('transactions/{id}', [TransactionController::class, 'destroy'])->middleware('permission:delete transactions');
 
     // Tasks
-    Route::get('tasks', [TaskController::class, 'index']);
-    Route::post('tasks', [TaskController::class, 'store']);
-    Route::put('tasks/{id}', [TaskController::class, 'update']);
-    Route::post('tasks/{id}/toggle', [TaskController::class, 'toggleCompletion']);
-    Route::delete('tasks/{id}', [TaskController::class, 'destroy']);
+    Route::middleware('permission:view tasks')->get('tasks', [TaskController::class, 'index']);
+    Route::post('tasks', [TaskController::class, 'store'])->middleware('permission:create tasks');
+    Route::middleware('permission:edit tasks')->group(function () {
+        Route::put('tasks/{id}', [TaskController::class, 'update']);
+        Route::post('tasks/{id}/toggle', [TaskController::class, 'toggleCompletion']);
+    });
+    Route::delete('tasks/{id}', [TaskController::class, 'destroy'])->middleware('permission:delete tasks');
 
     // Routines
-    Route::get('routines', [RoutineController::class, 'index']);
-    Route::post('routines', [RoutineController::class, 'store']);
-    Route::put('routines/{id}', [RoutineController::class, 'update']);
-    Route::post('routines/{id}/toggle', [RoutineController::class, 'toggleActive']);
-    Route::delete('routines/{id}', [RoutineController::class, 'destroy']);
-    Route::get('routine-tasks/day/{dayOfWeek}', [RoutineController::class, 'tasksForDay']);
-
-    // Routine Tasks
-    Route::get('routines/{routineId}/tasks', [RoutineTaskController::class, 'index']);
-    Route::post('routines/{routineId}/tasks', [RoutineTaskController::class, 'store']);
-    Route::put('routines/{routineId}/tasks/{taskId}', [RoutineTaskController::class, 'update']);
-    Route::delete('routines/{routineId}/tasks/{taskId}', [RoutineTaskController::class, 'destroy']);
+    Route::middleware('permission:view routines')->group(function () {
+        Route::get('routines', [RoutineController::class, 'index']);
+        Route::get('routine-tasks/day/{dayOfWeek}', [RoutineController::class, 'tasksForDay']);
+        
+        // Routine Tasks view
+        Route::get('routines/{routineId}/tasks', [RoutineTaskController::class, 'index']);
+    });
+    
+    Route::post('routines', [RoutineController::class, 'store'])->middleware('permission:create routines');
+    
+    Route::middleware('permission:edit routines')->group(function () {
+        Route::put('routines/{id}', [RoutineController::class, 'update']);
+        Route::post('routines/{id}/toggle', [RoutineController::class, 'toggleActive']);
+        
+        // Routine Tasks edit
+        Route::post('routines/{routineId}/tasks', [RoutineTaskController::class, 'store']);
+        Route::put('routines/{routineId}/tasks/{taskId}', [RoutineTaskController::class, 'update']);
+    });
+    
+    Route::middleware('permission:delete routines')->group(function () {
+        Route::delete('routines/{id}', [RoutineController::class, 'destroy']);
+        Route::delete('routines/{routineId}/tasks/{taskId}', [RoutineTaskController::class, 'destroy']);
+    });
 
     // Notifications
-    Route::get('notifications', [NotificationController::class, 'index']);
-    Route::get('notifications/unread-count', [NotificationController::class, 'unreadCount']);
-    Route::post('notifications/mark-all-as-read', [NotificationController::class, 'markAllAsRead']);
-    Route::delete('notifications/delete-all', [NotificationController::class, 'deleteAll']);
-    Route::post('notifications/{id}/mark-as-read', [NotificationController::class, 'markAsRead']);
-    Route::delete('notifications/{id}', [NotificationController::class, 'delete']);
+    Route::middleware('permission:view notifications')->group(function () {
+        Route::get('notifications', [NotificationController::class, 'index']);
+        Route::get('notifications/unread-count', [NotificationController::class, 'unreadCount']);
+    });
+    
+    Route::middleware('permission:manage notifications')->group(function () {
+        Route::post('notifications/mark-all-as-read', [NotificationController::class, 'markAllAsRead']);
+        Route::delete('notifications/delete-all', [NotificationController::class, 'deleteAll']);
+        Route::post('notifications/{id}/mark-as-read', [NotificationController::class, 'markAsRead']);
+    });
+    
+    Route::delete('notifications/{id}', [NotificationController::class, 'delete'])->middleware('permission:delete notifications');
 });

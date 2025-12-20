@@ -17,7 +17,10 @@ class PerformanceMetric
         private float $achieved,
         private float $expected,
         private float $delta,
-        private ?string $metadata = null
+        private ?string $metadata = null,
+        private float $budgetAdherenceScore = 0,
+        private float $spendingVsBudgetRatio = 0,
+        private ?array $categoriesOverBudget = null
     ) {
     }
 
@@ -51,4 +54,7 @@ class PerformanceMetric
     public function expected(): float { return $this->expected; }
     public function delta(): float { return $this->delta; }
     public function metadata(): ?string { return $this->metadata; }
+    public function budgetAdherenceScore(): float { return $this->budgetAdherenceScore; }
+    public function spendingVsBudgetRatio(): float { return $this->spendingVsBudgetRatio; }
+    public function categoriesOverBudget(): ?array { return $this->categoriesOverBudget; }
 }

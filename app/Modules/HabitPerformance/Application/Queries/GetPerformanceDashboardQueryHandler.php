@@ -46,9 +46,13 @@ class GetPerformanceDashboardQueryHandler
         
         $gamificationData = [
             'xp' => $profile ? $profile->xp() : 0,
-            'level' => $profile ? $profile->currentLevel() : 1,
+            'level' => $profile ? $profile->level() : 1,
             'coins' => $profile ? $profile->coins() : 0,
             'streak' => $profile ? $profile->streakCount() : 0,
+            'streakDays' => $profile ? $profile->streakDays() : 0,
+            'overallScore' => $profile ? $profile->overallScore() : 0,
+            'financialScore' => $profile ? $profile->financialScore() : 0,
+            'taskScore' => $profile ? $profile->taskScore() : 0,
             'dailyBonusAvailable' => $profile ? $profile->canClaimDailyBonus(new DateTimeImmutable()) : true,
         ];
 

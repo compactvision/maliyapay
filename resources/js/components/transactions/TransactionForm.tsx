@@ -35,6 +35,7 @@ import {
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ui/use-toast';
+import { useFormErrorScroll } from '@/hooks/useFormErrorScroll';
 import { cn } from '@/lib/utils';
 import { Account } from '@/types/account';
 import { Category } from '@/types/category';
@@ -105,6 +106,9 @@ export function TransactionForm({
             notes: transaction?.notes || '',
         },
     });
+
+    // Auto-scroll to first error
+    useFormErrorScroll(form.formState.errors);
 
     useEffect(() => {
         if (open) {
@@ -444,6 +448,20 @@ export function TransactionForm({
                                             </Carousel>
                                         </div>
                                     </FormControl>
+                                    {field.value && (
+                                        <p className="mt-1 text-xs text-muted-foreground">
+                                            Compte sélectionné:{' '}
+                                            <span className="font-medium text-foreground">
+                                                {
+                                                    accounts.find(
+                                                        (a) =>
+                                                            a.id ===
+                                                            field.value,
+                                                    )?.name
+                                                }
+                                            </span>
+                                        </p>
+                                    )}
                                     <FormMessage className="text-[10px] sm:text-xs" />
                                 </FormItem>
                             )}

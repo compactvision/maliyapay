@@ -52,6 +52,8 @@ class NotificationServiceProvider extends ServiceProvider
                 $app->make(NotificationRepositoryInterface::class)
             );
         });
+
+        $this->app->singleton(\App\Modules\Notification\Domain\Services\NotificationService::class);
     }
 
     public function boot(): void

@@ -19,7 +19,12 @@ class GamificationProfileModel extends Model
         'coins',
         'streak_count',
         'last_activity_date',
-        'last_daily_bonus_claimed_at'
+        'last_daily_bonus_claimed_at',
+        'financial_score',
+        'task_score',
+        'overall_score',
+        'level',
+        'streak_days',
     ];
 
     protected $casts = [

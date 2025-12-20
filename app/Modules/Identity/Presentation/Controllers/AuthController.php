@@ -106,6 +106,84 @@ class AuthController extends Controller
         RateLimiter::clear($key);
 
         $user = Auth::user();
+
+        // Check for two factor authentication
+        if ($user->hasEnabledTwoFactorAuthentication()) {
+            // Logout and require 2FA challenge
+            Auth::logout();
+            $request->session()->put('login.id', $user->id);
+            $request->session()->put('login.remember', $request->boolean('remember'));
+
+            return response()->json([
+                'two_factor' => true,
+                'email' => $user->email,
+            ]);
+        }
+
+        $token = $user->createToken('auth-token')->plainTextToken;
+
+        return response()->json([
+            'message' => 'Connexion réussie',
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'avatar' => $user->avatar,
+                'email_verified_at' => $user->email_verified_at,
+                'roles' => $user->getRoleNames(),
+                'permissions' => $user->getAllPermissions()->pluck('name'),
+            ],
+            'token' => $token,
+        ]);
+    }
+
+    /**
+     * Handle two-factor authentication challenge
+     */
+    public function twoFactorLogin(Request $request, \Laravel\Fortify\Contracts\TwoFactorAuthenticationProvider $provider): JsonResponse
+    {
+        $userId = $request->session()->get('login.id');
+
+        if (! $userId) {
+            return response()->json([
+                'message' => 'La session a expiré.',
+            ], Response::HTTP_UNAUTHORIZED);
+        }
+
+        $user = User::findOrFail($userId);
+
+        $request->validate([
+            'code' => ['nullable', 'string'],
+            'recovery_code' => ['nullable', 'string'],
+        ]);
+
+        if ($code = $request->code) {
+            if (! $provider->verify(decrypt($user->two_factor_secret), $code)) {
+                throw ValidationException::withMessages([
+                    'code' => ['Le code d\'authentification fourni est invalide.'],
+                ]);
+            }
+        } elseif ($recoveryCode = $request->recovery_code) {
+            $userRecoveryCode = collect($user->recoveryCodes())->first(function ($code) use ($recoveryCode) {
+                return hash_equals($code, $recoveryCode);
+            });
+
+            if (! $userRecoveryCode) {
+                throw ValidationException::withMessages([
+                    'recovery_code' => ['Le code de secours fourni est invalide.'],
+                ]);
+            }
+
+            $user->replaceRecoveryCode($userRecoveryCode);
+        } else {
+            throw ValidationException::withMessages([
+                'code' => ['Un code est requis.'],
+            ]);
+        }
+
+        Auth::login($user, $request->session()->get('login.remember', false));
+        $request->session()->forget(['login.id', 'login.remember']);
+
         $token = $user->createToken('auth-token')->plainTextToken;
 
         return response()->json([
@@ -128,8 +206,12 @@ class AuthController extends Controller
      */
     public function logout(Request $request): JsonResponse
     {
-        // Revoke current token
-        $request->user()->currentAccessToken()->delete();
+        // Revoke current token if it exists and is deletable (not a TransientToken)
+        $token = $request->user()->currentAccessToken();
+        
+        if ($token && method_exists($token, 'delete')) {
+            $token->delete();
+        }
 
         return response()->json([
             'message' => 'Déconnexion réussie',

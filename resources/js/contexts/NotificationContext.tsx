@@ -6,6 +6,7 @@ import {
     useCallback,
     useContext,
     useEffect,
+    useMemo,
     useState,
 } from 'react';
 
@@ -198,21 +199,35 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
         fetchNotifications,
     ]);
 
+    const value = useMemo(
+        () => ({
+            notifications,
+            unreadCount,
+            isLoading,
+            error,
+            fetchNotifications,
+            fetchUnreadCount,
+            markAsRead,
+            markAllAsRead,
+            deleteNotification,
+            deleteAllNotifications,
+        }),
+        [
+            notifications,
+            unreadCount,
+            isLoading,
+            error,
+            fetchNotifications,
+            fetchUnreadCount,
+            markAsRead,
+            markAllAsRead,
+            deleteNotification,
+            deleteAllNotifications,
+        ],
+    );
+
     return (
-        <NotificationContext.Provider
-            value={{
-                notifications,
-                unreadCount,
-                isLoading,
-                error,
-                fetchNotifications,
-                fetchUnreadCount,
-                markAsRead,
-                markAllAsRead,
-                deleteNotification,
-                deleteAllNotifications,
-            }}
-        >
+        <NotificationContext.Provider value={value}>
             {children}
         </NotificationContext.Provider>
     );

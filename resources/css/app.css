@@ -1,6 +1,7 @@
 @import 'tailwindcss';
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@700;900&display=swap');
 
-@import "tw-animate-css";
+@import 'tw-animate-css';
 
 @source '../views';
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
@@ -142,3 +143,114 @@
     }
 }
 
+@font-face {
+    font-family: 'Instrument Sans';
+    src: url('/fonts/instrument-sans/InstrumentSans-Regular.woff2')
+        format('woff2');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Instrument Sans';
+    src: url('/fonts/instrument-sans/InstrumentSans-Medium.woff2')
+        format('woff2');
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Instrument Sans';
+    src: url('/fonts/instrument-sans/InstrumentSans-SemiBold.woff2')
+        format('woff2');
+    font-weight: 600;
+    font-style: normal;
+    font-display: swap;
+}
+
+/* SplashScreen Animations */
+@keyframes float {
+    0%,
+    100% {
+        transform: translateY(0px) rotate(0deg);
+        opacity: 0;
+    }
+    10% {
+        opacity: 1;
+    }
+    90% {
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(-100vh) rotate(360deg);
+        opacity: 0;
+    }
+}
+
+@keyframes float-reverse {
+    0%,
+    100% {
+        transform: translateY(0px) rotate(0deg);
+        opacity: 0;
+    }
+    10% {
+        opacity: 1;
+    }
+    90% {
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(100vh) rotate(-360deg);
+        opacity: 0;
+    }
+}
+
+@keyframes pulse-glow {
+    0%,
+    100% {
+        box-shadow: 0 0 20px rgba(16, 185, 129, 0.5);
+    }
+    50% {
+        box-shadow: 0 0 40px rgba(16, 185, 129, 0.8);
+    }
+}
+
+@keyframes logo-entrance {
+    0% {
+        transform: perspective(1000px) rotateX(25deg) rotateY(-30deg) scale(0.5);
+        opacity: 0;
+        filter: blur(10px);
+    }
+    50% {
+        transform: perspective(1000px) rotateX(25deg) rotateY(-30deg) scale(1.1);
+        opacity: 1;
+        filter: blur(0px);
+    }
+    100% {
+        transform: perspective(1000px) rotateX(25deg) rotateY(-30deg) scale(1);
+        opacity: 1;
+        filter: blur(0px);
+    }
+}
+
+@keyframes tagline-entrance {
+    0% {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes progress-glow {
+    0% {
+        box-shadow: 0 0 5px rgba(16, 185, 129, 0.5);
+    }
+    100% {
+        box-shadow: 0 0 20px rgba(16, 185, 129, 0.8);
+    }
+}

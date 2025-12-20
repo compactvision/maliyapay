@@ -41,29 +41,57 @@ class RoleAndPermissionSeeder extends Seeder
             'create accounts',
             'edit accounts',
             'delete accounts',
+
+            // Task permissions
+            'view tasks',
+            'create tasks',
+            'edit tasks',
+            'delete tasks',
+
+            // Routine permissions
+            'view routines',
+            'create routines',
+            'edit routines',
+            'delete routines',
+
+            // Habit Performance permissions
+            'view habit-performance',
+            'manage habit-performance',
+
+            // Notification permissions
+            'view notifications',
+            'delete notifications',
+            'manage notifications',
             
             // Statistics permissions
             'view statistics',
+
+            // Dashboard permissions
+            'view dashboard',
+
+            // Settings permissions
+            'view settings',
+            'edit settings',
             
-            // Admin permissions
+            // Identity/Admin permissions
             'manage users',
             'manage roles',
             'manage permissions',
         ];
 
         foreach ($permissions as $permission) {
-            Permission::create(['name' => $permission]);
+            Permission::firstOrCreate(['name' => $permission]);
         }
 
         // Create roles
-        $adminRole = Role::create(['name' => 'admin']);
-        $userRole = Role::create(['name' => 'user']);
+        $adminRole = Role::firstOrCreate(['name' => 'admin']);
+        $userRole = Role::firstOrCreate(['name' => 'user']);
 
         // Assign all permissions to admin
-        $adminRole->givePermissionTo(Permission::all());
+        $adminRole->syncPermissions(Permission::all());
 
         // Assign basic permissions to user
-        $userRole->givePermissionTo([
+        $userRole->syncPermissions([
             'view categories',
             'create categories',
             'edit categories',
@@ -80,7 +108,20 @@ class RoleAndPermissionSeeder extends Seeder
             'create accounts',
             'edit accounts',
             'delete accounts',
+            'view tasks',
+            'create tasks',
+            'edit tasks',
+            'delete tasks',
+            'view routines',
+            'create routines',
+            'edit routines',
+            'delete routines',
+            'view habit-performance',
+            'view notifications',
+            'delete notifications',
             'view statistics',
+            'view dashboard',
+            'view settings',
         ]);
 
         $this->command->info('Roles and permissions created successfully!');

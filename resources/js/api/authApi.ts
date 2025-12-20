@@ -88,6 +88,30 @@ export const authApi = {
     },
 
     /**
+     * Handle two-factor challenge
+     */
+    async loginTwoFactor(data: {
+        code?: string;
+        recovery_code?: string;
+    }): Promise<AuthResponse> {
+        try {
+            const response = await api.post<AuthResponse>(
+                '/two-factor-challenge',
+                data,
+            );
+
+            // Store token
+            if (response.data.token) {
+                localStorage.setItem('auth_token', response.data.token);
+            }
+
+            return response.data;
+        } catch (error) {
+            throw handleApiError(error);
+        }
+    },
+
+    /**
      * Logout user
      */
     async logout(): Promise<void> {

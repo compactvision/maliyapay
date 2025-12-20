@@ -30,6 +30,9 @@ class HabitPerformanceServiceProvider extends ServiceProvider
             GamificationProfileRepositoryInterface::class,
             EloquentGamificationProfileRepository::class
         );
+
+        $this->app->singleton(\App\Modules\HabitPerformance\Domain\Services\FinancialPerformanceService::class);
+        $this->app->singleton(\App\Modules\HabitPerformance\Domain\Services\TaskPerformanceService::class);
     }
 
     public function boot(): void
