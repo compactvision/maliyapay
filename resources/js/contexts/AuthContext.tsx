@@ -150,20 +150,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     const sendVerificationEmail = async (): Promise<void> => {
         try {
-            const response = await fetch(
-                '/api/auth/email/verification-notification',
-                {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
-                    },
-                },
-            );
-
-            if (!response.ok) {
-                throw new Error("Erreur lors de l'envoi de l'email");
-            }
+            await authApi.sendVerificationEmail();
         } catch (err) {
             throw new Error(
                 err instanceof Error
@@ -175,21 +162,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     const forgotPassword = async (email: string): Promise<void> => {
         try {
-            const response = await fetch('/api/auth/forgot-password', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ email }),
-            });
-
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(
-                    data.errors?.email?.[0] || 'Erreur lors de la demande',
-                );
-            }
+            await authApi.forgotPassword({ email });
         } catch (err) {
             throw new Error(
                 err instanceof Error
@@ -206,23 +179,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         password_confirmation: string;
     }): Promise<void> => {
         try {
-            const response = await fetch('/api/auth/reset-password', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(data),
-            });
-
-            const result = await response.json();
-
-            if (!response.ok) {
-                throw new Error(
-                    result.errors?.email?.[0] ||
-                        result.errors?.password?.[0] ||
-                        'Erreur lors de la réinitialisation',
-                );
-            }
+            await authApi.resetPassword(data);
         } catch (err) {
             throw new Error(
                 err instanceof Error

@@ -23,15 +23,15 @@ Route::post('/auth/two-factor-challenge', [AuthController::class, 'twoFactorLogi
 Route::post('/auth/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
 
 // Email Verification
-Route::post('/email/verification-notification', [AuthController::class, 'sendVerificationEmail'])
+Route::post('/auth/email/verification-notification', [AuthController::class, 'sendVerificationEmail'])
     ->middleware(['auth:sanctum', 'throttle:6,1']);
 
 // Password Reset
-Route::post('/forgot-password', [AuthController::class, 'forgotPassword'])
+Route::post('/auth/forgot-password', [AuthController::class, 'forgotPassword'])
     ->middleware('guest')
     ->name('api.password.email');
 
-Route::post('/reset-password', [AuthController::class, 'resetPassword'])
+Route::post('/auth/reset-password', [AuthController::class, 'resetPassword'])
     ->middleware('guest')
     ->name('api.password.update');
 

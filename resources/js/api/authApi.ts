@@ -170,6 +170,44 @@ export const authApi = {
     /**
      * Get stored token
      */
+    /**
+     * Send verification email
+     */
+    async sendVerificationEmail(): Promise<void> {
+        try {
+            await api.post('/email/verification-notification');
+        } catch (error) {
+            throw handleApiError(error);
+        }
+    },
+
+    /**
+     * Forgot password
+     */
+    async forgotPassword(data: { email: string }): Promise<void> {
+        try {
+            await api.post('/forgot-password', data);
+        } catch (error) {
+            throw handleApiError(error);
+        }
+    },
+
+    /**
+     * Reset password
+     */
+    async resetPassword(data: {
+        token: string;
+        email: string;
+        password: string;
+        password_confirmation: string;
+    }): Promise<void> {
+        try {
+            await api.post('/reset-password', data);
+        } catch (error) {
+            throw handleApiError(error);
+        }
+    },
+
     getToken(): string | null {
         return localStorage.getItem('auth_token');
     },
