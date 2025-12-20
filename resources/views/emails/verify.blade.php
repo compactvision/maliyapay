@@ -97,7 +97,7 @@
     <div class="container">
         <div class="header">
             <div class="logo">
-                MaliyaPay<span class="sparkle">✦</span>
+                MaliyaFlow<span class="sparkle">✦</span>
             </div>
         </div>
         
@@ -110,7 +110,7 @@
             
             <p>Bonjour {{ $user->name }},</p>
             
-            <p>Merci de vous être inscrit sur MaliyaPay ! Pour sécuriser votre compte et accéder à toutes les fonctionnalités, veuillez confirmer votre adresse email.</p>
+            <p>Merci de vous être inscrit sur MaliyaFlow ! Pour sécuriser votre compte et accéder à toutes les fonctionnalités, veuillez confirmer votre adresse email.</p>
             
             <a href="{{ $url }}" class="btn">Vérifier mon email</a>
             
