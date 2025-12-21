@@ -59,6 +59,15 @@ class ProfileController extends Controller
         }
 
         $user->save(); // Save first
+        
+        if ($request->expectsJson()) {
+            return response()->json([
+                'message' => 'Profil mis à jour avec succès',
+                'user' => array_merge($user->toArray(), [
+                    'roles' => $user->getRoleNames(),
+                ]),
+            ]);
+        }
 
         return Redirect::route('profile.show');
     }

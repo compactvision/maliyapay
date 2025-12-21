@@ -166,6 +166,7 @@ export default function AccountPage() {
         setIsSubmitting(true);
         setFormError(null);
         try {
+            await axios.post('/api/accounts', values);
             await fetchAccounts();
             setCreateFormOpen(false);
             createForm.reset();

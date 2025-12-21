@@ -30,9 +30,8 @@ Route::group(['middleware' => ['auth:sanctum', 'verified', 'feature.enabled:perf
     Route::post('/habits/bonus', [\App\Modules\HabitPerformance\Presentation\Controllers\HabitPerformanceController::class, 'claimBonus'])->middleware('permission:manage habit-performance')->name('habit-performance.bonus');
     Route::post('/habits/shop', [\App\Modules\HabitPerformance\Presentation\Controllers\HabitPerformanceController::class, 'purchaseReward'])->middleware('permission:manage habit-performance')->name('habit-performance.shop');
 });
-Route::get('/profile', [\App\Modules\Identity\Presentation\Controllers\ProfileController::class, 'show'])->middleware('permission:view settings')->name('profile.show');
 Route::patch('/profile', [\App\Modules\Identity\Presentation\Controllers\ProfileController::class, 'update'])
-    ->middleware(['auth:sanctum', 'permission:edit settings']) // Utilisation de Sanctum pour supporter l'auth par token
+    ->middleware(['auth:sanctum', 'permission:view settings']) // Users should edit their own profile
     ->name('profile.update');
 
 Route::patch('/password', [\App\Http\Controllers\Settings\PasswordController::class, 'update'])
