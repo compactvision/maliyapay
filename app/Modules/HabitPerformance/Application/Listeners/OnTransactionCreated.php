@@ -58,12 +58,12 @@ class OnTransactionCreated
 
         // 2. Update Gamification Profile
         // Tracking expenses is responsible behavior -> small reward
-        $profile = $this->gamificationRepository->findByUserId($event->userId);
+        $profile = $this->gamificationRepository->findByUserId((int) $event->userId);
         
         if (!$profile) {
              $profile = GamificationProfile::create(
                  Uuid::uuid4(),
-                 $event->userId
+                 (int) $event->userId
              );
         }
 
@@ -74,7 +74,7 @@ class OnTransactionCreated
         $this->gamificationRepository->save($profile);
 
         // 3. Real-time Budget Check
-        $user = \App\Models\User::find($event->userId);
+        $user = \App\Models\User::find((int) $event->userId);
         if ($user) {
             $this->financialPerformanceService->checkBudgetThresholds($user);
         }
