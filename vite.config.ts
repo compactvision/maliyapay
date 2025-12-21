@@ -94,7 +94,7 @@ export default defineConfig({
                 ],
             },
             workbox: {
-                navigateFallback: null,
+                navigateFallback: '/',
                 runtimeCaching: [
                     {
                         urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
@@ -143,6 +143,7 @@ export default defineConfig({
                         handler: 'NetworkFirst',
                         options: {
                             cacheName: 'pages-cache',
+                            networkTimeoutSeconds: 3,
                             expiration: {
                                 maxEntries: 50,
                                 maxAgeSeconds: 24 * 60 * 60, // 24 hours
@@ -158,6 +159,7 @@ export default defineConfig({
                         handler: 'NetworkFirst',
                         options: {
                             cacheName: 'inertia-data-cache',
+                            networkTimeoutSeconds: 3,
                             expiration: {
                                 maxEntries: 50,
                                 maxAgeSeconds: 24 * 60 * 60, // 24 hours

@@ -9,6 +9,7 @@ import {
     SidebarTrigger,
     useLayout,
 } from '@/components/LayoutComponents';
+import { OfflineIndicator } from '@/components/OfflineIndicator';
 import { ReactNode } from 'react';
 
 interface AppLayoutProps {
@@ -30,6 +31,7 @@ function AppLayoutContent({ children }: { children: ReactNode }) {
             <MobileTopBar />
             <RightMenu />
             <MobileBottomNavbar />
+            <OfflineIndicator />
 
             {/* --- Contenu Principal --- */}
             <main className="flex flex-col">
