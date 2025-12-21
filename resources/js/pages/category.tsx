@@ -45,6 +45,7 @@ import {
     TrendingUp,
 } from 'lucide-react';
 import { useState } from 'react';
+import { toast } from 'sonner';
 
 // --- Mock Colors ---
 const mockColors = [
@@ -125,13 +126,16 @@ export default function CategoryPage() {
         try {
             if (editCategory) {
                 await updateCategory(editCategory.id, values);
+                toast.success('Catégorie modifiée avec succès');
             } else {
                 await createCategory(values);
+                toast.success('Catégorie créée avec succès');
             }
             await refetch();
             closeForm();
         } catch (err) {
             console.error('Failed to save category:', err);
+            toast.error("Erreur lors de l'enregistrement de la catégorie");
         }
     };
 
@@ -140,10 +144,12 @@ export default function CategoryPage() {
 
         try {
             await deleteCategory(deleteId);
+            toast.success('Catégorie supprimée avec succès');
             await refetch();
             setDeleteId(null);
         } catch (err) {
             console.error('Failed to delete category:', err);
+            toast.error('Erreur lors de la suppression de la catégorie');
         }
     };
 

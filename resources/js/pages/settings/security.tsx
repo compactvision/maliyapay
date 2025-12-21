@@ -21,7 +21,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { AppLayout } from '@/layouts/AppLayout';
 import { Head, router } from '@inertiajs/react';
 import { ArrowLeft, Shield, Smartphone } from 'lucide-react';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 export default function Security() {
@@ -30,6 +30,27 @@ export default function Security() {
     const [password, setPassword] = useState('');
     const [step, setStep] = useState<'password' | 'pin'>('password');
     const [isLoading, setIsLoading] = useState(false);
+
+    // Effect to handle post-verification onboarding
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('onboarding') === 'true' && !user?.pin_code_set) {
+            // Auto-open PIN modal
+            setIsPinModalOpen(true);
+            setStep('password');
+            toast(
+                'Sécurité : Veuillez configurer votre code PIN pour continuer.',
+                {
+                    description: 'Ceci simplifiera vos prochaines connexions.',
+                    duration: 5000,
+                },
+            );
+
+            // Clean up URL parameter without refreshing
+            const newUrl = window.location.pathname;
+            window.history.replaceState({}, '', newUrl);
+        }
+    }, [user?.pin_code_set]);
 
     const handleToggleAutoLock = async (checked: boolean) => {
         if (checked && !user?.auto_lock_enabled && !user?.pin_code_set) {

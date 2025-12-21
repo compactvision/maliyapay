@@ -38,6 +38,7 @@ import axios from 'axios';
 import { Loader2, Pencil, Plus, Trash2, Wallet } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { toast } from 'sonner';
 import z from 'zod';
 
 // Interfaces
@@ -121,12 +122,19 @@ export default function Budget() {
     const onSubmit = async (values: z.infer<typeof budgetSchema>) => {
         setIsSubmitting(true);
         try {
-            await axios.post('/api/budgets', values);
+            if (selectedBudget) {
+                await axios.put(`/api/budgets/${selectedBudget.id}`, values);
+                toast.success('Budget modifié avec succès');
+            } else {
+                await axios.post('/api/budgets', values);
+                toast.success('Budget créé avec succès');
+            }
             await fetchData();
             setOpen(false);
             form.reset();
         } catch (error) {
             console.error('Failed to save budget', error);
+            toast.error("Erreur lors de l'enregistrement du budget");
         } finally {
             setIsSubmitting(false);
         }
@@ -136,10 +144,12 @@ export default function Budget() {
         if (!deleteId) return;
         try {
             await axios.delete(`/api/budgets/${deleteId}`);
+            toast.success('Budget supprimé avec succès');
             await fetchData();
             setDeleteId(null);
         } catch (error) {
             console.error('Failed to delete budget', error);
+            toast.error('Erreur lors de la suppression du budget');
         }
     };
 

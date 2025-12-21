@@ -16,36 +16,47 @@ use Illuminate\Support\Facades\Broadcast;
 
 Broadcast::routes(['middleware' => ['auth:sanctum']]);
 
-Route::get('/user', function (Request $request) {
-    return $request->user();
-})->middleware('auth:sanctum');
+Route::group(['prefix' => 'auth'], function () {
+    Route::post('/register', [AuthController::class, 'register']);
+    Route::post('/login', [AuthController::class, 'login']);
+    Route::post('/two-factor-challenge', [AuthController::class, 'twoFactorLogin']);
+    Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
 
-// Auth Routes (from previous context, though they might be in AuthController)
-Route::post('/auth/register', [AuthController::class, 'register']);
-Route::post('/auth/login', [AuthController::class, 'login']);
-Route::post('/auth/two-factor-challenge', [AuthController::class, 'twoFactorLogin']);
-Route::post('/auth/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
+    // Email Verification
+    Route::post('/email/verification-notification', [AuthController::class, 'sendVerificationEmail'])
+        ->middleware(['auth:sanctum', 'throttle:6,1']);
 
-// Email Verification
-Route::post('/auth/email/verification-notification', [AuthController::class, 'sendVerificationEmail'])
-    ->middleware(['auth:sanctum', 'throttle:6,1']);
+    // Password Reset
+    Route::post('/forgot-password', [AuthController::class, 'forgotPassword'])
+        ->middleware('guest')
+        ->name('api.password.email');
 
-// Password Reset
-Route::post('/auth/forgot-password', [AuthController::class, 'forgotPassword'])
-    ->middleware('guest')
-    ->name('api.password.email');
+    Route::post('/reset-password', [AuthController::class, 'resetPassword'])
+        ->middleware('guest')
+        ->name('api.password.update');
 
-Route::post('/auth/reset-password', [AuthController::class, 'resetPassword'])
-    ->middleware('guest')
-    ->name('api.password.update');
+    // PIN & Auto-lock
+    Route::post('/pin/verify', [PinController::class, 'verify']); // Public, but requires email + PIN
 
-// PIN & Auto-lock
-Route::post('/auth/pin/verify', [PinController::class, 'verify']); // Public, but requires email + PIN
+    Route::middleware(['auth:sanctum'])->group(function () {
+        Route::get('/user', function (Request $request) {
+            $user = $request->user();
+            return response()->json([
+                'user' => array_merge($user->toArray(), [
+                    'roles' => $user->getRoleNames(),
+                ])
+            ]);
+        });
+        Route::post('/pin/setup', [PinController::class, 'setup']);
+        Route::post('/pin/toggle', [PinController::class, 'toggleAutoLock']);
+        
+        // Profile & Password updates (API versions)
+        Route::put('/profile', [\App\Modules\Identity\Presentation\Controllers\ProfileController::class, 'update']);
+        Route::post('/password', [\App\Http\Controllers\Settings\PasswordController::class, 'update']);
+    });
+});
 
 Route::middleware(['auth:sanctum'])->group(function () {
-    Route::post('/auth/pin/setup', [PinController::class, 'setup']);
-    Route::post('/auth/pin/toggle', [PinController::class, 'toggleAutoLock']);
-    
     // Protected Routes
     // Categories
     Route::middleware('permission:view categories')->group(function () {

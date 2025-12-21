@@ -363,7 +363,7 @@ class AuthController extends Controller
             event(new Verified($user));
         }
 
-        return redirect('/');
+        return redirect('/settings/security?onboarding=true');
     }
 
     /**
