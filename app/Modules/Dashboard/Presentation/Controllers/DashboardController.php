@@ -48,6 +48,7 @@ class DashboardController extends Controller
         $recent = array_slice($transactions, 0, 5);
         $recentData = array_map(fn($t) => [
             'id' => $t->id()->toString(),
+            'account_id' => $t->accountId(),
             'description' => $t->description(),
             'amount' => $t->amount(),
             'currency' => $t->currency(),
