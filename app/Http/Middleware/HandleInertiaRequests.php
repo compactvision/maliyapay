@@ -50,6 +50,9 @@ class HandleInertiaRequests extends Middleware
                     'avatar' => $request->user()->avatar,
                     'play_notification_sound' => $request->user()->play_notification_sound, // Share preference
                     'roles' => $request->user()->getRoleNames(), // Share roles
+                    'auto_lock_enabled' => $request->user()->auto_lock_enabled,
+                    'auto_lock_timeout' => $request->user()->auto_lock_timeout,
+                    'pin_code_set' => $request->user()->pin_code_set,
                 ] : null,
             ],
             'ziggy' => fn () => [

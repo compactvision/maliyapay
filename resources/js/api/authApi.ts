@@ -17,7 +17,7 @@ import type {
 import axios, { AxiosError } from 'axios';
 
 // Configure axios instance
-const api = axios.create({
+export const api = axios.create({
     baseURL: '/api/auth',
     headers: {
         'Content-Type': 'application/json',
@@ -203,6 +203,52 @@ export const authApi = {
     }): Promise<void> {
         try {
             await api.post('/reset-password', data);
+        } catch (error) {
+            throw handleApiError(error);
+        }
+    },
+
+    /**
+     * Set or update PIN
+     */
+    async setupPin(data: {
+        pin_code: string;
+        password: string;
+    }): Promise<void> {
+        try {
+            await api.post('/pin/setup', data);
+        } catch (error) {
+            throw handleApiError(error);
+        }
+    },
+
+    /**
+     * Toggle auto-lock
+     */
+    async toggleAutoLock(enabled: boolean): Promise<void> {
+        try {
+            await api.post('/pin/toggle', { enabled });
+        } catch (error) {
+            throw handleApiError(error);
+        }
+    },
+
+    /**
+     * Unlock with PIN
+     */
+    async unlockWithPin(data: {
+        email: string;
+        pin_code: string;
+    }): Promise<AuthResponse> {
+        try {
+            const response = await api.post<AuthResponse>('/pin/verify', data);
+
+            // Store token
+            if (response.data.token) {
+                localStorage.setItem('auth_token', response.data.token);
+            }
+
+            return response.data;
         } catch (error) {
             throw handleApiError(error);
         }

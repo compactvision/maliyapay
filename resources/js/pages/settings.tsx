@@ -254,6 +254,26 @@ export default function Settings({ user }: PageProps) {
                                     Gérer
                                 </Button>
                             </div>
+
+                            <div className="flex items-center justify-between rounded-lg border p-4">
+                                <div className="space-y-0.5">
+                                    <Label className="text-base font-semibold">
+                                        Verrouillage & PIN
+                                    </Label>
+                                    <p className="text-sm text-muted-foreground">
+                                        Configurez votre code PIN et le
+                                        verrouillage automatique.
+                                    </p>
+                                </div>
+                                <Button
+                                    variant="outline"
+                                    onClick={() =>
+                                        router.visit(route('settings.security'))
+                                    }
+                                >
+                                    Gérer
+                                </Button>
+                            </div>
                         </CardContent>
                     </Card>
                 </div>

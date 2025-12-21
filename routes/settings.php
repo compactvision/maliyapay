@@ -27,6 +27,10 @@ Route::middleware(['auth:sanctum', 'permission:view settings'])->group(function 
         return Inertia::render('settings/appearance');
     })->name('appearance.edit');
 
+    Route::get('settings/security', function () {
+        return Inertia::render('settings/security');
+    })->name('settings.security');
+
     Route::get('settings/two-factor', [TwoFactorAuthenticationController::class, 'show'])
         ->name('two-factor.show');
 

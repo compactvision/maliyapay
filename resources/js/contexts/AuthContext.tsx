@@ -5,12 +5,15 @@
  * and loading screens across page navigations.
  */
 
-import { authApi } from '@/api/authApi';
+import { api, authApi } from '@/api/authApi';
+import { UnlockScreen } from '@/components/auth/UnlockScreen';
 import type { LoginCredentials, RegisterData, User } from '@/types/auth';
+import { AnimatePresence } from 'framer-motion';
 import {
     createContext,
     useCallback,
     useEffect,
+    useLayoutEffect,
     useMemo,
     useState,
     type ReactNode,
@@ -37,6 +40,10 @@ interface AuthContextValue {
         password: string;
         password_confirmation: string;
     }) => Promise<void>;
+    setupPin: (data: { pin_code: string; password: string }) => Promise<void>;
+    toggleAutoLock: (enabled: boolean) => Promise<void>;
+    unlockWithPin: (pin: string) => Promise<void>;
+    isLocked: boolean;
 }
 
 export const AuthContext = createContext<AuthContextValue | undefined>(
@@ -51,6 +58,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const [user, setUser] = useState<User | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [isLocked, setIsLocked] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     // Check authentication status on mount - ONLY ONCE
@@ -72,6 +80,21 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
         checkAuth();
     }, []); // Empty dependency array = runs only once
+
+    // Intercept 401 errors to trigger auto-lock
+    useLayoutEffect(() => {
+        const interceptor = api.interceptors.response.use(
+            (response) => response,
+            (error) => {
+                if (error.response?.status === 401 && user?.auto_lock_enabled) {
+                    setIsLocked(true);
+                }
+                return Promise.reject(error);
+            },
+        );
+
+        return () => api.interceptors.response.eject(interceptor);
+    }, [user]);
 
     const login = async (credentials: LoginCredentials): Promise<any> => {
         try {
@@ -189,11 +212,55 @@ export function AuthProvider({ children }: AuthProviderProps) {
         }
     };
 
+    const setupPin = async (data: {
+        pin_code: string;
+        password: string;
+    }): Promise<void> => {
+        try {
+            await authApi.setupPin(data);
+            await refreshUser();
+        } catch (err) {
+            throw new Error(
+                err instanceof Error ? err.message : 'Erreur de configuration',
+            );
+        }
+    };
+
+    const toggleAutoLock = async (enabled: boolean): Promise<void> => {
+        try {
+            await authApi.toggleAutoLock(enabled);
+            await refreshUser();
+        } catch (err) {
+            throw new Error(
+                err instanceof Error ? err.message : 'Erreur de modification',
+            );
+        }
+    };
+
+    const unlockWithPin = async (pin: string): Promise<void> => {
+        if (!user?.email) throw new Error('Utilisateur non identifié');
+
+        try {
+            const response = await authApi.unlockWithPin({
+                email: user.email,
+                pin_code: pin,
+            });
+            setUser(response.user);
+            setIsAuthenticated(true);
+            setIsLocked(false);
+        } catch (err) {
+            throw new Error(
+                err instanceof Error ? err.message : 'Code PIN incorrect',
+            );
+        }
+    };
+
     const value: AuthContextValue = useMemo(
         () => ({
             user,
             isLoading,
             isAuthenticated,
+            isLocked,
             error,
             login,
             loginTwoFactor,
@@ -203,11 +270,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
             sendVerificationEmail,
             forgotPassword,
             resetPassword,
+            setupPin,
+            toggleAutoLock,
+            unlockWithPin,
         }),
         [
             user,
             isLoading,
             isAuthenticated,
+            isLocked,
             error,
             login,
             loginTwoFactor,
@@ -217,10 +288,20 @@ export function AuthProvider({ children }: AuthProviderProps) {
             sendVerificationEmail,
             forgotPassword,
             resetPassword,
+            setupPin,
+            toggleAutoLock,
+            unlockWithPin,
         ],
     );
 
     return (
-        <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+        <AuthContext.Provider value={value}>
+            {children}
+            <AnimatePresence>
+                {isLocked && (
+                    <UnlockScreen onSuccess={() => setIsLocked(false)} />
+                )}
+            </AnimatePresence>
+        </AuthContext.Provider>
     );
 }

@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Modules\Category\Presentation\Controllers\CategoryController;
 use App\Modules\Account\Presentation\Controllers\AccountController;
 use App\Modules\Identity\Presentation\Controllers\AuthController;
+use App\Modules\Identity\Presentation\Controllers\PinController;
 use App\Modules\Budget\Presentation\Controllers\BudgetController;
 use App\Modules\Transaction\Presentation\Controllers\TransactionController;
 use App\Modules\Task\Presentation\Controllers\TaskController;
@@ -38,8 +39,14 @@ Route::post('/auth/reset-password', [AuthController::class, 'resetPassword'])
     ->middleware('guest')
     ->name('api.password.update');
 
-// Protected Routes
+// PIN & Auto-lock
+Route::post('/auth/pin/verify', [PinController::class, 'verify']); // Public, but requires email + PIN
+
 Route::middleware(['auth:sanctum'])->group(function () {
+    Route::post('/auth/pin/setup', [PinController::class, 'setup']);
+    Route::post('/auth/pin/toggle', [PinController::class, 'toggleAutoLock']);
+    
+    // Protected Routes
     // Categories
     Route::middleware('permission:view categories')->group(function () {
         Route::get('categories', [CategoryController::class, 'index']);

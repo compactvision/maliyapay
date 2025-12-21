@@ -15,6 +15,9 @@ export interface User {
     updated_at: string;
     avatar?: string;
     play_notification_sound?: boolean;
+    auto_lock_enabled?: boolean;
+    auto_lock_timeout?: number;
+    pin_code_set?: boolean;
 }
 
 export interface LoginCredentials {

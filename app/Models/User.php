@@ -28,6 +28,9 @@ class User extends Authenticatable implements MustVerifyEmail
         'receive_notifications',
         'play_notification_sound',
         'password',
+        'pin_code',
+        'auto_lock_enabled',
+        'auto_lock_timeout',
     ];
 
     /**
@@ -40,6 +43,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'two_factor_secret',
         'two_factor_recovery_codes',
         'remember_token',
+        'pin_code',
     ];
 
     /**
@@ -55,7 +59,26 @@ class User extends Authenticatable implements MustVerifyEmail
             'receive_notifications' => 'boolean',
             'play_notification_sound' => 'boolean',
             'two_factor_confirmed_at' => 'datetime',
+            'auto_lock_enabled' => 'boolean',
+            'auto_lock_timeout' => 'integer',
         ];
+    }
+
+    /**
+     * The accessors to append to the model's array form.
+     *
+     * @var array
+     */
+    protected $appends = [
+        'pin_code_set',
+    ];
+
+    /**
+     * Check if user has a PIN code set.
+     */
+    public function getPinCodeSetAttribute(): bool
+    {
+        return $this->pin_code !== null;
     }
 
     /**
