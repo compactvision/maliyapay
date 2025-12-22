@@ -25,7 +25,7 @@ import React, { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 export default function Security() {
-    const { user, setupPin, toggleAutoLock } = useAuth();
+    const { user, setupPin, toggleAutoLock, updateAutoLockTimeout } = useAuth();
     const [isPinModalOpen, setIsPinModalOpen] = useState(false);
     const [password, setPassword] = useState('');
     const [step, setStep] = useState<'password' | 'pin'>('password');
@@ -159,6 +159,49 @@ export default function Security() {
                                     onCheckedChange={handleToggleAutoLock}
                                 />
                             </div>
+
+                            {user?.auto_lock_enabled && (
+                                <div className="space-y-4 rounded-lg border bg-muted/30 p-4">
+                                    <div className="space-y-1">
+                                        <Label className="text-sm font-semibold">
+                                            Délai d'inactivité avant
+                                            verrouillage
+                                        </Label>
+                                        <p className="text-xs text-muted-foreground">
+                                            L'application se verrouillera après
+                                            cette période sans activité.
+                                        </p>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-5">
+                                        {[
+                                            { label: '30s', value: 30 },
+                                            { label: '1 min', value: 60 },
+                                            { label: '5 min', value: 300 },
+                                            { label: '15 min', value: 900 },
+                                            { label: '30 min', value: 1800 },
+                                        ].map((option) => (
+                                            <Button
+                                                key={option.value}
+                                                variant={
+                                                    user?.auto_lock_timeout ===
+                                                    option.value
+                                                        ? 'default'
+                                                        : 'outline'
+                                                }
+                                                size="sm"
+                                                className="text-xs"
+                                                onClick={() =>
+                                                    updateAutoLockTimeout(
+                                                        option.value,
+                                                    )
+                                                }
+                                            >
+                                                {option.label}
+                                            </Button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
 
                             <div className="flex items-center justify-between rounded-lg border p-4">
                                 <div className="space-y-0.5">

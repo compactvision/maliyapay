@@ -42,6 +42,7 @@ interface AuthContextValue {
     }) => Promise<void>;
     setupPin: (data: { pin_code: string; password: string }) => Promise<void>;
     toggleAutoLock: (enabled: boolean) => Promise<void>;
+    updateAutoLockTimeout: (timeout: number) => Promise<void>;
     unlockWithPin: (pin: string) => Promise<void>;
     isLocked: boolean;
 }
@@ -95,6 +96,53 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
         return () => api.interceptors.response.eject(interceptor);
     }, [user]);
+
+    // Inactivity Lock Timer
+    useEffect(() => {
+        if (!isAuthenticated || !user?.auto_lock_enabled || isLocked) return;
+
+        let timeoutId: NodeJS.Timeout;
+
+        const resetTimer = () => {
+            if (timeoutId) clearTimeout(timeoutId);
+
+            const timeout = (user.auto_lock_timeout || 300) * 1000; // Default 5min
+
+            timeoutId = setTimeout(() => {
+                setIsLocked(true);
+            }, timeout);
+        };
+
+        // Events to track activity
+        const events = [
+            'mousedown',
+            'mousemove',
+            'keypress',
+            'scroll',
+            'touchstart',
+            'click',
+        ];
+
+        // Set initial timer
+        resetTimer();
+
+        // Add event listeners
+        events.forEach((event) => {
+            window.addEventListener(event, resetTimer);
+        });
+
+        return () => {
+            if (timeoutId) clearTimeout(timeoutId);
+            events.forEach((event) => {
+                window.removeEventListener(event, resetTimer);
+            });
+        };
+    }, [
+        isAuthenticated,
+        user?.auto_lock_enabled,
+        user?.auto_lock_timeout,
+        isLocked,
+    ]);
 
     const login = async (credentials: LoginCredentials): Promise<any> => {
         try {
@@ -237,6 +285,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
         }
     };
 
+    const updateAutoLockTimeout = async (timeout: number): Promise<void> => {
+        try {
+            const userData = await authApi.updateAutoLockTimeout(timeout);
+            setUser(userData);
+        } catch (err) {
+            throw new Error(
+                err instanceof Error ? err.message : 'Erreur de modification',
+            );
+        }
+    };
+
     const unlockWithPin = async (pin: string): Promise<void> => {
         if (!user?.email) throw new Error('Utilisateur non identifié');
 
@@ -272,6 +331,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
             resetPassword,
             setupPin,
             toggleAutoLock,
+            updateAutoLockTimeout,
             unlockWithPin,
         }),
         [
@@ -290,6 +350,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
             resetPassword,
             setupPin,
             toggleAutoLock,
+            updateAutoLockTimeout,
             unlockWithPin,
         ],
     );

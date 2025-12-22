@@ -49,6 +49,7 @@ Route::group(['prefix' => 'auth'], function () {
         });
         Route::post('/pin/setup', [PinController::class, 'setup']);
         Route::post('/pin/toggle', [PinController::class, 'toggleAutoLock']);
+        Route::post('/pin/settings', [PinController::class, 'updateSettings']);
         
         // Profile & Password updates (API versions)
         Route::put('/profile', [\App\Modules\Identity\Presentation\Controllers\ProfileController::class, 'update']);

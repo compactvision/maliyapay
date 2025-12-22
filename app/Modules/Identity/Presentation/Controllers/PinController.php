@@ -109,4 +109,27 @@ class PinController extends Controller
             'auto_lock_enabled' => $user->auto_lock_enabled,
         ]);
     }
+
+    /**
+     * Update PIN settings (timeout)
+     */
+    public function updateSettings(Request $request): JsonResponse
+    {
+        $request->validate([
+            'auto_lock_timeout' => ['required', 'integer', 'in:30,60,300,900,1800'],
+        ]);
+
+        $user = $request->user();
+        $user->update([
+            'auto_lock_timeout' => $request->auto_lock_timeout,
+        ]);
+
+        return response()->json([
+            'message' => 'Paramètres de verrouillage mis à jour',
+            'user' => array_merge($user->toArray(), [
+                'roles' => $user->getRoleNames(),
+                'permissions' => $user->getAllPermissions()->pluck('name'),
+            ]),
+        ]);
+    }
 }

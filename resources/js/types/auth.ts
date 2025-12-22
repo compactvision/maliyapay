@@ -37,6 +37,7 @@ export interface AuthResponse {
     message: string;
     user: User;
     token: string;
+    two_factor?: boolean;
 }
 
 export interface UserResponse {

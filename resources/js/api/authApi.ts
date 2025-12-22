@@ -234,6 +234,20 @@ export const authApi = {
     },
 
     /**
+     * Update auto-lock timeout
+     */
+    async updateAutoLockTimeout(timeout: number): Promise<User> {
+        try {
+            const response = await api.post<UserResponse>('/pin/settings', {
+                auto_lock_timeout: timeout,
+            });
+            return response.data.user;
+        } catch (error) {
+            throw handleApiError(error);
+        }
+    },
+
+    /**
      * Unlock with PIN
      */
     async unlockWithPin(data: {
