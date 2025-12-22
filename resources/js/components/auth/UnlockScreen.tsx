@@ -34,7 +34,7 @@ export function UnlockScreen({ onSuccess }: UnlockScreenProps) {
     useEffect(() => {
         if (!lockedUntil) return;
 
-        const interval = setInterval(() => {
+        const updateCountdown = () => {
             const now = Date.now();
             const diff = Math.ceil((lockedUntil - now) / 1000);
 
@@ -42,11 +42,20 @@ export function UnlockScreen({ onSuccess }: UnlockScreenProps) {
                 setLockedUntil(null);
                 localStorage.removeItem('pin_locked_until');
                 setRemainingTime(0);
-                clearInterval(interval);
+                setError(null);
             } else {
                 setRemainingTime(diff);
+                const unit = diff > 60 ? 'min' : 's';
+                const timeStr =
+                    diff > 60
+                        ? `${Math.floor(diff / 60)}m ${diff % 60}s`
+                        : `${diff}s`;
+                setError(`Trop de tentatives. Réessayez dans ${timeStr}.`);
             }
-        }, 1000);
+        };
+
+        updateCountdown();
+        const interval = setInterval(updateCountdown, 1000);
 
         return () => clearInterval(interval);
     }, [lockedUntil]);
@@ -60,11 +69,7 @@ export function UnlockScreen({ onSuccess }: UnlockScreenProps) {
     }, []);
 
     const handleUnlock = async (pin: string) => {
-        if (lockedUntil && Date.now() < lockedUntil) {
-            setError(`Veuillez attendre ${remainingTime} secondes.`);
-            setPinPadKey((prev) => prev + 1);
-            return;
-        }
+        if (lockedUntil && Date.now() < lockedUntil) return;
 
         setIsLoading(true);
         setError(null);
@@ -86,7 +91,6 @@ export function UnlockScreen({ onSuccess }: UnlockScreenProps) {
                 const unlockTime = Date.now() + delay * 1000;
                 setLockedUntil(unlockTime);
                 localStorage.setItem('pin_locked_until', String(unlockTime));
-                setError(`Trop de tentatives. Réessayez dans ${delay}s.`);
             } else {
                 setError(
                     err instanceof Error ? err.message : 'Code PIN incorrect',
