@@ -87,7 +87,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         const interceptor = api.interceptors.response.use(
             (response) => response,
             (error) => {
-                if (error.response?.status === 401 && user?.auto_lock_enabled) {
+                if (error.response?.status === 401 && user?.pin_code_set) {
                     setIsLocked(true);
                 }
                 return Promise.reject(error);

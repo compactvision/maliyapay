@@ -1,9 +1,15 @@
+import { UnlockScreen } from '@/components/auth/UnlockScreen';
 import { Button } from '@/components/ui/button';
+import { useAuth } from '@/hooks/useAuth';
 import { AppLayout } from '@/layouts/AppLayout';
 import { Head, Link } from '@inertiajs/react';
-import { ShieldAlert } from 'lucide-react';
+import { LockKeyhole, ShieldAlert } from 'lucide-react';
+import { useState } from 'react';
 
 export default function Forbidden() {
+    const { isAuthenticated, user } = useAuth();
+    const [showUnlock, setShowUnlock] = useState(false);
+
     return (
         <AppLayout>
             <Head title="Accès refusé" />
@@ -24,19 +30,45 @@ export default function Forbidden() {
                 </p>
 
                 <div className="flex flex-col gap-3 sm:flex-row">
-                    <Button asChild size="lg" className="px-8">
-                        <Link href="/">Retour au tableau de bord</Link>
-                    </Button>
+                    {isAuthenticated && user?.pin_code_set && (
+                        <Button
+                            onClick={() => setShowUnlock(true)}
+                            size="lg"
+                            className="bg-emerald-600 px-8 hover:bg-emerald-700"
+                        >
+                            <LockKeyhole className="mr-2 h-5 w-5" />
+                            Déverrouiller avec PIN
+                        </Button>
+                    )}
                     <Button
                         asChild
-                        variant="outline"
                         size="lg"
                         className="px-8"
+                        variant={isAuthenticated ? 'outline' : 'default'}
                     >
-                        <Link href="/">Acceuil</Link>
+                        <Link href="/">Retour au tableau de bord</Link>
                     </Button>
+                    {!isAuthenticated && (
+                        <Button
+                            asChild
+                            variant="outline"
+                            size="lg"
+                            className="px-8"
+                        >
+                            <Link href="/login">Se connecter</Link>
+                        </Button>
+                    )}
                 </div>
             </div>
+
+            {showUnlock && (
+                <UnlockScreen
+                    onSuccess={() => {
+                        setShowUnlock(false);
+                        window.location.reload();
+                    }}
+                />
+            )}
         </AppLayout>
     );
 }

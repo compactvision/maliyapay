@@ -15,29 +15,32 @@ Route::get('/reset-password/{token}', [PageController::class, 'resetPassword'])-
 
 
 // Protected routes (auth required via Sanctum)
-// Protected routes (auth required via Sanctum)
-Route::get('/', [PageController::class, 'dashboard'])->middleware(['feature.enabled:dashboard', 'permission:view dashboard'])->name('home');
-Route::get('/account', [PageController::class, 'account'])->middleware(['feature.enabled:accounts', 'permission:view accounts'])->name('account');
-Route::get('/transaction', [PageController::class, 'transaction'])->middleware(['feature.enabled:transactions', 'permission:view transactions'])->name('transaction');
-Route::get('/category', [PageController::class, 'category'])->middleware(['feature.enabled:categories', 'permission:view categories'])->name('category');
-Route::get('/budget', [PageController::class, 'budget'])->middleware(['feature.enabled:budgets', 'permission:view budgets'])->name('budget');
-Route::get('/statistic', [PageController::class, 'statistic'])->middleware(['feature.enabled:statistics', 'permission:view statistics'])->name('statistic');
-Route::get('/task', [PageController::class, 'task'])->middleware(['feature.enabled:tasks', 'permission:view tasks'])->name('task');
-Route::get('/routine', [PageController::class, 'routine'])->middleware(['feature.enabled:routines', 'permission:view routines'])->name('routine');
-Route::get('/notification', [PageController::class, 'notification'])->middleware('permission:view notifications')->name('notification');
-Route::group(['middleware' => ['auth:sanctum', 'verified', 'feature.enabled:performance', 'permission:view habit-performance']], function () {
-    Route::get('/habits', [\App\Modules\HabitPerformance\Presentation\Controllers\HabitPerformanceController::class, 'index'])->name('habit-performance.index');
-    Route::post('/habits/bonus', [\App\Modules\HabitPerformance\Presentation\Controllers\HabitPerformanceController::class, 'claimBonus'])->middleware('permission:manage habit-performance')->name('habit-performance.bonus');
-    Route::post('/habits/shop', [\App\Modules\HabitPerformance\Presentation\Controllers\HabitPerformanceController::class, 'purchaseReward'])->middleware('permission:manage habit-performance')->name('habit-performance.shop');
-});
-Route::get('/profile', [\App\Modules\Identity\Presentation\Controllers\ProfileController::class, 'show'])->middleware('permission:view settings')->name('profile.show');
-Route::patch('/profile', [\App\Modules\Identity\Presentation\Controllers\ProfileController::class, 'update'])
-    ->middleware(['auth:sanctum', 'permission:view settings']) // Users should edit their own profile
-    ->name('profile.update');
+Route::group(['middleware' => ['auth:sanctum']], function () {
+    Route::get('/', [PageController::class, 'dashboard'])->middleware(['feature.enabled:dashboard', 'permission:view dashboard'])->name('home');
+    Route::get('/account', [PageController::class, 'account'])->middleware(['feature.enabled:accounts', 'permission:view accounts'])->name('account');
+    Route::get('/transaction', [PageController::class, 'transaction'])->middleware(['feature.enabled:transactions', 'permission:view transactions'])->name('transaction');
+    Route::get('/category', [PageController::class, 'category'])->middleware(['feature.enabled:categories', 'permission:view categories'])->name('category');
+    Route::get('/budget', [PageController::class, 'budget'])->middleware(['feature.enabled:budgets', 'permission:view budgets'])->name('budget');
+    Route::get('/statistic', [PageController::class, 'statistic'])->middleware(['feature.enabled:statistics', 'permission:view statistics'])->name('statistic');
+    Route::get('/task', [PageController::class, 'task'])->middleware(['feature.enabled:tasks', 'permission:view tasks'])->name('task');
+    Route::get('/routine', [PageController::class, 'routine'])->middleware(['feature.enabled:routines', 'permission:view routines'])->name('routine');
+    Route::get('/notification', [PageController::class, 'notification'])->middleware('permission:view notifications')->name('notification');
+    
+    Route::group(['middleware' => ['verified', 'feature.enabled:performance', 'permission:view habit-performance']], function () {
+        Route::get('/habits', [\App\Modules\HabitPerformance\Presentation\Controllers\HabitPerformanceController::class, 'index'])->name('habit-performance.index');
+        Route::post('/habits/bonus', [\App\Modules\HabitPerformance\Presentation\Controllers\HabitPerformanceController::class, 'claimBonus'])->middleware('permission:manage habit-performance')->name('habit-performance.bonus');
+        Route::post('/habits/shop', [\App\Modules\HabitPerformance\Presentation\Controllers\HabitPerformanceController::class, 'purchaseReward'])->middleware('permission:manage habit-performance')->name('habit-performance.shop');
+    });
 
-Route::patch('/password', [\App\Http\Controllers\Settings\PasswordController::class, 'update'])
-    ->middleware(['auth:sanctum', 'permission:edit settings'])
-    ->name('profile.password.update');
+    Route::get('/profile', [\App\Modules\Identity\Presentation\Controllers\ProfileController::class, 'show'])->middleware('permission:view settings')->name('profile.show');
+    Route::patch('/profile', [\App\Modules\Identity\Presentation\Controllers\ProfileController::class, 'update'])
+        ->middleware(['permission:view settings']) // Users should edit their own profile
+        ->name('profile.update');
+
+    Route::patch('/password', [\App\Http\Controllers\Settings\PasswordController::class, 'update'])
+        ->middleware(['permission:edit settings'])
+        ->name('profile.password.update');
+});
 
 
 
