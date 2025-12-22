@@ -1,0 +1,11 @@
+import{a as u,c as m,j as t}from"./app-BaNbzdP_.js";import{C as p,a as x,b as f,c as y}from"./card-DXfcu7dp.js";import{S as _}from"./shield-BNEkkXto.js";import{K as h}from"./key-DZWw1ReV.js";/* empty css            *//**
+ * @license lucide-react v0.475.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */const k=[["path",{d:"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2",key:"1yyitq"}],["circle",{cx:"9",cy:"7",r:"4",key:"nufk8"}],["polyline",{points:"16 11 18 13 22 9",key:"1pwet4"}]],v=u("UserCheck",k);/**
+ * @license lucide-react v0.475.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */const b=[["path",{d:"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2",key:"1yyitq"}],["circle",{cx:"9",cy:"7",r:"4",key:"nufk8"}],["path",{d:"M22 21v-2a4 4 0 0 0-3-3.87",key:"kshegd"}],["path",{d:"M16 3.13a4 4 0 0 1 0 7.75",key:"1da9ce"}]],j=u("Users",b);function H(o){const e=m.c(15),{stats:s}=o;let c;e[0]!==s.users_count?(c={label:"Utilisateurs Total",value:s.users_count,icon:j,color:"text-blue-500"},e[0]=s.users_count,e[1]=c):c=e[1];let l;e[2]!==s.admins_count?(l={label:"Administrateurs",value:s.admins_count,icon:_,color:"text-red-500"},e[2]=s.admins_count,e[3]=l):l=e[3];let r;e[4]!==s.roles_count?(r={label:"Rôles Définis",value:s.roles_count,icon:v,color:"text-green-500"},e[4]=s.roles_count,e[5]=r):r=e[5];let i;e[6]!==s.permissions_count?(i={label:"Permissions",value:s.permissions_count,icon:h,color:"text-yellow-500"},e[6]=s.permissions_count,e[7]=i):i=e[7];let n;e[8]!==c||e[9]!==l||e[10]!==r||e[11]!==i?(n=[c,l,r,i],e[8]=c,e[9]=l,e[10]=r,e[11]=i,e[12]=n):n=e[12];const d=n;let a;return e[13]!==d?(a=t.jsx("div",{className:"grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4",children:d.map(g)}),e[13]=d,e[14]=a):a=e[14],a}function g(o,e){return t.jsxs(p,{children:[t.jsxs(x,{className:"flex flex-row items-center justify-between space-y-0 pb-2",children:[t.jsx(f,{className:"text-sm font-medium",children:o.label}),t.jsx(o.icon,{className:`h-4 w-4 ${o.color}`})]}),t.jsx(y,{children:t.jsx("div",{className:"text-2xl font-bold",children:o.value})})]},e)}export{H as StatsTab};

@@ -2,7 +2,7 @@ import { PinPad } from '@/components/auth/PinPad';
 import { useAuth } from '@/hooks/useAuth';
 import { motion } from 'framer-motion';
 import { Lock, LogOut, User as UserIcon } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface UnlockScreenProps {
     onSuccess: () => void;
@@ -12,6 +12,14 @@ export function UnlockScreen({ onSuccess }: UnlockScreenProps) {
     const { user, unlockWithPin } = useAuth();
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    // Empêcher le scroll de la page lorsque l'écran de déverrouillage est affiché
+    useEffect(() => {
+        document.body.style.overflow = 'hidden';
+        return () => {
+            document.body.style.overflow = '';
+        };
+    }, []);
 
     const handleUnlock = async (pin: string) => {
         setIsLoading(true);
