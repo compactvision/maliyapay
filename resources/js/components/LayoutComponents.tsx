@@ -199,6 +199,9 @@ export const DesktopSidebar = () => {
                             src="/logo.png"
                             alt="MaliyaFlow"
                             className="h-8 w-8 object-contain"
+                            width="32"
+                            height="32"
+                            loading="eager"
                         />
                     </div>
 
@@ -312,6 +315,9 @@ export const MobileTopBar = () => {
                             src={user.avatar}
                             alt={user.name}
                             className="h-full w-full object-cover"
+                            width="32"
+                            height="32"
+                            loading="lazy"
                         />
                     ) : (
                         <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-blue-500 to-purple-600 text-white">
@@ -368,6 +374,9 @@ export const RightMenu = () => {
                                 src={user.avatar}
                                 alt={user.name}
                                 className="h-full w-full object-cover"
+                                width="80"
+                                height="80"
+                                loading="lazy"
                             />
                         </div>
                     ) : (
@@ -597,6 +606,9 @@ export const DesktopHeaderProfile = () => {
                                 src={user.avatar}
                                 alt={user.name}
                                 className="h-full w-full object-cover"
+                                width="32"
+                                height="32"
+                                loading="lazy"
                             />
                         </div>
                     ) : (

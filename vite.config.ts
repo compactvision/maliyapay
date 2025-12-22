@@ -170,14 +170,26 @@ export default defineConfig({
             },
         }),
     ],
-    esbuild: {
-        jsx: 'automatic',
+    build: {
+        chunkSizeWarningLimit: 1000,
+        rollupOptions: {
+            output: {
+                manualChunks: {
+                    vendor: [
+                        'react',
+                        'react-dom',
+                        '@inertiajs/react',
+                        'lucide-react',
+                    ],
+                    charts: ['recharts'],
+                    animations: ['framer-motion'],
+                    ui: [
+                        '@headlessui/react',
+                        '@radix-ui/react-dialog',
+                        '@radix-ui/react-dropdown-menu',
+                    ],
+                },
+            },
+        },
     },
-    // server: {
-    //     host: '0.0.0.0',
-    //     port: 5173,
-    //     hmr: {
-    //         host: '192.168.0.169',
-    //     },
-    // },
 });
