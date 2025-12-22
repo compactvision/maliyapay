@@ -77,6 +77,9 @@ class PinController extends Controller
                 'name' => $user->name,
                 'email' => $user->email,
                 'avatar' => $user->avatar,
+                'email_verified_at' => $user->email_verified_at,
+                'auto_lock_enabled' => $user->auto_lock_enabled,
+                'auto_lock_timeout' => $user->auto_lock_timeout,
                 'roles' => $user->getRoleNames(),
                 'permissions' => $user->getAllPermissions()->pluck('name'),
             ],
@@ -127,6 +130,7 @@ class PinController extends Controller
         return response()->json([
             'message' => 'Paramètres de verrouillage mis à jour',
             'user' => array_merge($user->toArray(), [
+                'email_verified_at' => $user->email_verified_at,
                 'roles' => $user->getRoleNames(),
                 'permissions' => $user->getAllPermissions()->pluck('name'),
             ]),
