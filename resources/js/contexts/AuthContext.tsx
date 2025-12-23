@@ -231,6 +231,7 @@ export function AuthProvider({ children, initialAuth }: AuthProviderProps) {
         } finally {
             setUser(null);
             setIsAuthenticated(false);
+            setIsLocked(false);
             // Redirect to login page
             window.location.href = '/login';
         }

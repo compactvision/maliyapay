@@ -9,7 +9,7 @@ interface UnlockScreenProps {
 }
 
 export function UnlockScreen({ onSuccess }: UnlockScreenProps) {
-    const { user, unlockWithPin } = useAuth();
+    const { user, unlockWithPin, logout } = useAuth();
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [failedAttempts, setFailedAttempts] = useState(() => {
@@ -211,10 +211,7 @@ export function UnlockScreen({ onSuccess }: UnlockScreenProps) {
                 {/* Pied de page fixe pour le bouton "Changer de compte" */}
                 <div className="border-t border-white/5 bg-slate-900/80 p-4 backdrop-blur-xl sm:p-6">
                     <button
-                        onClick={() => {
-                            localStorage.removeItem('auth_token');
-                            window.location.href = '/login';
-                        }}
+                        onClick={logout}
                         className="group mx-auto flex items-center justify-center gap-2 text-sm text-slate-500 transition-all hover:text-white"
                     >
                         <LogOut className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
