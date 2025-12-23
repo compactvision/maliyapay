@@ -123,7 +123,7 @@ class EloquentFinancialForecastRepository implements FinancialForecastRepository
 
         return FinancialForecast::reconstitute(
             Uuid::fromString($model->id),
-            $model->user_id,
+            (int) $model->user_id,
             $generatedAt,
             $model->currency ?? 'USD',
             (float) $model->current_balance,

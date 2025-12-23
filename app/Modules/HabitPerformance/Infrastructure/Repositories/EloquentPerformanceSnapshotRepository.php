@@ -99,7 +99,7 @@ class EloquentPerformanceSnapshotRepository implements PerformanceSnapshotReposi
 
         return PerformanceSnapshot::reconstitute(
             Uuid::fromString($model->id),
-            $model->user_id,
+            (int) $model->user_id,
             $date,
             $model->financial_score,
             $model->task_score,
