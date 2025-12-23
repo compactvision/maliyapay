@@ -49,6 +49,8 @@ class HandleInertiaRequests extends Middleware
                     'email' => $request->user()->email,
                     'avatar' => $request->user()->avatar,
                     'play_notification_sound' => $request->user()->play_notification_sound, // Share preference
+                    'email_verified_at' => $request->user()->email_verified_at,
+                    'created_at' => $request->user()->created_at,
                     'roles' => $request->user()->getRoleNames(), // Share roles
                     'auto_lock_enabled' => $request->user()->auto_lock_enabled,
                     'auto_lock_timeout' => $request->user()->auto_lock_timeout,

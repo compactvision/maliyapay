@@ -54,6 +54,9 @@ class AuthController extends Controller
             // Assign default role
             $user->assignRole('user');
 
+            // Explicitly log the user in to establish a session
+            Auth::login($user);
+
             // Create token
             $token = $user->createToken('auth-token')->plainTextToken;
 
@@ -63,6 +66,8 @@ class AuthController extends Controller
                     'id' => $user->id,
                     'name' => $user->name,
                     'email' => $user->email,
+                    'email_verified_at' => $user->email_verified_at,
+                    'created_at' => $user->created_at,
                     'roles' => $user->getRoleNames(),
                 ],
                 'token' => $token,
@@ -130,6 +135,7 @@ class AuthController extends Controller
                 'email' => $user->email,
                 'avatar' => $user->avatar,
                 'email_verified_at' => $user->email_verified_at,
+                'created_at' => $user->created_at,
                 'roles' => $user->getRoleNames(),
                 'permissions' => $user->getAllPermissions()->pluck('name'),
             ],
@@ -194,6 +200,7 @@ class AuthController extends Controller
                 'email' => $user->email,
                 'avatar' => $user->avatar,
                 'email_verified_at' => $user->email_verified_at,
+                'created_at' => $user->created_at,
                 'roles' => $user->getRoleNames(),
                 'permissions' => $user->getAllPermissions()->pluck('name'),
             ],
@@ -213,6 +220,13 @@ class AuthController extends Controller
             $token->delete();
         }
 
+        // Invalidate session and regenerate CSRF token for stateful sessions
+        if ($request->hasSession()) {
+            Auth::guard('web')->logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+        }
+
         return response()->json([
             'message' => 'Déconnexion réussie',
         ]);
@@ -224,6 +238,11 @@ class AuthController extends Controller
     public function user(Request $request): JsonResponse
     {
         $user = $request->user();
+
+        // If authenticated via token but no session, establish session for web routes
+        if ($user && !Auth::guard('web')->check() && $request->hasSession()) {
+            Auth::guard('web')->login($user);
+        }
 
         return response()->json([
             'user' => [

@@ -22,7 +22,7 @@ return [
     //     // Sanctum::currentRequestHost(),
     // ))),
 
-    'stateful' => explode(',', env('SANCTUM_STATEFUL_DOMAINS', 'localhost,maliyaflow.com,www.maliyaflow.com')),
+    'stateful' => explode(',', env('SANCTUM_STATEFUL_DOMAINS', 'localhost,localhost:8000,127.0.0.1,127.0.0.1:8000,maliyaflow.com,www.maliyaflow.com')),
 
     /*
     |--------------------------------------------------------------------------

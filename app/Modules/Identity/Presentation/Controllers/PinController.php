@@ -9,6 +9,7 @@ use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 
@@ -65,6 +66,9 @@ class PinController extends Controller
                 'message' => 'Code PIN incorrect.',
             ], Response::HTTP_UNAUTHORIZED);
         }
+
+        // Login the user to establish a session for web/Inertia requests
+        Auth::login($user);
 
         // Issue new token
         $token = $user->createToken('auth-token')->plainTextToken;
