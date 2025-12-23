@@ -336,6 +336,9 @@ export function AuthProvider({ children, initialAuth }: AuthProviderProps) {
             setUser(response.user);
             setIsAuthenticated(true);
             setIsLocked(false);
+
+            // Refresh page data and CSRF cookie
+            router.reload();
         } catch (err) {
             throw new Error(
                 err instanceof Error ? err.message : 'Code PIN incorrect',

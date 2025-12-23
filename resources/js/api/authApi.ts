@@ -28,11 +28,20 @@ export const api = axios.create({
 
 // Add CSRF token to requests
 api.interceptors.request.use((config) => {
-    const token = document
-        .querySelector('meta[name="csrf-token"]')
-        ?.getAttribute('content');
-    if (token) {
-        config.headers['X-CSRF-TOKEN'] = token;
+    const xsrfToken = document.cookie
+        .split('; ')
+        .find((row) => row.startsWith('XSRF-TOKEN='))
+        ?.split('=')[1];
+
+    if (xsrfToken) {
+        config.headers['X-XSRF-TOKEN'] = decodeURIComponent(xsrfToken);
+    } else {
+        const token = document
+            .querySelector('meta[name="csrf-token"]')
+            ?.getAttribute('content');
+        if (token) {
+            config.headers['X-CSRF-TOKEN'] = token;
+        }
     }
 
     // Add auth token if exists
