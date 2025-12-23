@@ -23,7 +23,10 @@ class GamificationProfile
         private int $taskScore = 0,
         private int $overallScore = 0,
         private int $level = 1,
-        private int $streakDays = 0
+        private int $streakDays = 0,
+        private int $totalXpEarned = 0,
+        private int $totalXpLost = 0,
+        private ?DateTimeImmutable $lastPenaltyAt = null
     ) {
     }
 
@@ -58,44 +61,55 @@ class GamificationProfile
     public function overallScore(): int { return $this->overallScore; }
     public function level(): int { return $this->level; }
     public function streakDays(): int { return $this->streakDays; }
+    public function totalXpEarned(): int { return $this->totalXpEarned; }
+    public function totalXpLost(): int { return $this->totalXpLost; }
+    public function lastPenaltyAt(): ?DateTimeImmutable { return $this->lastPenaltyAt; }
 
     // Logic
     public function addXp(int $amount): void
     {
         $this->xp += $amount;
+        $this->totalXpEarned += $amount;
         $this->checkLevelUp();
+        $this->updatedAt = new DateTimeImmutable();
+    }
+
+    public function removeXp(int $amount): void
+    {
+        $this->xp = max(0, $this->xp - $amount);
+        $this->totalXpLost += $amount;
+        $this->lastPenaltyAt = new DateTimeImmutable();
+        $this->checkLevelDown();
         $this->updatedAt = new DateTimeImmutable();
     }
 
     private function checkLevelUp(): void
     {
-        // Level 1: 0 - 1,000 XP
-        // Level 2: 1,000 - 10,000 XP
-        // Level 3+: Scalable (e.g. every 10,000 thereafter or exponential?)
-        // Let's implement specific thresholds for early levels and scalable for later.
-
-        $newLevel = 1;
-        if ($this->xp < 1000) {
-            $newLevel = 1;
-        } elseif ($this->xp < 10000) {
-            $newLevel = 2;
-        } else {
-            // Level 3 start at 10,000. Let's say every 15,000 after that adds a level?
-            // Or simple log scale.
-            // For scalability: Level = 2 + floor((XP - 10000) / 10000)
-            // 10,000 -> L3 (2 + 0) -> Wait, if < 10000 is L2, then >= 10000 starts L3?
-            // User said "Level 2: 1000 - 10000". So at 10000 you are Level 3? Or still 2 until 10001?
-            // Let's assume inclusive lower bound.
-            // At 10,000 XP -> Level 3.
-            $base = 10000;
-            $step = 10000; // 10k per level after
-            $newLevel = 3 + (int) floor(($this->xp - $base) / $step);
-        }
+        // Système 1-100 niveaux: 1000 XP par niveau
+        // Niveau 1: 0-999 XP
+        // Niveau 2: 1000-1999 XP
+        // Niveau 3: 2000-2999 XP
+        // ...
+        // Niveau 100: 99000-99999+ XP
+        
+        $newLevel = min(100, (int)floor($this->xp / 1000) + 1);
 
         if ($newLevel > $this->currentLevel) {
+            $oldLevel = $this->currentLevel;
             $this->currentLevel = $newLevel;
-            // Bonus coins on level up
+            // Bonus coins on level up (progressif)
             $this->addCoins(100 * $newLevel); 
+            // Event LevelUp sera dispatché par le handler
+        }
+    }
+
+    private function checkLevelDown(): void
+    {
+        // Vérifier si on descend de niveau après perte d'XP
+        $newLevel = max(1, min(100, (int)floor($this->xp / 1000) + 1));
+
+        if ($newLevel < $this->currentLevel) {
+            $this->currentLevel = $newLevel;
         }
     }
 
@@ -202,5 +216,57 @@ class GamificationProfile
     {
         $this->streakDays = 0;
         $this->updatedAt = new DateTimeImmutable();
+    }
+
+    /**
+     * Applique une pénalité pour inactivité
+     */
+    public function applyInactivityPenalty(int $daysInactive): int
+    {
+        // Pénalité progressive: 10 XP par jour d'inactivité
+        $penalty = $daysInactive * 10;
+        $this->removeXp($penalty);
+        return $penalty;
+    }
+
+    /**
+     * Applique une pénalité pour dépassement de budget
+     */
+    public function applyBudgetExcessPenalty(float $excessPercentage): int
+    {
+        // Pénalité basée sur le pourcentage de dépassement
+        // 10% dépassement = 20 XP, 50% = 100 XP, etc.
+        $penalty = (int)($excessPercentage * 2);
+        $this->removeXp($penalty);
+        return $penalty;
+    }
+
+    /**
+     * Calcule le progrès vers le prochain niveau (0-100%)
+     */
+    public function progressToNextLevel(): float
+    {
+        if ($this->currentLevel >= 100) {
+            return 100.0; // Max level atteint
+        }
+
+        $currentLevelXp = ($this->currentLevel - 1) * 1000;
+        $nextLevelXp = $this->currentLevel * 1000;
+        $xpInCurrentLevel = $this->xp - $currentLevelXp;
+        
+        return ($xpInCurrentLevel / 1000) * 100;
+    }
+
+    /**
+     * XP requis pour le prochain niveau
+     */
+    public function xpToNextLevel(): int
+    {
+        if ($this->currentLevel >= 100) {
+            return 0;
+        }
+
+        $nextLevelXp = $this->currentLevel * 1000;
+        return max(0, $nextLevelXp - $this->xp);
     }
 }

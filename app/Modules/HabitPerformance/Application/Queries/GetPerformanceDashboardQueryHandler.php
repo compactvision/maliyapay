@@ -54,6 +54,8 @@ class GetPerformanceDashboardQueryHandler
             'financialScore' => $profile ? $profile->financialScore() : 0,
             'taskScore' => $profile ? $profile->taskScore() : 0,
             'dailyBonusAvailable' => $profile ? $profile->canClaimDailyBonus(new DateTimeImmutable()) : true,
+            'totalXpEarned' => $profile ? $profile->totalXpEarned() : 0,
+            'totalXpLost' => $profile ? $profile->totalXpLost() : 0,
         ];
 
         return [

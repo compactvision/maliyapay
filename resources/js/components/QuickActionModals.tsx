@@ -9,8 +9,8 @@ export function QuickActionModals() {
     const { activeModal, closeModal } = useQuickAction();
 
     const handleSuccess = () => {
-        // Refresh the current page data if needed
-        router.reload({ preserveScroll: true });
+        // Refresh the current page data (preserveScroll and preserveState are true by default)
+        router.reload();
     };
 
     return (
