@@ -162,7 +162,7 @@ export default function TransactionPage() {
                     </div>
                     <Button
                         onClick={() => setFormOpen(true)}
-                        className="gap-2"
+                        className="hidden gap-2 lg:inline-flex"
                         variant="primary"
                     >
                         <Plus className="h-4 w-4" />

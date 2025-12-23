@@ -86,6 +86,16 @@ export default function Security() {
             setIsPinModalOpen(false);
             setPassword('');
             setStep('password');
+
+            // If onboarding and email not verified, redirect to verify-email
+            if (
+                new URLSearchParams(window.location.search).get(
+                    'onboarding',
+                ) === 'true' &&
+                !user?.email_verified_at
+            ) {
+                router.visit('/verify-email');
+            }
         } catch (err) {
             toast.error(
                 err instanceof Error

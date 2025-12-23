@@ -20,11 +20,9 @@ export function ProfileHeader({ user }: ProfileHeaderProps) {
         .toUpperCase()
         .slice(0, 2);
 
-    const formattedCreationDate = format(
-        new Date(user.created_at),
-        'MMMM yyyy',
-        { locale: fr },
-    );
+    const formattedCreationDate = user.created_at
+        ? format(new Date(user.created_at), 'MMMM yyyy', { locale: fr })
+        : '...';
 
     return (
         <Card className="rounded border-none shadow-none sm:rounded-lg sm:border sm:shadow-sm">

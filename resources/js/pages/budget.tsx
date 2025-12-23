@@ -1,3 +1,4 @@
+import { BudgetForm } from '@/components/budgets/BudgetForm';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -14,32 +15,12 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import {
-    Form,
-    FormControl,
-    FormField,
-    FormItem,
-    FormLabel,
-    FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
-import { useFormErrorScroll } from '@/hooks/useFormErrorScroll';
 import { AppLayout } from '@/layouts/AppLayout';
-import { zodResolver } from '@hookform/resolvers/zod';
 import axios from 'axios';
 import { Loader2, Pencil, Plus, Trash2, Wallet } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
-import z from 'zod';
 
 // Interfaces
 interface Category {
@@ -59,34 +40,13 @@ interface Budget {
     spent_amount: number;
 }
 
-const budgetSchema = z.object({
-    category_id: z.string().min(1, 'Catégorie requise'),
-    amount: z.string().min(1, 'Montant requis'),
-    currency: z.string().length(3, 'Devise invalide'),
-    period: z.enum(['daily', 'weekly', 'monthly']),
-});
-
 export default function Budget() {
     const [categories, setCategories] = useState<Category[]>([]);
     const [budgets, setBudgets] = useState<Budget[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [isSubmitting, setIsSubmitting] = useState(false);
     const [open, setOpen] = useState(false);
     const [selectedBudget, setSelectedBudget] = useState<Budget | null>(null);
     const [deleteId, setDeleteId] = useState<string | null>(null);
-
-    const form = useForm<z.infer<typeof budgetSchema>>({
-        resolver: zodResolver(budgetSchema),
-        defaultValues: {
-            category_id: '',
-            amount: '',
-            currency: 'CDF',
-            period: 'monthly',
-        },
-    });
-
-    // Auto-scroll to first error
-    useFormErrorScroll(form.formState.errors);
 
     const fetchData = async () => {
         try {
@@ -107,39 +67,6 @@ export default function Budget() {
         fetchData();
     }, []);
 
-    useEffect(() => {
-        if (!open) {
-            setSelectedBudget(null);
-            form.reset({
-                category_id: '',
-                amount: '',
-                currency: 'USD',
-                period: 'monthly',
-            });
-        }
-    }, [open, form]);
-
-    const onSubmit = async (values: z.infer<typeof budgetSchema>) => {
-        setIsSubmitting(true);
-        try {
-            if (selectedBudget) {
-                await axios.put(`/api/budgets/${selectedBudget.id}`, values);
-                toast.success('Budget modifié avec succès');
-            } else {
-                await axios.post('/api/budgets', values);
-                toast.success('Budget créé avec succès');
-            }
-            await fetchData();
-            setOpen(false);
-            form.reset();
-        } catch (error) {
-            console.error('Failed to save budget', error);
-            toast.error("Erreur lors de l'enregistrement du budget");
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
-
     const handleDelete = async () => {
         if (!deleteId) return;
         try {
@@ -155,23 +82,11 @@ export default function Budget() {
 
     const handleEdit = (budget: Budget) => {
         setSelectedBudget(budget);
-        form.reset({
-            category_id: budget.category_id,
-            amount: budget.amount.toString(),
-            currency: budget.currency,
-            period: budget.period,
-        });
         setOpen(true);
     };
 
     const handleNewBudget = () => {
         setSelectedBudget(null);
-        form.reset({
-            category_id: '',
-            amount: '',
-            currency: 'USD',
-            period: 'monthly',
-        });
         setOpen(true);
     };
 
@@ -190,11 +105,15 @@ export default function Budget() {
                             Budgets
                         </h1>
                         <p className="text-muted-foreground">
-                            Gérez vos limites de dépenses par catégorie
+                            Gérez vos limites de petites dépenses par catégorie
                         </p>
                     </div>
-                    <Button onClick={handleNewBudget} variant="primary">
-                        <Plus className="mr-2 h-4 w-4" />
+                    <Button
+                        onClick={handleNewBudget}
+                        className="hidden gap-2 lg:inline-flex"
+                        variant="primary"
+                    >
+                        <Plus className="h-4 w-4" />
                         Nouveau Budget
                     </Button>
                 </div>
@@ -210,7 +129,6 @@ export default function Budget() {
                                 const category = categories.find(
                                     (c) => c.id === budget.category_id,
                                 );
-                                // Use real spent amount from backend
                                 const spent = budget.spent_amount || 0;
                                 const percentage = Math.min(
                                     (spent / budget.amount) * 100,
@@ -306,156 +224,12 @@ export default function Budget() {
                     </>
                 )}
 
-                <Dialog open={open} onOpenChange={setOpen}>
-                    <DialogContent className="max-h-[95vh] overflow-y-auto sm:max-w-[425px]">
-                        <DialogHeader>
-                            <DialogTitle className="text-base sm:text-lg">
-                                {selectedBudget
-                                    ? 'Modifier le budget'
-                                    : 'Nouveau budget'}
-                            </DialogTitle>
-                        </DialogHeader>
-                        <Form {...form}>
-                            <form
-                                onSubmit={form.handleSubmit(onSubmit)}
-                                className="space-y-3 sm:space-y-4"
-                            >
-                                <FormField
-                                    control={form.control}
-                                    name="category_id"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel className="text-xs sm:text-sm">
-                                                Catégorie
-                                            </FormLabel>
-                                            <Select
-                                                onValueChange={field.onChange}
-                                                value={field.value}
-                                                disabled={!!selectedBudget}
-                                            >
-                                                <FormControl>
-                                                    <SelectTrigger className="h-9 text-base sm:h-10">
-                                                        <SelectValue placeholder="Sélectionner" />
-                                                    </SelectTrigger>
-                                                </FormControl>
-                                                <SelectContent>
-                                                    {categories.map((cat) => (
-                                                        <SelectItem
-                                                            key={cat.id}
-                                                            value={cat.id}
-                                                        >
-                                                            {cat.name}
-                                                        </SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
-                                            <FormMessage className="text-xs" />
-                                        </FormItem>
-                                    )}
-                                />
-                                <div className="grid grid-cols-2 gap-3 sm:gap-4">
-                                    <FormField
-                                        control={form.control}
-                                        name="amount"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel className="text-xs sm:text-sm">
-                                                    Montant
-                                                </FormLabel>
-                                                <FormControl>
-                                                    <Input
-                                                        type="number"
-                                                        step="0.01"
-                                                        placeholder="0.00"
-                                                        className="h-9 text-base sm:h-10"
-                                                        {...field}
-                                                    />
-                                                </FormControl>
-                                                <FormMessage className="text-xs" />
-                                            </FormItem>
-                                        )}
-                                    />
-                                    <FormField
-                                        control={form.control}
-                                        name="currency"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel className="text-xs sm:text-sm">
-                                                    Devise
-                                                </FormLabel>
-                                                <Select
-                                                    onValueChange={
-                                                        field.onChange
-                                                    }
-                                                    value={field.value}
-                                                >
-                                                    <FormControl>
-                                                        <SelectTrigger className="h-9 text-base sm:h-10">
-                                                            <SelectValue />
-                                                        </SelectTrigger>
-                                                    </FormControl>
-                                                    <SelectContent>
-                                                        <SelectItem value="CDF">
-                                                            CDF
-                                                        </SelectItem>
-                                                        <SelectItem value="USD">
-                                                            USD
-                                                        </SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                                <FormMessage className="text-xs" />
-                                            </FormItem>
-                                        )}
-                                    />
-                                </div>
-                                <FormField
-                                    control={form.control}
-                                    name="period"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel className="text-xs sm:text-sm">
-                                                Période
-                                            </FormLabel>
-                                            <Select
-                                                onValueChange={field.onChange}
-                                                value={field.value}
-                                            >
-                                                <FormControl>
-                                                    <SelectTrigger className="h-9 text-base sm:h-10">
-                                                        <SelectValue />
-                                                    </SelectTrigger>
-                                                </FormControl>
-                                                <SelectContent>
-                                                    <SelectItem value="daily">
-                                                        Journalier
-                                                    </SelectItem>
-                                                    <SelectItem value="weekly">
-                                                        Hebdomadaire
-                                                    </SelectItem>
-                                                    <SelectItem value="monthly">
-                                                        Mensuel
-                                                    </SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                            <FormMessage className="text-xs" />
-                                        </FormItem>
-                                    )}
-                                />
-                                <Button
-                                    variant="primary"
-                                    type="submit"
-                                    className="h-9 w-full text-sm sm:h-10"
-                                    disabled={isSubmitting}
-                                >
-                                    {isSubmitting && (
-                                        <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin sm:h-4 sm:w-4" />
-                                    )}
-                                    Enregistrer
-                                </Button>
-                            </form>
-                        </Form>
-                    </DialogContent>
-                </Dialog>
+                <BudgetForm
+                    open={open}
+                    onOpenChange={setOpen}
+                    budget={selectedBudget}
+                    onSuccess={fetchData}
+                />
 
                 <Dialog
                     open={!!deleteId}

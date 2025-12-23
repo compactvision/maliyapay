@@ -12,6 +12,7 @@ import { LayoutProvider } from './components/LayoutComponents';
 import { Toaster } from './components/ui/sonner';
 import { AuthProvider } from './contexts/AuthContext';
 import { NotificationProvider } from './contexts/NotificationContext';
+import { QuickActionProvider } from './contexts/QuickActionContext';
 
 // --- Axios Configuration ---
 window.axios = axios;
@@ -41,8 +42,6 @@ axios.interceptors.response.use(
     (error) => {
         if (error.response?.status === 403) {
             const isGet = error.config?.method?.toLowerCase() === 'get';
-            // Only show toast for non-GET requests (actions like POST/PUT/DELETE)
-            // Page transitions (GET) are handled by Inertia and our backend exception handler
             if (!isGet) {
                 toast.error(
                     "Vous n'êtes pas autorisé à effectuer cette action",
@@ -78,7 +77,6 @@ createInertiaApp({
             import.meta.glob('./pages/**/*.tsx'),
         );
 
-        // Wrap page component with auth guard based on page name
         const Component = page.default;
         const isGuestPage =
             name === 'auth' ||
@@ -90,12 +88,9 @@ createInertiaApp({
             name === 'auth/reset-password' ||
             name === 'auth/two-factor-challenge';
 
-        // Special pages that manage their own guards or have specific requirements
         const isSpecialPage = name === 'verify-email';
 
-        // Return new object with wrapped component (can't modify page.default directly)
         if (isGuestPage) {
-            // Wrap auth pages with GuestGuard
             return {
                 default: (props: any) => (
                     <GuestGuard>
@@ -104,10 +99,8 @@ createInertiaApp({
                 ),
             };
         } else if (isSpecialPage) {
-            // Don't wrap special pages, they handle their own guards
             return page;
         } else {
-            // Wrap all other pages with AuthGuard
             return {
                 default: (props: any) => (
                     <AuthGuard>
@@ -122,12 +115,16 @@ createInertiaApp({
 
         root.render(
             <ErrorBoundary>
-                <AuthProvider>
+                <AuthProvider
+                    initialAuth={(props as any).initialPage.props.auth}
+                >
                     <NotificationProvider>
-                        <LayoutProvider>
-                            <App {...props} />
-                            <Toaster />
-                        </LayoutProvider>
+                        <QuickActionProvider>
+                            <LayoutProvider>
+                                <App {...props} />
+                                <Toaster />
+                            </LayoutProvider>
+                        </QuickActionProvider>
                     </NotificationProvider>
                 </AuthProvider>
             </ErrorBoundary>,

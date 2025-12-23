@@ -8,6 +8,7 @@
 import { api, authApi } from '@/api/authApi';
 import { UnlockScreen } from '@/components/auth/UnlockScreen';
 import type { LoginCredentials, RegisterData, User } from '@/types/auth';
+import { router } from '@inertiajs/react';
 import { AnimatePresence } from 'framer-motion';
 import {
     createContext,
@@ -53,18 +54,45 @@ export const AuthContext = createContext<AuthContextValue | undefined>(
 
 interface AuthProviderProps {
     children: ReactNode;
+    initialAuth?: {
+        user: User | null;
+    };
 }
 
-export function AuthProvider({ children }: AuthProviderProps) {
-    const [user, setUser] = useState<User | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
+export function AuthProvider({ children, initialAuth }: AuthProviderProps) {
+    const [user, setUser] = useState<User | null>(initialAuth?.user || null);
+    const [isLoading, setIsLoading] = useState(!initialAuth?.user);
+    const [isAuthenticated, setIsAuthenticated] = useState(!!initialAuth?.user);
     const [isLocked, setIsLocked] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    // Check authentication status on mount - ONLY ONCE
+    // Sync state if navigation happens (standard Inertia behavior)
+    useEffect(() => {
+        const unbind = router.on('navigate', (event: any) => {
+            const sharedAuth = event.detail?.page?.props?.auth;
+            if (sharedAuth?.user) {
+                setUser(sharedAuth.user);
+                setIsAuthenticated(true);
+                setIsLoading(false);
+            } else if (sharedAuth && sharedAuth.user === null) {
+                // Server explicitly says user is null
+                setUser(null);
+                setIsAuthenticated(false);
+                setIsLoading(false);
+            }
+        });
+        return unbind;
+    }, []);
+
+    // Check authentication status on mount if not already handled by initialAuth
     useEffect(() => {
         const checkAuth = async () => {
+            // If already authenticated via initial auth, skip API call
+            if (isAuthenticated) {
+                setIsLoading(false);
+                return;
+            }
+
             if (authApi.isAuthenticated()) {
                 try {
                     const userData = await authApi.getUser();
@@ -80,7 +108,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         };
 
         checkAuth();
-    }, []); // Empty dependency array = runs only once
+    }, []); // Run once on mount
 
     // Intercept 401 errors to trigger auto-lock
     useLayoutEffect(() => {

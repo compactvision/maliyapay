@@ -1,12 +1,5 @@
-/**
- * AuthGuard Component
- *
- * Protects routes by checking authentication status
- * Redirects to login if not authenticated
- * Redirects to verify-email if email is not verified
- */
-
 import { useAuth } from '@/hooks/useAuth';
+import { router } from '@inertiajs/react'; // Added import
 import { useEffect } from 'react';
 import { SplashScreen } from '../ui/splash-screen';
 
@@ -19,22 +12,24 @@ export function AuthGuard({
     children,
     requireEmailVerification = true,
 }: AuthGuardProps) {
-    const { isAuthenticated, isLoading, user } = useAuth();
+    const { isAuthenticated, isLoading, user, isLocked } = useAuth();
 
     useEffect(() => {
-        if (!isLoading && !isAuthenticated) {
-            window.location.href = '/login';
+        if (!isLoading && !isAuthenticated && !isLocked) {
+            router.get('/login'); // Use router.get for login redirect
         } else if (
             !isLoading &&
             isAuthenticated &&
+            !isLocked &&
             requireEmailVerification &&
             user &&
             !user.email_verified_at &&
-            window.location.pathname !== '/verify-email'
+            window.location.pathname !== '/verify-email' &&
+            !window.location.search.includes('onboarding=true')
         ) {
-            window.location.href = '/verify-email';
+            router.get('/verify-email'); // Use router.get
         }
-    }, [isAuthenticated, isLoading, user, requireEmailVerification]);
+    }, [isAuthenticated, isLoading, user, isLocked, requireEmailVerification]);
 
     if (isLoading) {
         return <SplashScreen />;
@@ -48,7 +43,8 @@ export function AuthGuard({
         requireEmailVerification &&
         user &&
         !user.email_verified_at &&
-        window.location.pathname !== '/verify-email'
+        window.location.pathname !== '/verify-email' &&
+        !window.location.search.includes('onboarding=true')
     ) {
         return null; // Will redirect via useEffect
     }

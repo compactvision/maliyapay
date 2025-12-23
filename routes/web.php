@@ -15,7 +15,7 @@ Route::get('/reset-password/{token}', [PageController::class, 'resetPassword'])-
 
 
 // Protected routes (auth required via Sanctum)
-Route::group(['middleware' => ['auth:sanctum']], function () {
+Route::group(['middleware' => ['auth']], function () {
     Route::get('/', [PageController::class, 'dashboard'])->middleware(['feature.enabled:dashboard', 'permission:view dashboard'])->name('home');
     Route::get('/account', [PageController::class, 'account'])->middleware(['feature.enabled:accounts', 'permission:view accounts'])->name('account');
     Route::get('/transaction', [PageController::class, 'transaction'])->middleware(['feature.enabled:transactions', 'permission:view transactions'])->name('transaction');

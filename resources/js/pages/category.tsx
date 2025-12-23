@@ -1,3 +1,4 @@
+import { CategoryForm } from '@/components/categories/CategoryForm';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -10,29 +11,8 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-} from '@/components/ui/dialog';
-import {
-    Form,
-    FormControl,
-    FormField,
-    FormItem,
-    FormLabel,
-    FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import {
-    useCategories,
-    useCategoryForm,
-    useCategoryMutations,
-    type CategoryFormValues,
-} from '@/hooks/useCategories';
-import { useFormErrorScroll } from '@/hooks/useFormErrorScroll';
+import { useCategories, useCategoryMutations } from '@/hooks/useCategories';
 import { AppLayout } from '@/layouts/AppLayout';
 import type { Category } from '@/types/category';
 import {
@@ -47,24 +27,6 @@ import {
 import { useState } from 'react';
 import { toast } from 'sonner';
 
-// --- Mock Colors ---
-const mockColors = [
-    '#ef4444',
-    '#f97316',
-    '#eab308',
-    '#84cc16',
-    '#22c55e',
-    '#14b8a6',
-    '#06b6d4',
-    '#3b82f6',
-    '#6366f1',
-    '#8b5cf6',
-    '#a855f7',
-    '#d946ef',
-    '#ec4899',
-    '#f43f5e',
-];
-
 export default function CategoryPage() {
     // --- Hooks ---
     const {
@@ -74,16 +36,10 @@ export default function CategoryPage() {
         refetch,
     } = useCategories();
     const {
-        createCategory,
-        updateCategory,
         deleteCategory,
         isSubmitting,
         error: mutationError,
     } = useCategoryMutations();
-    const form = useCategoryForm();
-
-    // Auto-scroll to first error
-    useFormErrorScroll(form.formState.errors);
 
     // --- State Management ---
     const [activeTab, setActiveTab] = useState<'income' | 'expense'>('expense');
@@ -100,43 +56,9 @@ export default function CategoryPage() {
         activeTab === 'expense' ? expenseCategories : incomeCategories;
 
     // --- Form Handling ---
-    const resetForm = () => {
-        form.reset();
-        setEditCategory(null);
-    };
-
     const openForm = (category?: Category) => {
-        if (category) {
-            form.setValue('name', category.name);
-            form.setValue('type', category.type);
-            form.setValue('color', category.color);
-            setEditCategory(category);
-        } else {
-            resetForm();
-        }
+        setEditCategory(category || null);
         setFormOpen(true);
-    };
-
-    const closeForm = () => {
-        setFormOpen(false);
-        resetForm();
-    };
-
-    const handleSubmit = async (values: CategoryFormValues) => {
-        try {
-            if (editCategory) {
-                await updateCategory(editCategory.id, values);
-                toast.success('Catégorie modifiée avec succès');
-            } else {
-                await createCategory(values);
-                toast.success('Catégorie créée avec succès');
-            }
-            await refetch();
-            closeForm();
-        } catch (err) {
-            console.error('Failed to save category:', err);
-            toast.error("Erreur lors de l'enregistrement de la catégorie");
-        }
     };
 
     const handleDelete = async () => {
@@ -176,7 +98,6 @@ export default function CategoryPage() {
                         </p>
                     </div>
 
-                    {/* Actions visibles sur mobile, au hover sur desktop */}
                     <div className="flex gap-1 sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100">
                         <Button
                             variant="ghost"
@@ -203,7 +124,6 @@ export default function CategoryPage() {
     return (
         <AppLayout>
             <div className="space-y-6">
-                {/* Header */}
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                         <h1 className="text-2xl font-bold tracking-tight">
@@ -215,7 +135,7 @@ export default function CategoryPage() {
                     </div>
                     <Button
                         onClick={() => openForm()}
-                        className="gap-2 bg-emerald-600 hover:bg-emerald-700"
+                        className="hidden gap-2 bg-emerald-600 hover:bg-emerald-700 lg:inline-flex"
                         variant="primary"
                     >
                         <Plus className="h-4 w-4" />
@@ -223,7 +143,6 @@ export default function CategoryPage() {
                     </Button>
                 </div>
 
-                {/* Error Display */}
                 {(fetchError || mutationError) && (
                     <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-200">
                         <p className="font-medium">Erreur</p>
@@ -231,14 +150,12 @@ export default function CategoryPage() {
                     </div>
                 )}
 
-                {/* Loading State */}
                 {isLoading && (
                     <div className="flex items-center justify-center py-12">
                         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                     </div>
                 )}
 
-                {/* Categories Tabs */}
                 {!isLoading && (
                     <Card>
                         <Tabs
@@ -294,129 +211,13 @@ export default function CategoryPage() {
                 )}
             </div>
 
-            {/* Category Form Dialog */}
-            <Dialog open={formOpen} onOpenChange={closeForm}>
-                <DialogContent className="max-h-[95vh] overflow-y-auto sm:max-w-[425px]">
-                    <DialogHeader>
-                        <DialogTitle className="text-base sm:text-lg">
-                            {editCategory
-                                ? 'Modifier la catégorie'
-                                : 'Nouvelle catégorie'}
-                        </DialogTitle>
-                    </DialogHeader>
-                    <Form {...form}>
-                        <form
-                            onSubmit={form.handleSubmit(handleSubmit)}
-                            className="space-y-3 sm:space-y-4"
-                        >
-                            <FormField
-                                control={form.control}
-                                name="name"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel className="text-xs sm:text-sm">
-                                            Nom
-                                        </FormLabel>
-                                        <FormControl>
-                                            <Input
-                                                placeholder="Ex: Alimentation"
-                                                className="h-9 text-base sm:h-10"
-                                                {...field}
-                                            />
-                                        </FormControl>
-                                        <FormMessage className="text-xs" />
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name="type"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel className="text-xs sm:text-sm">
-                                            Type
-                                        </FormLabel>
-                                        <Tabs
-                                            value={field.value}
-                                            onValueChange={field.onChange}
-                                        >
-                                            <TabsList className="grid h-9 w-full grid-cols-2 sm:h-10">
-                                                <TabsTrigger
-                                                    value="expense"
-                                                    className="text-sm"
-                                                >
-                                                    Dépense
-                                                </TabsTrigger>
-                                                <TabsTrigger
-                                                    value="income"
-                                                    className="text-sm"
-                                                >
-                                                    Revenu
-                                                </TabsTrigger>
-                                            </TabsList>
-                                        </Tabs>
-                                        <FormMessage className="text-xs" />
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name="color"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel className="text-xs sm:text-sm">
-                                            Couleur
-                                        </FormLabel>
-                                        <FormControl>
-                                            <div className="flex flex-wrap gap-2">
-                                                {mockColors.map((color) => (
-                                                    <button
-                                                        key={color}
-                                                        type="button"
-                                                        className={`h-9 w-9 rounded-full transition-transform sm:h-10 sm:w-10 ${field.value === color ? 'scale-110 ring-2 ring-primary ring-offset-2' : ''}`}
-                                                        style={{
-                                                            backgroundColor:
-                                                                color,
-                                                        }}
-                                                        onClick={() =>
-                                                            field.onChange(
-                                                                color,
-                                                            )
-                                                        }
-                                                    />
-                                                ))}
-                                            </div>
-                                        </FormControl>
-                                        <FormMessage className="text-xs" />
-                                    </FormItem>
-                                )}
-                            />
-                            <div className="flex gap-2 pt-3 sm:gap-3 sm:pt-4">
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    className="h-9 flex-1 text-sm sm:h-10"
-                                    onClick={closeForm}
-                                >
-                                    Annuler
-                                </Button>
-                                <Button
-                                    type="submit"
-                                    className="h-9 flex-1 text-sm sm:h-10"
-                                    disabled={isSubmitting}
-                                >
-                                    {isSubmitting && (
-                                        <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin sm:h-4 sm:w-4" />
-                                    )}
-                                    {editCategory ? 'Modifier' : 'Ajouter'}
-                                </Button>
-                            </div>
-                        </form>
-                    </Form>
-                </DialogContent>
-            </Dialog>
+            <CategoryForm
+                open={formOpen}
+                onOpenChange={setFormOpen}
+                category={editCategory}
+                onSuccess={refetch}
+            />
 
-            {/* Delete Confirmation */}
             <AlertDialog
                 open={!!deleteId}
                 onOpenChange={() => setDeleteId(null)}

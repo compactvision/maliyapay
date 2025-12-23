@@ -58,7 +58,7 @@ export default function Auth() {
         setError(null);
         try {
             await register(values);
-            window.location.href = '/';
+            window.location.href = '/settings/security?onboarding=true';
         } catch (err) {
             setError(
                 err instanceof Error ? err.message : "Erreur d'inscription",

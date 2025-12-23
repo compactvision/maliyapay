@@ -1,10 +1,5 @@
-/**
- * GuestGuard Component
- *
- * Redirects authenticated users away from auth pages
- */
-
 import { useAuth } from '@/hooks/useAuth';
+import { router } from '@inertiajs/react';
 import { useEffect } from 'react';
 import { SplashScreen } from '../ui/splash-screen';
 
@@ -13,13 +8,13 @@ interface GuestGuardProps {
 }
 
 export function GuestGuard({ children }: GuestGuardProps) {
-    const { isAuthenticated, isLoading } = useAuth();
+    const { isAuthenticated, isLoading, isLocked } = useAuth();
 
     useEffect(() => {
-        if (!isLoading && isAuthenticated) {
-            window.location.href = '/';
+        if (!isLoading && isAuthenticated && !isLocked) {
+            router.get('/'); // Use router.get
         }
-    }, [isAuthenticated, isLoading]);
+    }, [isAuthenticated, isLoading, isLocked]);
 
     if (isLoading) {
         return <SplashScreen />;

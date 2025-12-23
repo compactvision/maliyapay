@@ -10,6 +10,7 @@ import {
     useLayout,
 } from '@/components/LayoutComponents';
 import { OfflineIndicator } from '@/components/OfflineIndicator';
+import { QuickActionModals } from '@/components/QuickActionModals';
 import { ReactNode } from 'react';
 
 interface AppLayoutProps {
@@ -32,6 +33,7 @@ function AppLayoutContent({ children }: { children: ReactNode }) {
             <RightMenu />
             <MobileBottomNavbar />
             <OfflineIndicator />
+            <QuickActionModals />
 
             {/* --- Contenu Principal --- */}
             <main className="flex flex-col">

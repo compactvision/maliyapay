@@ -475,41 +475,51 @@ export const RightMenu = () => {
     );
 };
 
+import { MobileQuickActions } from './MobileQuickActions';
+
 // --- Composant pour la Bottom Navbar Mobile (Stylée) ---
 export const MobileBottomNavbar = () => {
     const currentUrl = usePage().url;
+
     return (
-        <nav className="fixed right-0 bottom-0 left-0 z-30 border-t border-gray-200 bg-white/80 backdrop-blur-md lg:hidden dark:border-gray-700 dark:bg-gray-900/80">
-            <div className="flex h-16 items-center justify-around">
-                {mobileNavItems.map((item) => (
-                    <Link
-                        key={item.title}
-                        href={item.url}
-                        className={cn(
-                            'group flex flex-1 flex-col items-center justify-center gap-1 py-2 text-xs font-medium transition-all duration-200',
-                            (
-                                item.url === '/'
-                                    ? currentUrl === '/'
-                                    : currentUrl.startsWith(item.url)
-                            )
-                                ? 'text-blue-600 dark:text-blue-400'
-                                : 'text-gray-600 dark:text-gray-400',
-                        )}
-                    >
-                        <item.icon
-                            className={cn(
-                                'h-5 w-5 transition-transform duration-200 group-hover:scale-110',
-                                (item.url === '/'
-                                    ? currentUrl === '/'
-                                    : currentUrl.startsWith(item.url)) &&
-                                    'scale-110',
-                            )}
-                        />
-                        <span>{item.title}</span>
-                    </Link>
-                ))}
+        <>
+            {/* FAB Overlay - Positioned above and to the right of the navbar */}
+            <div className="fixed right-4 bottom-24 z-50 lg:hidden">
+                <MobileQuickActions />
             </div>
-        </nav>
+
+            <nav className="pb-safe fixed right-0 bottom-0 left-0 z-40 border-t border-gray-200 bg-white/90 backdrop-blur-xl lg:hidden dark:border-gray-800 dark:bg-gray-900/90">
+                <div className="flex h-16 items-center justify-around">
+                    {mobileNavItems.map((item) => (
+                        <Link
+                            key={item.title}
+                            href={item.url}
+                            className={cn(
+                                'group flex flex-1 flex-col items-center justify-center gap-1 py-2 text-[10px] font-medium transition-all duration-200',
+                                (
+                                    item.url === '/'
+                                        ? currentUrl === '/'
+                                        : currentUrl.startsWith(item.url)
+                                )
+                                    ? 'text-emerald-500 dark:text-emerald-400'
+                                    : 'text-gray-500 dark:text-gray-400',
+                            )}
+                        >
+                            <item.icon
+                                className={cn(
+                                    'h-5 w-5 transition-transform duration-200 group-hover:scale-110',
+                                    (item.url === '/'
+                                        ? currentUrl === '/'
+                                        : currentUrl.startsWith(item.url)) &&
+                                        'scale-110',
+                                )}
+                            />
+                            <span className="truncate">{item.title}</span>
+                        </Link>
+                    ))}
+                </div>
+            </nav>
+        </>
     );
 };
 
