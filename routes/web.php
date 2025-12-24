@@ -25,6 +25,8 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('/task', [PageController::class, 'task'])->middleware(['feature.enabled:tasks', 'permission:view tasks'])->name('task');
     Route::get('/routine', [PageController::class, 'routine'])->middleware(['feature.enabled:routines', 'permission:view routines'])->name('routine');
     Route::get('/notification', [PageController::class, 'notification'])->middleware('permission:view notifications')->name('notification');
+    Route::get('/goal', [PageController::class, 'goal'])->name('goal');
+    Route::get('/growth', [PageController::class, 'growth'])->middleware(['permission:view tasks'])->name('growth');
     
     Route::group(['middleware' => ['verified', 'feature.enabled:performance', 'permission:view habit-performance']], function () {
         Route::get('/habits', [\App\Modules\HabitPerformance\Presentation\Controllers\HabitPerformanceController::class, 'index'])->name('habit-performance.index');
@@ -40,6 +42,12 @@ Route::group(['middleware' => ['auth']], function () {
     Route::patch('/password', [\App\Http\Controllers\Settings\PasswordController::class, 'update'])
         ->middleware(['permission:edit settings'])
         ->name('profile.password.update');
+
+    Route::group(['prefix' => 'api/growth'], function () {
+        Route::get('/', [\App\Modules\Growth\Presentation\Controllers\GrowthController::class, 'index']);
+        Route::post('/routine-kits/{id}/import', [\App\Modules\Growth\Presentation\Controllers\GrowthController::class, 'importRoutineKit']);
+        Route::post('/progress', [\App\Modules\Growth\Presentation\Controllers\GrowthController::class, 'updateBusinessProgress']);
+    });
 });
 
 
@@ -51,6 +59,12 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
     // Settings
     Route::get('/settings', [\App\Modules\Settings\Presentation\Controllers\MaliyaSettingsController::class, 'index'])->middleware('permission:view settings')->name('admin.settings.index');
     Route::post('/settings', [\App\Modules\Settings\Presentation\Controllers\MaliyaSettingsController::class, 'update'])->middleware('permission:edit settings')->name('admin.settings.update');
+
+    Route::get('/growth', [\App\Http\Controllers\PageController::class, 'adminGrowth'])->name('admin.growth.index');
+    Route::get('/growth/config', [\App\Modules\Growth\Presentation\Controllers\GrowthController::class, 'config'])->name('admin.growth.config');
+    Route::get('/growth/advice/config', [\App\Modules\Growth\Presentation\Controllers\GrowthController::class, 'adviceConfig'])->name('admin.growth.advice.config');
+    Route::get('/growth/kit/config', [\App\Modules\Growth\Presentation\Controllers\GrowthController::class, 'kitConfig'])->name('admin.growth.kit.config');
+    Route::get('/growth/business/config', [\App\Modules\Growth\Presentation\Controllers\GrowthController::class, 'businessConfig'])->name('admin.growth.business.config');
 
     // Roles & Permissions
     Route::middleware('permission:manage roles')->group(function () {
@@ -65,6 +79,21 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
     Route::middleware('permission:manage users')->group(function () {
         Route::get('/users', [\App\Modules\Identity\Presentation\Controllers\UserManagementController::class, 'index'])->name('admin.users.index');
         Route::post('/users/{user}/roles', [\App\Modules\Identity\Presentation\Controllers\UserManagementController::class, 'assignRole'])->name('admin.users.assign_role');
+    });
+
+    // Growth Module Admin
+    Route::prefix('growth')->group(function () {
+        Route::post('/advices', [\App\Modules\Growth\Presentation\Controllers\AdminGrowthController::class, 'storeAdvice']);
+        Route::put('/advices/{id}', [\App\Modules\Growth\Presentation\Controllers\AdminGrowthController::class, 'updateAdvice']);
+        Route::delete('/advices/{id}', [\App\Modules\Growth\Presentation\Controllers\AdminGrowthController::class, 'destroyAdvice']);
+        
+        Route::post('/routine-kits', [\App\Modules\Growth\Presentation\Controllers\AdminGrowthController::class, 'storeRoutineKit']);
+        Route::put('/routine-kits/{id}', [\App\Modules\Growth\Presentation\Controllers\AdminGrowthController::class, 'updateRoutineKit']);
+        Route::delete('/routine-kits/{id}', [\App\Modules\Growth\Presentation\Controllers\AdminGrowthController::class, 'destroyRoutineKit']);
+        
+        Route::post('/business-models', [\App\Modules\Growth\Presentation\Controllers\AdminGrowthController::class, 'storeBusinessModel']);
+        Route::put('/business-models/{id}', [\App\Modules\Growth\Presentation\Controllers\AdminGrowthController::class, 'updateBusinessModel']);
+        Route::delete('/business-models/{id}', [\App\Modules\Growth\Presentation\Controllers\AdminGrowthController::class, 'destroyBusinessModel']);
     });
 });
 

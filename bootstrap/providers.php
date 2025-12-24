@@ -11,4 +11,5 @@ return [
     App\Modules\Routine\RoutineServiceProvider::class,
     App\Modules\Notification\NotificationServiceProvider::class,
     App\Modules\HabitPerformance\HabitPerformanceServiceProvider::class,
+    App\Modules\Growth\GrowthServiceProvider::class,
 ];

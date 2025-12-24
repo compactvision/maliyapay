@@ -15,6 +15,7 @@ import {
     PiggyBank,
     Repeat,
     Settings,
+    Sparkles,
     Sun,
     Tags,
     User,
@@ -140,13 +141,14 @@ const mainNavItems = [
     { title: 'Tâches', url: '/task', icon: CheckSquare },
     { title: 'Routine', url: '/routine', icon: Repeat },
     { title: 'Performance', url: '/habits', icon: LineChart },
+    { title: 'Croissance', url: '/growth', icon: Sparkles },
 ];
 
 const mobileNavItems = [
     { title: 'Accueil', url: '/', icon: LayoutDashboard },
     { title: 'Transactions', url: '/transaction', icon: ArrowUpDown },
     { title: 'Tâches', url: '/task', icon: CheckSquare },
-    { title: 'Statistiques', url: '/statistic', icon: BarChart3 },
+    { title: 'Croissance', url: '/growth', icon: Sparkles },
     { title: 'Performance', url: '/habits', icon: LineChart },
 ];
 
@@ -262,19 +264,34 @@ const AdminSidebarLink = ({
     if (!isAdmin) return null;
 
     return (
-        <li>
-            <Link
-                href="/admin/settings"
-                className={cn(
-                    'group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-red-600 transition-all duration-200 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-900/30 dark:hover:text-red-300',
-                    currentUrl.startsWith('/admin') &&
-                        'bg-red-50 text-red-700 hover:bg-red-100 dark:bg-red-900/40 dark:text-red-300 dark:hover:bg-red-900/50',
-                )}
-            >
-                <Settings className="h-5 w-5 shrink-0" />
-                {sidebarIsOpen && <span>Administration</span>}
-            </Link>
-        </li>
+        <>
+            <li>
+                <Link
+                    href="/admin/settings"
+                    className={cn(
+                        'group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-red-600 transition-all duration-200 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-900/30 dark:hover:text-red-300',
+                        currentUrl.startsWith('/admin/settings') &&
+                            'bg-red-50 text-red-700 hover:bg-red-100 dark:bg-red-900/40 dark:text-red-300 dark:hover:bg-red-900/50',
+                    )}
+                >
+                    <Settings className="h-5 w-5 shrink-0" />
+                    {sidebarIsOpen && <span>Administration</span>}
+                </Link>
+            </li>
+            <li>
+                <Link
+                    href="/admin/growth"
+                    className={cn(
+                        'group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-purple-600 transition-all duration-200 hover:bg-purple-50 hover:text-purple-700 dark:text-purple-400 dark:hover:bg-purple-900/30 dark:hover:text-purple-300',
+                        currentUrl.startsWith('/admin/growth') &&
+                            'bg-purple-50 text-purple-700 hover:bg-purple-100 dark:bg-purple-900/40 dark:text-purple-300 dark:hover:bg-purple-900/50',
+                    )}
+                >
+                    <Sparkles className="h-5 w-5 shrink-0" />
+                    {sidebarIsOpen && <span>Gérer Croissance</span>}
+                </Link>
+            </li>
+        </>
     );
 };
 
@@ -402,17 +419,27 @@ export const RightMenu = () => {
                         Mon Profil
                     </Link>
 
-                    {/* Admin Link for Mobile/RightMenu */}
+                    {/* Admin Links for Mobile/RightMenu */}
                     {(user?.roles?.includes('admin') ||
                         user?.email === 'admin@admin.com') && (
-                        <Link
-                            href="/admin/settings"
-                            onClick={closeRightMenu}
-                            className="flex items-center gap-3 rounded-lg px-3 py-2 text-red-600 transition-colors hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/30"
-                        >
-                            <Settings className="h-5 w-5" />
-                            Administration
-                        </Link>
+                        <>
+                            <Link
+                                href="/admin/settings"
+                                onClick={closeRightMenu}
+                                className="flex items-center gap-3 rounded-lg px-3 py-2 text-red-600 transition-colors hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/30"
+                            >
+                                <Settings className="h-5 w-5" />
+                                Administration
+                            </Link>
+                            <Link
+                                href="/admin/growth"
+                                onClick={closeRightMenu}
+                                className="flex items-center gap-3 rounded-lg px-3 py-2 text-purple-600 transition-colors hover:bg-purple-50 dark:text-purple-400 dark:hover:bg-purple-900/30"
+                            >
+                                <Sparkles className="h-5 w-5" />
+                                Gérer Croissance
+                            </Link>
+                        </>
                     )}
                     <Link
                         href="/budget"
@@ -445,6 +472,14 @@ export const RightMenu = () => {
                     >
                         <Calendar className="h-5 w-5" />
                         Routine
+                    </Link>
+                    <Link
+                        href="/growth"
+                        onClick={closeRightMenu}
+                        className="flex items-center gap-3 rounded-lg px-3 py-2 text-gray-600 transition-colors hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"
+                    >
+                        <Sparkles className="h-5 w-5" />
+                        Croissance
                     </Link>
                     <Link
                         href="/settings"

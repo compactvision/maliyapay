@@ -31,7 +31,7 @@
             }
         </style>
 
-        <title inertia>{{ config('app.name', 'MaliyaPay') }}</title>
+        <title inertia>{{ config('app.name', 'MaliyaFlow') }}</title>
 
         <link rel="icon" type="image/png" href="/logo.png">
         <link rel="icon" type="image/svg+xml" href="/logo.png">
@@ -41,7 +41,7 @@
         <meta name="mobile-web-app-capable" content="yes">
         <meta name="apple-mobile-web-app-capable" content="yes">
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-        <meta name="apple-mobile-web-app-title" content="MaliyaPay">
+        <meta name="apple-mobile-web-app-title" content="MaliyaFlow">
 
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600" rel="stylesheet" />

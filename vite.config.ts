@@ -28,8 +28,8 @@ export default defineConfig({
             scope: '/',
             includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'logo.svg'],
             manifest: {
-                name: 'MaliyaPay',
-                short_name: 'MaliyaPay',
+                name: 'MaliyaFlow',
+                short_name: 'MaliyaFlow',
                 description:
                     'Votre gestionnaire de budget et routines intelligent',
                 theme_color: '#0f172a',

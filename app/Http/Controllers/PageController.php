@@ -142,4 +142,31 @@ class PageController extends Controller
             'requiresAuth' => true,
         ]);
     }
+
+    /**
+     * Show goal/objectives page
+     */
+    public function goal(): Response
+    {
+        return Inertia::render('goal', [
+            'requiresAuth' => true,
+        ]);
+    }
+
+    public function growth(): Response
+    {
+        return Inertia::render('growth', [
+            'requiresAuth' => true,
+        ]);
+    }
+
+    /**
+     * Show admin growth management page
+     */
+    public function adminGrowth(): Response
+    {
+        return Inertia::render('admin/growth/Index', [
+            'requiresAuth' => true,
+        ]);
+    }
 }

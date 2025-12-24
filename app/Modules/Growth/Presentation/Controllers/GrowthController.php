@@ -1,0 +1,87 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Modules\Growth\Presentation\Controllers;
+
+use App\Http\Controllers\Controller;
+use App\Modules\Growth\Domain\Services\GrowthService;
+use App\Modules\Growth\Domain\Services\RoutineImportService;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Inertia\Inertia;
+
+class GrowthController extends Controller
+{
+    public function __construct(
+        private readonly GrowthService $growthService,
+        private readonly RoutineImportService $routineImportService
+    ) {}
+
+    public function index(Request $request): JsonResponse
+    {
+        return response()->json([
+            'advices' => $this->growthService->getAllAdvices(),
+            'routine_kits' => $this->growthService->getAllRoutineKits(),
+            'business_models' => $this->growthService->getAllBusinessModelsWithProgress((int) $request->user()->id),
+        ]);
+    }
+
+    public function updateBusinessProgress(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'business_model_id' => 'required|string',
+            'step_id' => 'required|string',
+        ]);
+
+        $this->growthService->updateBusinessProgress(
+            (int) $request->user()->id,
+            $data['business_model_id'],
+            $data['step_id']
+        );
+
+        return response()->json(['message' => 'Progress updated successfully']);
+    }
+
+    public function importRoutineKit(string $id, Request $request): JsonResponse
+    {
+        try {
+            $this->routineImportService->importKitToUser($id, (int) $request->user()->id);
+            return response()->json(['message' => 'Routine kit imported successfully']);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
+
+    public function config(Request $request)
+    {
+        $item = json_decode($request->get('item'), true);
+        $type = $request->get('type');
+        
+        return Inertia::render('admin/growth/Config', [
+            'item' => $item,
+            'type' => $type,
+        ]);
+    }
+
+    public function adviceConfig(Request $request)
+    {
+        return Inertia::render('admin/growth/AdviceConfig', [
+            'item' => json_decode($request->get('item'), true),
+        ]);
+    }
+
+    public function kitConfig(Request $request)
+    {
+        return Inertia::render('admin/growth/KitConfig', [
+            'item' => json_decode($request->get('item'), true),
+        ]);
+    }
+
+    public function businessConfig(Request $request)
+    {
+        return Inertia::render('admin/growth/BusinessConfig', [
+            'item' => json_decode($request->get('item'), true),
+        ]);
+    }
+}
