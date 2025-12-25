@@ -3,16 +3,16 @@ import {
     Card,
     CardContent,
     CardDescription,
-    CardHeader,
     CardTitle,
 } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useTasks } from '@/hooks/useTasks';
 import { motion } from 'framer-motion';
-import { CheckCircle2, Circle } from 'lucide-react';
+import { CheckCircle2, Circle, Image as ImageIcon } from 'lucide-react';
 import { useEffect } from 'react';
 
 import { useGrowth } from '@/hooks/useGrowth';
+import { router } from '@inertiajs/react';
 
 const AdviceTab = () => {
     const { tasks, refetch: fetchTasks } = useTasks();
@@ -30,6 +30,8 @@ const AdviceTab = () => {
                 'Découvrez pourquoi avoir 3 à 6 mois de dépenses de côté est crucial pour votre sérénité financière.',
             category: 'Épargne',
             publishedAt: '23 Déc 2025',
+            images: [],
+            readingTimeMinutes: 5,
         },
         {
             id: '2',
@@ -38,6 +40,8 @@ const AdviceTab = () => {
                 "Commencer petit aujourd'hui peut rapporter gros demain grâce à l'effet boule de neige.",
             category: 'Investissement',
             publishedAt: '22 Déc 2025',
+            images: [],
+            readingTimeMinutes: 7,
         },
         {
             id: '3',
@@ -46,6 +50,8 @@ const AdviceTab = () => {
                 'Une méthode simple pour répartir vos revenus entre besoins, envies et épargne.',
             category: 'Budget',
             publishedAt: '20 Déc 2025',
+            images: [],
+            readingTimeMinutes: 4,
         },
     ];
 
@@ -71,33 +77,64 @@ const AdviceTab = () => {
                                   initial={{ opacity: 0, y: 20 }}
                                   animate={{ opacity: 1, y: 0 }}
                                   transition={{ duration: 0.3 }}
+                                  whileHover={{ y: -5 }}
                               >
-                                  <Card className="h-full border-primary/10 transition-shadow duration-300 hover:shadow-lg">
-                                      <CardHeader>
-                                          <div className="mb-2 flex items-start justify-between">
-                                              <Badge
-                                                  variant="outline"
-                                                  className="bg-primary/5"
-                                              >
-                                                  {news.category}
-                                              </Badge>
-                                              <span className="text-xs text-muted-foreground">
+                                  <Card
+                                      onClick={() =>
+                                          router.visit(
+                                              `/growth/advice/${news.id}`,
+                                          )
+                                      }
+                                      className="group relative h-full cursor-pointer overflow-hidden border-border/50 bg-card transition-all duration-300 hover:shadow-xl dark:bg-card/50"
+                                  >
+                                      {/* Cover Image */}
+                                      <div className="relative h-48 w-full overflow-hidden">
+                                          {news.images &&
+                                          news.images.length > 0 ? (
+                                              <img
+                                                  src={news.images[0]}
+                                                  alt={news.title}
+                                                  className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                              />
+                                          ) : (
+                                              <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-blue-500 to-purple-600">
+                                                  <ImageIcon className="h-12 w-12 text-white/20" />
+                                              </div>
+                                          )}
+                                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-60" />
+
+                                          <Badge
+                                              variant="secondary"
+                                              className="absolute top-4 left-4 border-white/20 bg-white/10 text-white backdrop-blur-md"
+                                          >
+                                              {news.category}
+                                          </Badge>
+                                      </div>
+
+                                      <CardContent className="p-5">
+                                          <CardTitle className="mb-2 text-lg leading-tight group-hover:text-primary">
+                                              {news.title}
+                                          </CardTitle>
+                                          <CardDescription className="line-clamp-2 text-sm text-muted-foreground">
+                                              {news.summary}
+                                          </CardDescription>
+                                      </CardContent>
+
+                                      <div className="px-5 pb-5">
+                                          <div className="flex items-center justify-between text-xs text-muted-foreground/80">
+                                              <span>
                                                   {news.publishedAt
                                                       ? new Date(
                                                             news.publishedAt,
                                                         ).toLocaleDateString()
-                                                      : 'Nouveau'}
+                                                      : 'Récemment'}
+                                              </span>
+                                              <span>
+                                                  {news.readingTimeMinutes || 5}{' '}
+                                                  min lecture
                                               </span>
                                           </div>
-                                          <CardTitle className="text-lg leading-tight">
-                                              {news.title}
-                                          </CardTitle>
-                                      </CardHeader>
-                                      <CardContent>
-                                          <CardDescription>
-                                              {news.summary}
-                                          </CardDescription>
-                                      </CardContent>
+                                      </div>
                                   </Card>
                               </motion.div>
                           ))}

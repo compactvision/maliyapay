@@ -15,6 +15,8 @@ use App\Modules\Growth\Domain\Repositories\RoutineKitRepositoryInterface;
 use App\Modules\Growth\Domain\Repositories\UserBusinessProgressRepositoryInterface;
 use App\Modules\Growth\Domain\Entities\UserBusinessProgress;
 use Ramsey\Uuid\Uuid;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 
 class GrowthService
 {
@@ -24,6 +26,11 @@ class GrowthService
         private readonly BusinessModelRepositoryInterface $businessModelRepository,
         private readonly UserBusinessProgressRepositoryInterface $progressRepository
     ) {}
+
+    public function getAdvice(string $id): ?Advice
+    {
+        return $this->adviceRepository->findById($id);
+    }
 
     public function getAllAdvices(): array
     {
@@ -74,7 +81,7 @@ class GrowthService
             $data['video_url'] ?? null,
             $data['author_name'] ?? null,
             (int) ($data['reading_time_minutes'] ?? 5),
-            $this->parseJson($data['images'] ?? null, []),
+            $this->combineImages($data),
             isset($data['published_at']) ? new \DateTime($data['published_at']) : new \DateTime(),
             new \DateTime(),
             new \DateTime()
@@ -98,7 +105,7 @@ class GrowthService
             $data['video_url'] ?? $existing->videoUrl,
             $data['author_name'] ?? $existing->authorName,
             isset($data['reading_time_minutes']) ? (int) $data['reading_time_minutes'] : $existing->readingTimeMinutes,
-            $this->parseJson($data['images'] ?? $existing->images, $existing->images),
+            $this->combineImages($data, $existing->images),
             isset($data['published_at']) ? new \DateTime($data['published_at']) : $existing->publishedAt,
             $existing->createdAt,
             new \DateTime()
@@ -113,8 +120,35 @@ class GrowthService
 
     public function createRoutineKit(array $data): void
     {
+        $kitId = Uuid::uuid4()->toString();
+        
+        // Handle Tasks
+        $tasks = [];
+        if (isset($data['tasks'])) {
+            $tasksData = $this->parseJson($data['tasks'], []);
+            foreach ($tasksData as $taskData) {
+                $taskId = $taskData['id'] ?? Uuid::uuid4()->toString();
+                // Fix for provisional IDs
+                if (is_numeric($taskId) || strlen($taskId) < 10) {
+                     $taskId = Uuid::uuid4()->toString();
+                }
+
+                $tasks[] = new RoutineKitTask(
+                    $taskId,
+                    $kitId,
+                    $taskData['title'],
+                    $taskData['description'] ?? null,
+                    (int) ($taskData['order_index'] ?? 0),
+                    isset($taskData['day_of_week']) ? (int)$taskData['day_of_week'] : null,
+                    $taskData['time_start'] ?? null,
+                    $taskData['time_end'] ?? null,
+                    $taskData['priority'] ?? 'medium'
+                );
+            }
+        }
+        
         $kit = new RoutineKit(
-            Uuid::uuid4()->toString(),
+            $kitId,
             $data['name'],
             $data['description'] ?? null,
             $data['category'] ?? null,
@@ -124,7 +158,7 @@ class GrowthService
             isset($data['price_amount']) ? (float) $data['price_amount'] : null,
             $data['price_currency'] ?? null,
             $this->combineImages($data),
-            [] // Tasks can be added via kit management later
+            $tasks
         );
         $this->routineKitRepository->save($kit);
     }
@@ -192,7 +226,7 @@ class GrowthService
             $data['difficulty'] ?? 'Moyen',
             $data['potential'] ?? 'Élevé',
             $data['sector'] ?? 'Général',
-            $data['image'] ?? null,
+            $this->handleSingleImage($data),
             $data['season'] ?? null,
             $data['cycle_duration'] ?? null,
             $this->parseJson($data['soil_types'] ?? null, []),
@@ -248,7 +282,7 @@ class GrowthService
             $data['difficulty'] ?? $existing->difficulty,
             $data['potential'] ?? $existing->potential,
             $data['sector'] ?? $existing->sector,
-            $data['image'] ?? $data['existing_image'] ?? $existing->image,
+            $this->handleSingleImage($data, $existing->image),
             $data['season'] ?? $existing->season,
             $data['cycle_duration'] ?? $existing->cycleDuration,
             $this->parseJson($data['soil_types'] ?? $existing->soilTypes, []),
@@ -277,14 +311,46 @@ class GrowthService
 
     private function combineImages(array $data, array $existing = []): array
     {
-        $combined = [];
+        $finalImages = [];
+
+        // 1. Handle existing images (strings passed from frontend)
         if (isset($data['existing_images'])) {
-            $combined = (array)$data['existing_images'];
+            $finalImages = is_array($data['existing_images']) ? $data['existing_images'] : [];
+        } elseif (!array_key_exists('images', $data)) {
+            // If neither existing_images nor images are provided, keep original existing
+            $finalImages = $existing;
         }
-        if (isset($data['images'])) {
-            $combined = array_merge($combined, (array)$data['images']);
+
+        // 2. Handle new uploads
+        if (isset($data['images']) && is_array($data['images'])) {
+            foreach ($data['images'] as $file) {
+                if ($file instanceof UploadedFile) {
+                    $path = $file->store('growth/routine-kits', 'public');
+                    $finalImages[] = Storage::url($path);
+                } elseif (is_string($file)) {
+                    $finalImages[] = $file;
+                }
+            }
         }
-        return $combined ?: $existing;
+
+        return $finalImages;
+    }
+
+    private function handleSingleImage(array $data, ?string $existing = null): ?string
+    {
+        // 1. New upload
+        if (isset($data['image']) && $data['image'] instanceof UploadedFile) {
+            $path = $data['image']->store('growth/business-models', 'public');
+            return Storage::url($path);
+        }
+
+        // 2. String passed
+        if (isset($data['image']) && is_string($data['image'])) {
+            return $data['image'];
+        }
+
+        // 3. Existing
+        return $data['existing_image'] ?? $existing;
     }
 
     public function updateBusinessProgress(int $userId, string $businessModelId, string $stepId): void

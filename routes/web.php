@@ -27,6 +27,7 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('/notification', [PageController::class, 'notification'])->middleware('permission:view notifications')->name('notification');
     Route::get('/goal', [PageController::class, 'goal'])->name('goal');
     Route::get('/growth', [PageController::class, 'growth'])->middleware(['permission:view tasks'])->name('growth');
+    Route::get('/growth/advice/{id}', [\App\Modules\Growth\Presentation\Controllers\GrowthController::class, 'showAdvice'])->name('growth.advice.show');
     
     Route::group(['middleware' => ['verified', 'feature.enabled:performance', 'permission:view habit-performance']], function () {
         Route::get('/habits', [\App\Modules\HabitPerformance\Presentation\Controllers\HabitPerformanceController::class, 'index'])->name('habit-performance.index');

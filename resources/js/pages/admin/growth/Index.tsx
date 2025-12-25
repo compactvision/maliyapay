@@ -647,90 +647,151 @@ const AdminGrowth = () => {
                                     Kits de Routines
                                 </h2>
                             </div>
-                            <div className="grid gap-4">
+                            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                                 {routineKits.map((kit, index) => (
                                     <motion.div
                                         key={kit.id}
-                                        initial={{ opacity: 0, x: -20 }}
-                                        animate={{ opacity: 1, x: 0 }}
+                                        initial={{ opacity: 0, y: 20 }}
+                                        animate={{ opacity: 1, y: 0 }}
                                         transition={{ delay: index * 0.05 }}
                                     >
                                         <Card
-                                            className={`group cursor-pointer border-l-4 border-l-purple-500 transition-all duration-300 hover:shadow-lg ${
+                                            className={`group relative overflow-hidden transition-all duration-300 hover:shadow-2xl ${
                                                 isDarkMode
-                                                    ? 'border-gray-700 bg-gray-800 hover:border-purple-400'
-                                                    : ''
-                                            }`}
-                                            onClick={() =>
-                                                navigateToConfig(kit, 'kit')
-                                            }
+                                                    ? 'border-gray-700 bg-gray-800'
+                                                    : 'border-gray-200'
+                                            } ${kit.isPaid ? 'ring-2 ring-yellow-500/50' : ''}`}
                                         >
-                                            <CardContent className="p-6">
-                                                <div className="flex items-start justify-between">
-                                                    <div className="flex-1">
-                                                        <div className="mb-2 flex items-center gap-3">
-                                                            <div
-                                                                className="h-4 w-4 rounded-full shadow-sm"
-                                                                style={{
-                                                                    backgroundColor:
-                                                                        kit.color ||
-                                                                        '#3b82f6',
-                                                                }}
-                                                            />
-                                                            <h3
-                                                                className={`text-lg font-semibold ${isDarkMode ? 'text-white' : ''}`}
-                                                            >
+                                            {/* Image Header */}
+                                            <div className="relative h-48 overflow-hidden bg-muted/20">
+                                                {kit.images &&
+                                                kit.images.length > 0 ? (
+                                                    <img
+                                                        src={kit.images[0]}
+                                                        alt={kit.name}
+                                                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+                                                    />
+                                                ) : (
+                                                    <div className="flex h-full items-center justify-center bg-secondary/30 transition-colors group-hover:bg-secondary/40">
+                                                        <div className="text-center">
+                                                            <Package className="mx-auto h-12 w-12 text-muted-foreground/40" />
+                                                            <p className="mt-2 text-sm font-medium text-muted-foreground">
                                                                 {kit.name}
-                                                            </h3>
-                                                            <span
-                                                                className={`rounded-full px-2 py-1 text-xs ${
-                                                                    isDarkMode
-                                                                        ? 'bg-purple-900/30 text-purple-400'
-                                                                        : 'bg-purple-100 text-purple-700'
-                                                                }`}
-                                                            >
-                                                                {kit.category}
-                                                            </span>
-                                                            <span
-                                                                className={`flex items-center gap-1 rounded-full px-2 py-1 text-xs ${getStatusColor(kit.status || 'published')}`}
-                                                            >
-                                                                {getStatusIcon(
-                                                                    kit.status ||
-                                                                        'published',
-                                                                )}
-                                                                {kit.status ||
-                                                                    'published'}
-                                                            </span>
-                                                        </div>
-                                                        <p
-                                                            className={`mb-2 ${isDarkMode ? 'text-gray-400' : 'text-muted-foreground'}`}
-                                                        >
-                                                            {kit.description}
-                                                        </p>
-                                                        <div
-                                                            className={`flex items-center gap-4 text-sm ${isDarkMode ? 'text-gray-500' : 'text-muted-foreground'}`}
-                                                        >
-                                                            <span className="flex items-center gap-1">
-                                                                <Target className="h-4 w-4" />
-                                                                {kit.tasks
-                                                                    ?.length ||
-                                                                    0}{' '}
-                                                                tâches
-                                                            </span>
-                                                            <span className="flex items-center gap-1">
-                                                                <Eye className="h-4 w-4" />
-                                                                {kit.views || 0}{' '}
-                                                                vues
-                                                            </span>
-                                                            <span className="flex items-center gap-1">
-                                                                <Users className="h-4 w-4" />
-                                                                {kit.imports ||
-                                                                    0}{' '}
-                                                                importations
-                                                            </span>
+                                                            </p>
                                                         </div>
                                                     </div>
-                                                    <div className="flex items-center gap-2">
+                                                )}
+
+                                                {/* Overlay gradient */}
+                                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+
+                                                {/* Status badges */}
+                                                <div className="absolute top-3 left-3 flex gap-2">
+                                                    <span
+                                                        className={`flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium backdrop-blur-sm ${getStatusColor(kit.status || 'published')}`}
+                                                    >
+                                                        {getStatusIcon(
+                                                            kit.status ||
+                                                                'published',
+                                                        )}
+                                                        {kit.status ||
+                                                            'published'}
+                                                    </span>
+                                                </div>
+
+                                                {/* Paid badge */}
+                                                {kit.isPaid && (
+                                                    <div className="absolute top-3 right-3">
+                                                        <span className="flex items-center gap-1 rounded-full bg-background/90 px-3 py-1 text-xs font-bold text-foreground shadow-sm backdrop-blur">
+                                                            <Sparkles className="h-3 w-3 text-yellow-500" />
+                                                            PREMIUM
+                                                        </span>
+                                                    </div>
+                                                )}
+
+                                                {/* Color indicator */}
+                                                <div
+                                                    className="absolute right-0 bottom-0 left-0 h-1"
+                                                    style={{
+                                                        backgroundColor:
+                                                            kit.color ||
+                                                            '#3b82f6',
+                                                    }}
+                                                />
+                                            </div>
+
+                                            <CardContent className="p-5">
+                                                {/* Title and category */}
+                                                <div className="mb-3">
+                                                    <h3
+                                                        className={`mb-1 text-lg font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}
+                                                    >
+                                                        {kit.name}
+                                                    </h3>
+                                                    <span
+                                                        className={`inline-block rounded-full px-2 py-0.5 text-xs ${
+                                                            isDarkMode
+                                                                ? 'bg-purple-900/30 text-purple-400'
+                                                                : 'bg-purple-100 text-purple-700'
+                                                        }`}
+                                                    >
+                                                        {kit.category}
+                                                    </span>
+                                                </div>
+
+                                                {/* Description */}
+                                                <p
+                                                    className={`mb-4 line-clamp-2 text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}
+                                                >
+                                                    {kit.description ||
+                                                        'Aucune description disponible'}
+                                                </p>
+
+                                                {/* Stats */}
+                                                <div
+                                                    className={`mb-4 flex items-center gap-4 text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}
+                                                >
+                                                    <span className="flex items-center gap-1">
+                                                        <Target className="h-3.5 w-3.5" />
+                                                        {kit.tasks?.length || 0}{' '}
+                                                        tâches
+                                                    </span>
+                                                    <span className="flex items-center gap-1">
+                                                        <Users className="h-3.5 w-3.5" />
+                                                        {kit.imports || 0}{' '}
+                                                        imports
+                                                    </span>
+                                                </div>
+
+                                                {/* Price and Actions */}
+                                                <div className="flex items-center justify-between gap-2 border-t border-gray-200 pt-4 dark:border-gray-700">
+                                                    {kit.isPaid ? (
+                                                        <div className="flex flex-col">
+                                                            <span className="text-xs text-gray-500">
+                                                                Prix
+                                                            </span>
+                                                            <span className="text-lg font-bold text-yellow-600 dark:text-yellow-500">
+                                                                {
+                                                                    kit.priceAmount
+                                                                }{' '}
+                                                                <span className="text-sm">
+                                                                    {kit.priceCurrency ===
+                                                                    'XP'
+                                                                        ? 'XP'
+                                                                        : 'FCFA'}
+                                                                </span>
+                                                            </span>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="flex items-center gap-1 text-green-600 dark:text-green-500">
+                                                            <Zap className="h-4 w-4" />
+                                                            <span className="font-semibold">
+                                                                GRATUIT
+                                                            </span>
+                                                        </div>
+                                                    )}
+
+                                                    <div className="flex gap-2">
                                                         <Button
                                                             variant="ghost"
                                                             size="icon"
@@ -741,7 +802,7 @@ const AdminGrowth = () => {
                                                                     'kit',
                                                                 );
                                                             }}
-                                                            className="text-purple-500 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-purple-500/10 hover:text-purple-400"
+                                                            className="text-purple-500 hover:bg-purple-500/10 hover:text-purple-400"
                                                         >
                                                             <Edit3 className="h-4 w-4" />
                                                         </Button>
@@ -754,7 +815,7 @@ const AdminGrowth = () => {
                                                                     kit.id,
                                                                 );
                                                             }}
-                                                            className="text-red-500 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-red-500/10 hover:text-red-400"
+                                                            className="text-red-500 hover:bg-red-500/10 hover:text-red-400"
                                                         >
                                                             <Trash2 className="h-4 w-4" />
                                                         </Button>

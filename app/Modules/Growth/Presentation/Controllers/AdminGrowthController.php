@@ -23,6 +23,7 @@ class AdminGrowthController extends Controller
             'content' => 'nullable|string',
             'category' => 'required|string',
             'published_at' => 'nullable|date',
+            'images' => 'nullable|array',
         ]);
 
         $this->growthService->createAdvice($data);
@@ -44,6 +45,8 @@ class AdminGrowthController extends Controller
             'content' => 'nullable|string',
             'category' => 'nullable|string',
             'published_at' => 'nullable|date',
+            'images' => 'nullable|array',
+            'existing_images' => 'nullable|array',
         ]);
 
         $this->growthService->updateAdvice($id, $data);
@@ -58,14 +61,32 @@ class AdminGrowthController extends Controller
 
     public function storeRoutineKit(Request $request): JsonResponse
     {
+        // Decode JSON fields if they're sent as strings (from FormData)
+        $requestData = $request->all();
+        if (isset($requestData['tasks']) && is_string($requestData['tasks'])) {
+            $requestData['tasks'] = json_decode($requestData['tasks'], true) ?? [];
+        }
+        $request->merge($requestData);
+        
         $data = $request->validate([
             'name' => 'required|string',
             'description' => 'nullable|string',
             'category' => 'nullable|string',
             'color' => 'nullable|string',
+            'status' => 'nullable|string',
             'is_paid' => 'nullable|boolean',
             'price_amount' => 'nullable|numeric',
             'price_currency' => 'nullable|string|in:MONEY,XP',
+            'tasks' => 'nullable|array',
+            'tasks.*.id' => 'nullable|string',
+            'tasks.*.title' => 'required_with:tasks|string',
+            'tasks.*.description' => 'nullable|string',
+            'tasks.*.day_of_week' => 'nullable|integer|min:1|max:7',
+            'tasks.*.order_index' => 'nullable|integer|min:0',
+            'tasks.*.time_start' => 'nullable|string',
+            'tasks.*.time_end' => 'nullable|string',
+            'tasks.*.priority' => 'nullable|string|in:low,medium,high',
+            'images' => 'nullable|array',
         ]);
 
         $this->growthService->createRoutineKit($data);
@@ -86,11 +107,21 @@ class AdminGrowthController extends Controller
             'description' => 'nullable|string',
             'category' => 'nullable|string',
             'color' => 'nullable|string',
+            'status' => 'nullable|string',
             'is_paid' => 'nullable|boolean',
             'price_amount' => 'nullable|numeric',
             'price_currency' => 'nullable|string',
             'tasks' => 'nullable|array',
+            'tasks.*.id' => 'nullable|string',
             'tasks.*.title' => 'required_with:tasks|string',
+            'tasks.*.description' => 'nullable|string',
+            'tasks.*.day_of_week' => 'nullable|integer|min:1|max:7',
+            'tasks.*.order_index' => 'nullable|integer|min:0',
+            'tasks.*.time_start' => 'nullable|string',
+            'tasks.*.time_end' => 'nullable|string',
+            'tasks.*.priority' => 'nullable|string|in:low,medium,high',
+            'images' => 'nullable|array',
+            'existing_images' => 'nullable|array',
         ]);
 
         $this->growthService->updateRoutineKit($id, $data);
@@ -111,7 +142,9 @@ class AdminGrowthController extends Controller
             'icon' => 'nullable|string',
             'difficulty' => 'nullable|string',
             'potential' => 'nullable|string',
+            'potential' => 'nullable|string',
             'sector' => 'nullable|string',
+            'image' => 'nullable',
         ]);
 
         $this->growthService->createBusinessModel($data);
@@ -144,6 +177,8 @@ class AdminGrowthController extends Controller
             'steps.*.title' => 'required_with:steps|string',
             'steps.*.is_paid' => 'nullable|boolean',
             'steps.*.price_amount' => 'nullable|numeric',
+            'image' => 'nullable',
+            'existing_image' => 'nullable|string',
         ]);
 
         $this->growthService->updateBusinessModel($id, $data);

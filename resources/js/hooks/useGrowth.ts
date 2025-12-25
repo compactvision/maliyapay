@@ -43,11 +43,13 @@ export function useGrowth() {
             const response = await growthApi.importRoutineKit(id);
             toast.success(response.message || 'Routine importée avec succès');
             return true;
-        } catch (err) {
+        } catch (err: any) {
+            // Extract error message from axios error response
             const errorMessage =
-                err instanceof Error
-                    ? err.message
-                    : "Erreur lors de l'importation de la routine";
+                err?.response?.data?.error ||
+                err?.response?.data?.message ||
+                err?.message ||
+                "Erreur lors de l'importation de la routine";
             toast.error(errorMessage);
             return false;
         }

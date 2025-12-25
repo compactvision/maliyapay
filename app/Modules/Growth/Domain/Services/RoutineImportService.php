@@ -11,6 +11,7 @@ use App\Modules\Routine\Domain\Repositories\RoutineRepositoryInterface;
 use App\Modules\Routine\Domain\Repositories\RoutineTaskRepositoryInterface;
 use App\Modules\Routine\Domain\ValueObjects\DayOfWeek;
 use App\Modules\Routine\Domain\ValueObjects\TimeRange;
+use App\Modules\Task\Domain\ValueObjects\TaskPriority;
 use DateTimeImmutable;
 use Ramsey\Uuid\Uuid;
 
@@ -29,6 +30,14 @@ class RoutineImportService
             throw new \Exception("Routine kit not found");
         }
 
+        // Check if user already imported this kit (by checking if a routine with the same name exists)
+        $existingRoutines = $this->routineRepository->findByUserId($userId);
+        foreach ($existingRoutines as $existingRoutine) {
+            if ($existingRoutine->name() === $kit->name) {
+                throw new \Exception("Vous avez déjà importé cette routine");
+            }
+        }
+
         // Create a new normal routine for the user based on the kit
         $routineId = Uuid::uuid4();
         $routine = Routine::reconstitute(
@@ -45,19 +54,20 @@ class RoutineImportService
 
         // Copy all tasks from the kit
         foreach ($kit->tasks as $task) {
-            $routineTask = RoutineTask::reconstitute(
+            // Skip tasks without required fields
+            if (!$task->dayOfWeek || !$task->timeStart || !$task->timeEnd) {
+                continue;
+            }
+            
+            $routineTask = RoutineTask::create(
                 id: Uuid::uuid4(),
                 routineId: $routineId,
                 title: $task->title,
                 description: $task->description,
-                dayOfWeek: $task->dayOfWeek ? new DayOfWeek($task->dayOfWeek) : null,
-                timeRange: ($task->timeStart && $task->timeEnd) 
-                    ? new TimeRange($task->timeStart, $task->timeEnd) 
-                    : null,
-                priority: $task->priority,
-                orderIndex: $task->orderIndex,
-                createdAt: new DateTimeImmutable(),
-                updatedAt: new DateTimeImmutable()
+                dayOfWeek: DayOfWeek::from($task->dayOfWeek),
+                timeRange: TimeRange::create($task->timeStart, $task->timeEnd),
+                priority: TaskPriority::from($task->priority),
+                orderIndex: $task->orderIndex
             );
             $this->routineTaskRepository->save($routineTask);
         }

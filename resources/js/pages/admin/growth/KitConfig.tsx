@@ -1,5 +1,5 @@
 // fichier: resources/js/Pages/Admin/Growth/KitConfig.tsx
-import { growthApi, RoutineKit } from '@/api/growthApi';
+import { growthApi, RoutineKit, RoutineKitTask } from '@/api/growthApi';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -38,7 +38,9 @@ interface Task {
     id: string;
     title: string;
     description: string;
-    time: string;
+    timeStart: string;
+    timeEnd: string;
+    priority: 'low' | 'medium' | 'high';
     completed: boolean;
 }
 
@@ -50,6 +52,57 @@ interface DayTasks {
 interface PageProps {
     item: RoutineKit;
 }
+
+// Helper function to transform backend tasks into weeklyTasks format
+const transformTasksToWeeklyFormat = (tasks?: RoutineKitTask[]): DayTasks[] => {
+    const daysOfWeek = [
+        'Lundi',
+        'Mardi',
+        'Mercredi',
+        'Jeudi',
+        'Vendredi',
+        'Samedi',
+        'Dimanche',
+    ];
+
+    // Initialize empty days
+    const weeklyTasks: DayTasks[] = daysOfWeek.map((day) => ({
+        day,
+        tasks: [],
+    }));
+
+    // If no tasks, return empty structure
+    if (!tasks || tasks.length === 0) {
+        return weeklyTasks;
+    }
+
+    // Group tasks by day
+    tasks.forEach((task) => {
+        if (task.dayOfWeek && task.dayOfWeek >= 1 && task.dayOfWeek <= 7) {
+            const dayIndex = task.dayOfWeek - 1; // dayOfWeek is 1-7, array is 0-6
+            weeklyTasks[dayIndex].tasks.push({
+                id: task.id,
+                title: task.title,
+                description: task.description || '',
+                timeStart: task.timeStart || '09:00',
+                timeEnd: task.timeEnd || '10:00',
+                priority: task.priority || 'medium',
+                completed: task.completed || false,
+            });
+        }
+    });
+
+    // Sort tasks by orderIndex within each day
+    weeklyTasks.forEach((day) => {
+        day.tasks.sort((a, b) => {
+            const taskA = tasks.find((t) => t.id === a.id);
+            const taskB = tasks.find((t) => t.id === b.id);
+            return (taskA?.orderIndex || 0) - (taskB?.orderIndex || 0);
+        });
+    });
+
+    return weeklyTasks;
+};
 
 const KitConfig = ({ item: propItem }: { item?: RoutineKit }) => {
     const { props } = usePage<any>();
@@ -76,17 +129,7 @@ const KitConfig = ({ item: propItem }: { item?: RoutineKit }) => {
         isPaid: selectedItem?.isPaid || false,
         priceAmount: selectedItem?.priceAmount || 0,
         priceCurrency: selectedItem?.priceCurrency || 'MONEY',
-        weeklyTasks:
-            (selectedItem as any)?.weeklyTasks ||
-            ([
-                { day: 'Lundi', tasks: [] },
-                { day: 'Mardi', tasks: [] },
-                { day: 'Mercredi', tasks: [] },
-                { day: 'Jeudi', tasks: [] },
-                { day: 'Vendredi', tasks: [] },
-                { day: 'Samedi', tasks: [] },
-                { day: 'Dimanche', tasks: [] },
-            ] as DayTasks[]),
+        weeklyTasks: transformTasksToWeeklyFormat(selectedItem?.tasks),
     });
 
     useEffect(() => {
@@ -109,10 +152,14 @@ const KitConfig = ({ item: propItem }: { item?: RoutineKit }) => {
             const flattenedTasks = configForm.weeklyTasks.flatMap(
                 (day: DayTasks, dayIndex: number) =>
                     day.tasks.map((task: Task, taskIndex: number) => ({
-                        ...task,
-                        dayOfWeek: dayIndex + 1,
-                        orderIndex: taskIndex,
-                        timeStart: task.time,
+                        id: task.id,
+                        title: task.title,
+                        description: task.description,
+                        day_of_week: dayIndex + 1, // ✅ snake_case
+                        order_index: taskIndex, // ✅ snake_case
+                        time_start: task.timeStart, // ✅ snake_case
+                        time_end: task.timeEnd, // ✅ snake_case
+                        priority: task.priority,
                     })),
             );
 
@@ -180,7 +227,9 @@ const KitConfig = ({ item: propItem }: { item?: RoutineKit }) => {
             id: Date.now().toString(),
             title: '',
             description: '',
-            time: '09:00',
+            timeStart: '09:00',
+            timeEnd: '10:00',
+            priority: 'medium',
             completed: false,
         };
 
@@ -769,7 +818,7 @@ const KitConfig = ({ item: propItem }: { item?: RoutineKit }) => {
                                                             key={task.id}
                                                             className={`rounded-lg p-4 ${isDarkMode ? 'bg-gray-800' : 'bg-white'} border ${isDarkMode ? 'border-gray-600' : 'border-gray-200'}`}
                                                         >
-                                                            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                                                            <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
                                                                 <div className="space-y-2">
                                                                     <Label
                                                                         className={`text-sm ${isDarkMode ? 'text-gray-300' : ''}`}
@@ -805,11 +854,12 @@ const KitConfig = ({ item: propItem }: { item?: RoutineKit }) => {
                                                                         className={`text-sm ${isDarkMode ? 'text-gray-300' : ''}`}
                                                                     >
                                                                         Heure
+                                                                        début
                                                                     </Label>
                                                                     <Input
                                                                         type="time"
                                                                         value={
-                                                                            task.time
+                                                                            task.timeStart
                                                                         }
                                                                         onChange={(
                                                                             e,
@@ -817,7 +867,38 @@ const KitConfig = ({ item: propItem }: { item?: RoutineKit }) => {
                                                                             updateTask(
                                                                                 dayIndex,
                                                                                 taskIndex,
-                                                                                'time',
+                                                                                'timeStart',
+                                                                                e
+                                                                                    .target
+                                                                                    .value,
+                                                                            )
+                                                                        }
+                                                                        className={`text-sm transition-colors focus:ring-2 focus:ring-purple-500 ${
+                                                                            isDarkMode
+                                                                                ? 'border-gray-600 bg-gray-700 text-white'
+                                                                                : ''
+                                                                        }`}
+                                                                    />
+                                                                </div>
+                                                                <div className="space-y-2">
+                                                                    <Label
+                                                                        className={`text-sm ${isDarkMode ? 'text-gray-300' : ''}`}
+                                                                    >
+                                                                        Heure
+                                                                        fin
+                                                                    </Label>
+                                                                    <Input
+                                                                        type="time"
+                                                                        value={
+                                                                            task.timeEnd
+                                                                        }
+                                                                        onChange={(
+                                                                            e,
+                                                                        ) =>
+                                                                            updateTask(
+                                                                                dayIndex,
+                                                                                taskIndex,
+                                                                                'timeEnd',
                                                                                 e
                                                                                     .target
                                                                                     .value,
@@ -845,6 +926,83 @@ const KitConfig = ({ item: propItem }: { item?: RoutineKit }) => {
                                                                     >
                                                                         <X className="h-4 w-4" />
                                                                     </Button>
+                                                                </div>
+                                                            </div>
+                                                            <div className="mt-3 grid grid-cols-1 gap-4 md:grid-cols-2">
+                                                                <div className="space-y-2">
+                                                                    <Label
+                                                                        className={`text-sm ${isDarkMode ? 'text-gray-300' : ''}`}
+                                                                    >
+                                                                        Priorité
+                                                                    </Label>
+                                                                    <div className="flex gap-2">
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() =>
+                                                                                updateTask(
+                                                                                    dayIndex,
+                                                                                    taskIndex,
+                                                                                    'priority',
+                                                                                    'low',
+                                                                                )
+                                                                            }
+                                                                            className={`flex flex-1 items-center justify-center gap-2 rounded-lg border-2 px-3 py-2 text-sm transition-all ${
+                                                                                task.priority ===
+                                                                                'low'
+                                                                                    ? 'border-green-500 bg-green-500/10 font-semibold text-green-600'
+                                                                                    : isDarkMode
+                                                                                      ? 'border-gray-600 text-gray-400 hover:bg-gray-700'
+                                                                                      : 'border-gray-200 hover:bg-gray-100'
+                                                                            }`}
+                                                                        >
+                                                                            🟢
+                                                                            Basse
+                                                                        </button>
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() =>
+                                                                                updateTask(
+                                                                                    dayIndex,
+                                                                                    taskIndex,
+                                                                                    'priority',
+                                                                                    'medium',
+                                                                                )
+                                                                            }
+                                                                            className={`flex flex-1 items-center justify-center gap-2 rounded-lg border-2 px-3 py-2 text-sm transition-all ${
+                                                                                task.priority ===
+                                                                                'medium'
+                                                                                    ? 'border-orange-500 bg-orange-500/10 font-semibold text-orange-600'
+                                                                                    : isDarkMode
+                                                                                      ? 'border-gray-600 text-gray-400 hover:bg-gray-700'
+                                                                                      : 'border-gray-200 hover:bg-gray-100'
+                                                                            }`}
+                                                                        >
+                                                                            🟡
+                                                                            Moyenne
+                                                                        </button>
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() =>
+                                                                                updateTask(
+                                                                                    dayIndex,
+                                                                                    taskIndex,
+                                                                                    'priority',
+                                                                                    'high',
+                                                                                )
+                                                                            }
+                                                                            className={`flex flex-1 items-center justify-center gap-2 rounded-lg border-2 px-3 py-2 text-sm transition-all ${
+                                                                                task.priority ===
+                                                                                'high'
+                                                                                    ? 'border-red-500 bg-red-500/10 font-semibold text-red-600'
+                                                                                    : isDarkMode
+                                                                                      ? 'border-gray-600 text-gray-400 hover:bg-gray-700'
+                                                                                      : 'border-gray-200 hover:bg-gray-100'
+                                                                            }`}
+                                                                        >
+                                                                            🔴
+                                                                            Haute
+                                                                        </button>
+                                                                    </div>
                                                                 </div>
                                                             </div>
                                                             <div className="mt-3">

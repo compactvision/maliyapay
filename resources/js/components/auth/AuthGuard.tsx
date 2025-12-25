@@ -15,7 +15,19 @@ export function AuthGuard({
     const { isAuthenticated, isLoading, user, isLocked } = useAuth();
 
     useEffect(() => {
-        if (!isLoading && !isAuthenticated && !isLocked) {
+        // List of authentication pages where we should NOT redirect
+        const authPages = [
+            '/login',
+            '/register',
+            '/forgot-password',
+            '/reset-password',
+            '/two-factor-challenge',
+        ];
+        const isOnAuthPage = authPages.some((page) =>
+            window.location.pathname.startsWith(page),
+        );
+
+        if (!isLoading && !isAuthenticated && !isLocked && !isOnAuthPage) {
             router.get('/login'); // Use router.get for login redirect
         } else if (
             !isLoading &&

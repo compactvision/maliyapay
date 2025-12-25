@@ -27,6 +27,18 @@ class GrowthController extends Controller
         ]);
     }
 
+    public function showAdvice(string $id): \Inertia\Response
+    {
+        $advice = $this->growthService->getAdvice($id);
+        if (!$advice) {
+            abort(404);
+        }
+
+        return Inertia::render('growth/AdviceDetail', [
+            'advice' => $advice,
+        ]);
+    }
+
     public function updateBusinessProgress(Request $request): JsonResponse
     {
         $data = $request->validate([
