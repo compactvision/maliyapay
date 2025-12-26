@@ -8,22 +8,23 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
+import { router } from '@inertiajs/react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
     ArrowRight,
     Briefcase,
-    CheckCircle,
     Code,
-    Lock,
     Rocket,
     ShoppingCart,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { growthApi } from '@/api/growthApi';
 import { useGrowth } from '@/hooks/useGrowth';
 import { toast } from 'sonner';
+import { QuestGameMap } from './QuestGameMap';
+import { QuestIntroBottomSheet } from './QuestIntroBottomSheet';
+import { QuestPaymentBottomSheet } from './QuestPaymentBottomSheet';
 
 const ICON_MAP = {
     ShoppingCart,
@@ -35,19 +36,70 @@ const ICON_MAP = {
 const BusinessGameTab = () => {
     const { businessModels, isLoading, refetch } = useGrowth();
     const [selectedBusiness, setSelectedBusiness] = useState<any | null>(null);
+    const [showIntro, setShowIntro] = useState(false);
+    const [questStarted, setQuestStarted] = useState(false);
+    const [payingStep, setPayingStep] = useState<any | null>(null);
+    const [showPayment, setShowPayment] = useState(false);
+
+    // Check if user has already started this quest
+    const hasStartedQuest = (businessId: string) => {
+        const startedQuests = JSON.parse(
+            localStorage.getItem('startedQuests') || '[]',
+        );
+        return startedQuests.includes(businessId);
+    };
+
+    // Mark quest as started
+    const markQuestAsStarted = (businessId: string) => {
+        const startedQuests = JSON.parse(
+            localStorage.getItem('startedQuests') || '[]',
+        );
+        if (!startedQuests.includes(businessId)) {
+            startedQuests.push(businessId);
+            localStorage.setItem(
+                'startedQuests',
+                JSON.stringify(startedQuests),
+            );
+        }
+    };
 
     const handleSelectBusiness = (business: any) => {
         setSelectedBusiness(business);
+
+        // If user has already started this quest, skip intro
+        if (hasStartedQuest(business.id)) {
+            setShowIntro(false);
+            setQuestStarted(true);
+        } else {
+            setShowIntro(true);
+            setQuestStarted(false);
+        }
+    };
+
+    const handleStartQuest = () => {
+        if (selectedBusiness) {
+            markQuestAsStarted(selectedBusiness.id);
+            // Save current business to localStorage
+            localStorage.setItem(
+                'currentBusiness',
+                JSON.stringify(selectedBusiness),
+            );
+        }
+        setShowIntro(false);
+        setQuestStarted(true);
     };
 
     const handleReset = () => {
         setSelectedBusiness(null);
+        setShowIntro(false);
+        setQuestStarted(false);
+        localStorage.removeItem('currentBusiness');
     };
 
     const handleCompleteStep = async (businessId: string, stepId: string) => {
         try {
             await growthApi.updateBusinessProgress(businessId, stepId);
-            toast.success('Étape terminée !');
+            toast.success('Étape terminée ! 🎉');
             // Optimistic update
             if (selectedBusiness) {
                 const newSteps = selectedBusiness.steps.map((s: any) =>
@@ -61,19 +113,41 @@ const BusinessGameTab = () => {
         }
     };
 
-    const calculateProgress = (steps: any[]) => {
-        if (!steps || steps.length === 0) return 0;
-        const completed = steps.filter((s) => s.completed).length;
-        return Math.round((completed / steps.length) * 100);
+    const handleStepClick = (step: any) => {
+        // Check if step is locked
+        const stepIndex = selectedBusiness.steps.findIndex(
+            (s: any) => s.id === step.id,
+        );
+        const isLocked =
+            !step.completed &&
+            stepIndex > 0 &&
+            !selectedBusiness.steps[stepIndex - 1].completed;
+
+        if (isLocked) {
+            toast.warning("Complétez les étapes précédentes d'abord");
+            return;
+        }
+
+        // If step is paid and not completed, show payment sheet
+        if (step.isPaid && !step.completed) {
+            setPayingStep(step);
+            setShowPayment(true);
+        } else {
+            // Navigate to step detail page
+            router.visit(
+                `/growth/business/${selectedBusiness.id}/step/${step.id}`,
+            );
+        }
     };
 
-    if (isLoading) {
-        return (
-            <div className="flex h-64 items-center justify-center">
-                Chargement de l'aventure...
-            </div>
-        );
-    }
+    const handlePaymentSubmit = () => {
+        if (payingStep && selectedBusiness) {
+            // Close the payment sheet
+            setShowPayment(false);
+            // Redirect to payment gateway with proper parameters
+            window.location.href = `/payment/checkout?type=business_step&item_id=${payingStep.id}&business_id=${selectedBusiness.id}`;
+        }
+    };
 
     const defaultBusinesses = [
         {
@@ -90,13 +164,13 @@ const BusinessGameTab = () => {
                     title: 'Étude de marché',
                     description:
                         'Analysez la concurrence et trouvez votre niche.',
-                    completed: true,
+                    completed: false,
                 },
                 {
                     id: '2',
                     title: 'Sourcing produits',
                     description: 'Trouvez des fournisseurs fiables.',
-                    completed: true,
+                    completed: false,
                 },
                 {
                     id: '3',
@@ -124,10 +198,44 @@ const BusinessGameTab = () => {
     const displayBusinesses =
         businessModels.length > 0 ? businessModels : defaultBusinesses;
 
+    // Restore last selected business on mount
+    useEffect(() => {
+        const currentBusiness = localStorage.getItem('currentBusiness');
+        if (currentBusiness && !selectedBusiness) {
+            try {
+                const business = JSON.parse(currentBusiness);
+                // Check if this business still exists in the list
+                const exists = displayBusinesses.find(
+                    (b) => b.id === business.id,
+                );
+                if (exists && hasStartedQuest(business.id)) {
+                    setSelectedBusiness(business);
+                    setQuestStarted(true);
+                    setShowIntro(false);
+                }
+            } catch (e) {
+                // Invalid JSON, ignore
+            }
+        }
+    }, [displayBusinesses, selectedBusiness]);
+
+    if (isLoading) {
+        return (
+            <div className="flex h-64 items-center justify-center">
+                <div className="text-center">
+                    <div className="mb-4 inline-block h-12 w-12 animate-spin rounded-full border-4 border-emerald-500 border-t-transparent"></div>
+                    <p className="text-muted-foreground">
+                        Chargement de l'aventure...
+                    </p>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="space-y-6">
             <AnimatePresence mode="wait">
-                {!selectedBusiness ? (
+                {!selectedBusiness || !questStarted ? (
                     <motion.div
                         key="selection"
                         initial={{ opacity: 0, x: -20 }}
@@ -136,7 +244,7 @@ const BusinessGameTab = () => {
                         className="space-y-6"
                     >
                         <div className="mb-8 space-y-2 text-center">
-                            <h3 className="bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-2xl font-bold text-transparent">
+                            <h3 className="bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-2xl font-bold text-transparent md:text-3xl">
                                 Choisissez votre Aventure
                             </h3>
                             <p className="mx-auto max-w-lg text-muted-foreground">
@@ -145,7 +253,7 @@ const BusinessGameTab = () => {
                             </p>
                         </div>
 
-                        <div className="grid gap-6 md:grid-cols-3">
+                        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                             {displayBusinesses.map((business, idx) => {
                                 const Icon =
                                     ICON_MAP[
@@ -161,14 +269,14 @@ const BusinessGameTab = () => {
                                         transition={{ delay: idx * 0.1 }}
                                     >
                                         <Card
-                                            className="flex h-full cursor-pointer flex-col border-2 transition-colors hover:border-primary"
+                                            className="group flex h-full cursor-pointer flex-col border-2 transition-all hover:border-emerald-500 hover:shadow-lg hover:shadow-emerald-500/20"
                                             onClick={() =>
                                                 handleSelectBusiness(business)
                                             }
                                         >
                                             <CardHeader>
-                                                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-                                                    <Icon className="h-6 w-6 text-primary" />
+                                                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500/10 transition-colors group-hover:bg-emerald-500/20">
+                                                    <Icon className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
                                                 </div>
                                                 <CardTitle>
                                                     {business.title}
@@ -177,7 +285,10 @@ const BusinessGameTab = () => {
                                                     <Badge variant="secondary">
                                                         {business.difficulty}
                                                     </Badge>
-                                                    <Badge variant="outline">
+                                                    <Badge
+                                                        variant="outline"
+                                                        className="border-emerald-500/50 text-emerald-600 dark:text-emerald-400"
+                                                    >
                                                         {business.potential}
                                                     </Badge>
                                                 </div>
@@ -188,9 +299,13 @@ const BusinessGameTab = () => {
                                                 </CardDescription>
                                             </CardContent>
                                             <CardFooter>
-                                                <Button className="group w-full">
-                                                    Démarrer{' '}
-                                                    <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                                                <Button className="group/btn w-full bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg transition-all hover:shadow-emerald-500/50">
+                                                    {hasStartedQuest(
+                                                        business.id,
+                                                    )
+                                                        ? 'Continuer'
+                                                        : 'Démarrer'}{' '}
+                                                    <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover/btn:translate-x-1" />
                                                 </Button>
                                             </CardFooter>
                                         </Card>
@@ -211,138 +326,46 @@ const BusinessGameTab = () => {
                             <Button
                                 variant="ghost"
                                 onClick={handleReset}
-                                className="pl-0 hover:bg-transparent"
+                                className="pl-0 hover:bg-transparent hover:text-emerald-600"
                             >
                                 ← Retour au choix
                             </Button>
                             <Badge
                                 variant="outline"
-                                className="px-4 py-1 text-lg"
+                                className="border-emerald-500/50 px-4 py-1 text-lg text-emerald-600 dark:text-emerald-400"
                             >
                                 {selectedBusiness.title}
                             </Badge>
                         </div>
 
-                        <Card className="border-primary/20 bg-primary/5">
-                            <CardContent className="pt-6">
-                                <div className="mb-2 flex items-end justify-between">
-                                    <div>
-                                        <p className="font-semibold">
-                                            Progression Globale
-                                        </p>
-                                        <p className="text-sm text-muted-foreground">
-                                            Niveau 1 - Débutant
-                                        </p>
-                                    </div>
-                                    <span className="text-2xl font-bold text-primary">
-                                        {calculateProgress(
-                                            selectedBusiness.steps,
-                                        )}
-                                        %
-                                    </span>
-                                </div>
-                                <Progress
-                                    value={calculateProgress(
-                                        selectedBusiness.steps,
-                                    )}
-                                    className="h-4"
-                                />
-                            </CardContent>
-                        </Card>
-
-                        <div className="relative ml-4 space-y-8 border-l-2 border-muted py-4 pl-8 md:ml-8 md:pl-12">
-                            {selectedBusiness.steps.map(
-                                (step: any, index: number) => {
-                                    const isCompleted = step.completed;
-                                    const isCurrent =
-                                        !step.completed &&
-                                        (index === 0 ||
-                                            selectedBusiness.steps[index - 1]
-                                                .completed);
-                                    const isLocked =
-                                        !step.completed && !isCurrent;
-
-                                    return (
-                                        <motion.div
-                                            key={step.id}
-                                            initial={{ opacity: 0, x: -10 }}
-                                            animate={{ opacity: 1, x: 0 }}
-                                            transition={{ delay: index * 0.1 }}
-                                            className={`relative ${isLocked ? 'opacity-50 blur-[0.5px]' : ''}`}
-                                        >
-                                            <div
-                                                className={`absolute top-1 -left-[43px] h-6 w-6 rounded-full border-4 md:-left-[59px] ${
-                                                    isCompleted
-                                                        ? 'border-green-500 bg-green-500'
-                                                        : isCurrent
-                                                          ? 'border-primary bg-background ring-4 ring-primary/20'
-                                                          : 'border-muted bg-background'
-                                                } flex items-center justify-center`}
-                                            >
-                                                {isCompleted && (
-                                                    <CheckCircle className="h-3 w-3 text-white" />
-                                                )}
-                                                {isLocked && (
-                                                    <Lock className="h-3 w-3 text-muted-foreground" />
-                                                )}
-                                            </div>
-
-                                            <Card
-                                                className={`${isCurrent ? 'border-primary shadow-md' : ''}`}
-                                            >
-                                                <CardHeader className="py-4">
-                                                    <div className="flex items-center justify-between">
-                                                        <CardTitle className="flex items-center gap-2 text-base md:text-lg">
-                                                            {step.title}
-                                                            {isCurrent && (
-                                                                <Badge className="ml-2 animate-pulse">
-                                                                    En cours
-                                                                </Badge>
-                                                            )}
-                                                        </CardTitle>
-                                                        {isCompleted && (
-                                                            <Badge
-                                                                variant="secondary"
-                                                                className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
-                                                            >
-                                                                Terminé
-                                                            </Badge>
-                                                        )}
-                                                    </div>
-                                                    <CardDescription>
-                                                        {step.description}
-                                                    </CardDescription>
-                                                </CardHeader>
-                                                {isCurrent && (
-                                                    <CardFooter className="pt-0">
-                                                        <Button
-                                                            size="sm"
-                                                            className="w-full md:w-auto"
-                                                            onClick={() =>
-                                                                handleCompleteStep(
-                                                                    selectedBusiness.id,
-                                                                    step.id,
-                                                                )
-                                                            }
-                                                        >
-                                                            Marquer comme
-                                                            terminé
-                                                        </Button>
-                                                    </CardFooter>
-                                                )}
-                                            </Card>
-                                        </motion.div>
-                                    );
-                                },
-                            )}
-
-                            <div className="pointer-events-none absolute bottom-0 -left-[5px] h-full w-full">
-                                <Rocket className="absolute bottom-0 -left-[18px] h-10 w-10 text-muted-foreground/20 md:-left-[26px]" />
-                            </div>
-                        </div>
+                        <QuestGameMap
+                            business={selectedBusiness}
+                            onCompleteStep={handleCompleteStep}
+                            onStepClick={handleStepClick}
+                        />
                     </motion.div>
                 )}
             </AnimatePresence>
+
+            {/* Quest Introduction Bottom Sheet */}
+            {selectedBusiness && (
+                <QuestIntroBottomSheet
+                    isOpen={showIntro}
+                    onClose={() => setShowIntro(false)}
+                    onStart={handleStartQuest}
+                    business={selectedBusiness}
+                />
+            )}
+
+            {selectedBusiness && payingStep && (
+                <QuestPaymentBottomSheet
+                    isOpen={showPayment}
+                    onClose={() => setShowPayment(false)}
+                    onPay={handlePaymentSubmit}
+                    step={payingStep}
+                    business={selectedBusiness}
+                />
+            )}
         </div>
     );
 };
