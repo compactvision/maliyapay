@@ -26,6 +26,7 @@ class BusinessModel extends Model
         'yield_potential',
         'main_risks',
         'business_plan',
+        'status',
     ];
 
     protected $casts = [

@@ -25,6 +25,7 @@ class BusinessModel
         public readonly array $mainRisks = [],
         public readonly array $businessPlan = [],
         public readonly array $steps = [],
+        public readonly string $status = 'published',
     ) {}
 
     public bool $started = false;

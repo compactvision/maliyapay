@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::table('growth_routine_kits', function (Blueprint $table) {
             $table->boolean('is_paid')->default(false);
             $table->decimal('price_amount', 15, 2)->nullable();
-            $table->string('price_currency')->nullable()->default('MONEY'); // 'MONEY' or 'XP'
+            $table->string('price_currency')->nullable()->default('$'); // 'MONEY' or 'XP'
         });
 
         Schema::table('growth_business_models', function (Blueprint $table) {

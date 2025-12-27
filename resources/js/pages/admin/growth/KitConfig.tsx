@@ -128,7 +128,7 @@ const KitConfig = ({ item: propItem }: { item?: RoutineKit }) => {
         images: (selectedItem?.images || []) as (string | File)[],
         isPaid: selectedItem?.isPaid || false,
         priceAmount: selectedItem?.priceAmount || 0,
-        priceCurrency: selectedItem?.priceCurrency || 'MONEY',
+        priceCurrency: selectedItem?.priceCurrency || '$',
         weeklyTasks: transformTasksToWeeklyFormat(selectedItem?.tasks),
     });
 
@@ -689,12 +689,12 @@ const KitConfig = ({ item: propItem }: { item?: RoutineKit }) => {
                                                             setConfigForm({
                                                                 ...configForm,
                                                                 priceCurrency:
-                                                                    'MONEY',
+                                                                    '$',
                                                             })
                                                         }
                                                         className={`flex flex-1 items-center justify-center gap-2 rounded-lg border-2 p-3 transition-all ${
                                                             configForm.priceCurrency ===
-                                                            'MONEY'
+                                                            '$'
                                                                 ? 'border-green-500 bg-green-500/10 text-green-600'
                                                                 : isDarkMode
                                                                   ? 'border-gray-600 text-gray-400 hover:bg-gray-700'
@@ -759,7 +759,7 @@ const KitConfig = ({ item: propItem }: { item?: RoutineKit }) => {
                                                     />
                                                     <div className="absolute top-2.5 left-3 text-gray-400">
                                                         {configForm.priceCurrency ===
-                                                        'MONEY' ? (
+                                                        '$' ? (
                                                             <DollarSign className="h-4 w-4" />
                                                         ) : (
                                                             <Sparkles className="h-4 w-4" />

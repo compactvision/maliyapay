@@ -20,10 +20,24 @@ class GrowthController extends Controller
 
     public function index(Request $request): JsonResponse
     {
+        $user = $request->user();
+        
+        // If user has permission to manage growth content, show all items (including drafts)
+        // Otherwise, show only published items
+        if ($user->can('manage growth') || $user->hasRole('admin')) {
+             $advices = $this->growthService->getAllAdvices();
+             $routineKits = $this->growthService->getAllRoutineKits();
+             $businessModels = $this->growthService->getAllBusinessModelsWithProgress((int) $user->id);
+        } else {
+             $advices = $this->growthService->getPublishedAdvices();
+             $routineKits = $this->growthService->getPublishedRoutineKits();
+             $businessModels = $this->growthService->getPublishedBusinessModelsWithProgress((int) $user->id);
+        }
+
         return response()->json([
-            'advices' => $this->growthService->getAllAdvices(),
-            'routine_kits' => $this->growthService->getAllRoutineKits(),
-            'business_models' => $this->growthService->getAllBusinessModelsWithProgress((int) $request->user()->id),
+            'advices' => $advices,
+            'routine_kits' => $routineKits,
+            'business_models' => $businessModels,
         ]);
     }
 

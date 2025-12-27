@@ -48,6 +48,18 @@ class GrowthService
         return $advices;
     }
 
+    public function getPublishedAdvices(): array
+    {
+        // Filter advices where status is 'published'
+        // Since findAll returns an array of entities, we can filter them here
+        // Ideally, the repository should support filtering, but for now we filter in memory to match getAllAdvices pattern
+        $allAdvices = $this->getAllAdvices();
+        
+        return array_values(array_filter($allAdvices, function ($advice) {
+            return $advice->status === 'published';
+        }));
+    }
+
     public function getAllRoutineKits(): array
     {
         $kits = $this->routineKitRepository->findAll();
@@ -61,6 +73,15 @@ class GrowthService
         }
         
         return $kits;
+    }
+
+    public function getPublishedRoutineKits(): array
+    {
+        $allKits = $this->getAllRoutineKits();
+        
+        return array_values(array_filter($allKits, function ($kit) {
+            return $kit->status === 'published';
+        }));
     }
 
     public function getAllBusinessModelsWithProgress(int $userId): array
@@ -89,6 +110,15 @@ class GrowthService
         }
 
         return $models;
+    }
+
+    public function getPublishedBusinessModelsWithProgress(int $userId): array
+    {
+        $allModels = $this->getAllBusinessModelsWithProgress($userId);
+        
+        return array_values(array_filter($allModels, function ($model) {
+            return $model->status === 'published';
+        }));
     }
 
     public function getBusinessModelWithProgress(int $userId, string $businessId): mixed
@@ -270,7 +300,8 @@ class GrowthService
     {
         // Note: Currently createBusinessModel does not support initial steps creation. 
         // Steps are expected to be added via updates.
-        
+        $steps = []; // Initialize steps array
+
         $model = new BusinessModel(
             Uuid::uuid4()->toString(),
             $data['title'],
@@ -286,7 +317,8 @@ class GrowthService
             $data['yield_potential'] ?? null,
             $this->parseJson($data['main_risks'] ?? null, []),
             $this->parseJson($data['business_plan'] ?? null, []),
-            $steps
+            $steps,
+            $data['status'] ?? 'published'
         );
         $this->businessModelRepository->save($model);
     }
@@ -362,7 +394,8 @@ class GrowthService
             $data['yield_potential'] ?? $existing->yieldPotential,
             $this->parseJson($data['main_risks'] ?? $existing->mainRisks, []),
             $this->parseJson($data['business_plan'] ?? $existing->businessPlan, []),
-            $steps
+            $steps,
+            $data['status'] ?? $existing->status
         );
         $this->businessModelRepository->save($model);
     }

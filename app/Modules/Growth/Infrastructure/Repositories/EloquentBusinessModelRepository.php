@@ -44,6 +44,7 @@ class EloquentBusinessModelRepository implements BusinessModelRepositoryInterfac
                 'yield_potential' => $busModel->yieldPotential,
                 'main_risks' => $busModel->mainRisks,
                 'business_plan' => $busModel->businessPlan,
+                'status' => $busModel->status,
             ]
         );
 
@@ -111,7 +112,8 @@ class EloquentBusinessModelRepository implements BusinessModelRepositoryInterfac
             $model->yield_potential,
             $model->main_risks ?? [],
             $model->business_plan ?? [],
-            $steps
+            $steps,
+            $model->status ?? 'published'
         );
     }
 }
