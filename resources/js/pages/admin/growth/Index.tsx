@@ -778,7 +778,7 @@ const AdminGrowth = () => {
                                                                     {kit.priceCurrency ===
                                                                     'XP'
                                                                         ? 'XP'
-                                                                        : 'FCFA'}
+                                                                        : '$'}
                                                                 </span>
                                                             </span>
                                                         </div>
