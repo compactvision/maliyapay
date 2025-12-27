@@ -142,9 +142,31 @@ class AdminGrowthController extends Controller
             'icon' => 'nullable|string',
             'difficulty' => 'nullable|string',
             'potential' => 'nullable|string',
-            'potential' => 'nullable|string',
             'sector' => 'nullable|string',
-            'image' => 'nullable',
+            'season' => 'nullable|string',
+            'cycle_duration' => 'nullable|string',
+            'soil_types' => 'nullable', // Allow array or string
+            'yield_potential' => 'nullable|string',
+            'main_risks' => 'nullable', // Allow array or string
+            'business_plan' => 'nullable', // Allow array or string
+            'steps' => 'nullable|array',
+            'steps.*.title' => 'required_with:steps|string',
+            'steps.*.description' => 'nullable|string',
+            'steps.*.order_index' => 'nullable|integer',
+            'steps.*.level' => 'nullable|integer',
+            'steps.*.objective' => 'nullable|string',
+            'steps.*.knowledge' => 'nullable', // Allow array or string (will be parsed)
+            'steps.*.actions' => 'nullable',
+            'steps.*.costs' => 'nullable',
+            'steps.*.routines' => 'nullable',
+            'steps.*.progression' => 'nullable',
+            'steps.*.locked' => 'nullable|boolean',
+            'steps.*.completed' => 'nullable|boolean',
+            'steps.*.is_paid' => 'nullable|boolean',
+            'steps.*.price_amount' => 'nullable|numeric',
+            'steps.*.knowledge_images' => 'nullable|array',
+            'steps.*.knowledge_images.*' => 'file|image|max:5120',
+            'image' => 'nullable|file|image|max:10240',
         ]);
 
         $this->growthService->createBusinessModel($data);
@@ -153,18 +175,20 @@ class AdminGrowthController extends Controller
 
     public function updateBusinessModel(Request $request, string $id): JsonResponse
     {
-        // Decode JSON fields if they're sent as strings (from FormData)
-        $requestData = $request->all();
-        
+        // Decode specific JSON fields if they're sent as strings (from FormData)
         $jsonFields = ['steps', 'soil_types', 'main_risks', 'business_plan'];
+        $decodedData = [];
+        
         foreach ($jsonFields as $field) {
-            if (isset($requestData[$field]) && is_string($requestData[$field])) {
-                $requestData[$field] = json_decode($requestData[$field], true) ?? [];
+            if ($request->has($field) && is_string($request->input($field))) {
+                $decodedData[$field] = json_decode($request->input($field), true) ?? [];
             }
         }
         
-        // Merge back into request for validation
-        $request->merge($requestData);
+        // Merge decoded data back into request for validation
+        if (!empty($decodedData)) {
+            $request->merge($decodedData);
+        }
         
         $data = $request->validate([
             'title' => 'nullable|string',
@@ -173,11 +197,30 @@ class AdminGrowthController extends Controller
             'difficulty' => 'nullable|string',
             'potential' => 'nullable|string',
             'sector' => 'nullable|string',
+            'season' => 'nullable|string',
+            'cycle_duration' => 'nullable|string',
+            'soil_types' => 'nullable', // Allow array or string
+            'yield_potential' => 'nullable|string',
+            'main_risks' => 'nullable', // Allow array or string
+            'business_plan' => 'nullable', // Allow array or string
             'steps' => 'nullable|array',
             'steps.*.title' => 'required_with:steps|string',
+            'steps.*.description' => 'nullable|string',
+            'steps.*.order_index' => 'nullable|integer',
+            'steps.*.level' => 'nullable|integer',
+            'steps.*.objective' => 'nullable|string',
+            'steps.*.knowledge' => 'nullable', // Allow array or string (will be parsed)
+            'steps.*.actions' => 'nullable',
+            'steps.*.costs' => 'nullable',
+            'steps.*.routines' => 'nullable',
+            'steps.*.progression' => 'nullable',
+            'steps.*.locked' => 'nullable|boolean',
+            'steps.*.completed' => 'nullable|boolean',
             'steps.*.is_paid' => 'nullable|boolean',
             'steps.*.price_amount' => 'nullable|numeric',
-            'image' => 'nullable',
+            'steps.*.knowledge_images' => 'nullable|array',
+            'steps.*.knowledge_images.*' => 'file|image|max:5120',
+            'image' => 'nullable|file|image|max:10240',
             'existing_image' => 'nullable|string',
         ]);
 

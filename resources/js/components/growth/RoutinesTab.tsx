@@ -18,7 +18,8 @@ import {
     Users,
     Zap,
 } from 'lucide-react';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { QuestPaymentBottomSheet } from './QuestPaymentBottomSheet';
 
 const RoutinesTab = () => {
     const {
@@ -27,15 +28,30 @@ const RoutinesTab = () => {
         isLoading: routinesLoading,
     } = useRoutines();
     const { routineKits, isLoading: growthLoading, importKit } = useGrowth();
+    const [selectedKit, setSelectedKit] = useState<any | null>(null);
+    const [showPayment, setShowPayment] = useState(false);
 
     useEffect(() => {
         fetchRoutines();
     }, []);
 
-    const handleImportKit = async (id: string) => {
-        const success = await importKit(id);
+    const handleImportKit = async (kit: any) => {
+        if (kit.isPaid) {
+            setSelectedKit(kit);
+            setShowPayment(true);
+            return;
+        }
+
+        const success = await importKit(kit.id);
         if (success) {
             fetchRoutines();
+        }
+    };
+
+    const handlePaymentSubmit = () => {
+        if (selectedKit) {
+            setShowPayment(false);
+            window.location.href = `/payment/checkout?type=routine_kit&item_id=${selectedKit.id}`;
         }
     };
 
@@ -206,7 +222,7 @@ const RoutinesTab = () => {
                                             <Button
                                                 size="sm"
                                                 onClick={() =>
-                                                    handleImportKit(kit.id)
+                                                    handleImportKit(kit)
                                                 }
                                                 className={`transition-all duration-300 ${
                                                     kit.isPaid
@@ -316,6 +332,23 @@ const RoutinesTab = () => {
                     </div>
                 )}
             </section>
+
+            {/* Payment Bottom Sheet */}
+            {selectedKit && (
+                <QuestPaymentBottomSheet
+                    isOpen={showPayment}
+                    onClose={() => setShowPayment(false)}
+                    onPay={handlePaymentSubmit}
+                    step={{
+                        id: selectedKit.id,
+                        title: selectedKit.name,
+                        priceAmount: selectedKit.priceAmount,
+                    }}
+                    business={{
+                        title: 'Kits de Routine',
+                    }}
+                />
+            )}
         </div>
     );
 };

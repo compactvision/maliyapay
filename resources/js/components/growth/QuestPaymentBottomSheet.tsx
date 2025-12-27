@@ -89,7 +89,7 @@ export const QuestPaymentBottomSheet = ({
                                 </div>
                                 <div className="text-4xl font-black text-emerald-600 dark:text-emerald-400">
                                     {(step.priceAmount || 0).toLocaleString()}{' '}
-                                    <span className="text-xl">FCFA</span>
+                                    <span className="text-xl">$</span>
                                 </div>
                             </div>
 

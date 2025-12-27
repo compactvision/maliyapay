@@ -82,6 +82,20 @@ class GrowthController extends Controller
         return response()->json(['message' => 'Progress updated successfully']);
     }
 
+    public function startQuest(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'business_model_id' => 'required|string',
+        ]);
+
+        $this->growthService->startBusinessQuest(
+            (int) $request->user()->id,
+            $data['business_model_id']
+        );
+
+        return response()->json(['message' => 'Quest started successfully']);
+    }
+
     public function importRoutineKit(string $id, Request $request): JsonResponse
     {
         try {

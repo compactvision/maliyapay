@@ -24,6 +24,7 @@ import { useGrowth } from '@/hooks/useGrowth';
 import { toast } from 'sonner';
 import { QuestGameMap } from './QuestGameMap';
 import { QuestIntroBottomSheet } from './QuestIntroBottomSheet';
+import { QuestLevelDetailSheet } from './QuestLevelDetailSheet';
 import { QuestPaymentBottomSheet } from './QuestPaymentBottomSheet';
 
 const ICON_MAP = {
@@ -41,33 +42,15 @@ const BusinessGameTab = () => {
     const [payingStep, setPayingStep] = useState<any | null>(null);
     const [showPayment, setShowPayment] = useState(false);
 
-    // Check if user has already started this quest
-    const hasStartedQuest = (businessId: string) => {
-        const startedQuests = JSON.parse(
-            localStorage.getItem('startedQuests') || '[]',
-        );
-        return startedQuests.includes(businessId);
-    };
-
-    // Mark quest as started
-    const markQuestAsStarted = (businessId: string) => {
-        const startedQuests = JSON.parse(
-            localStorage.getItem('startedQuests') || '[]',
-        );
-        if (!startedQuests.includes(businessId)) {
-            startedQuests.push(businessId);
-            localStorage.setItem(
-                'startedQuests',
-                JSON.stringify(startedQuests),
-            );
-        }
-    };
+    // New state for step details
+    const [selectedStep, setSelectedStep] = useState<any | null>(null);
+    const [showStepDetail, setShowStepDetail] = useState(false);
 
     const handleSelectBusiness = (business: any) => {
         setSelectedBusiness(business);
 
         // If user has already started this quest, skip intro
-        if (hasStartedQuest(business.id)) {
+        if (business.started) {
             setShowIntro(false);
             setQuestStarted(true);
         } else {
@@ -76,17 +59,23 @@ const BusinessGameTab = () => {
         }
     };
 
-    const handleStartQuest = () => {
+    const handleStartQuest = async () => {
         if (selectedBusiness) {
-            markQuestAsStarted(selectedBusiness.id);
-            // Save current business to localStorage
-            localStorage.setItem(
-                'currentBusiness',
-                JSON.stringify(selectedBusiness),
-            );
+            try {
+                await growthApi.startQuest(selectedBusiness.id);
+                // Save current business to localStorage just for selection persistence
+                localStorage.setItem(
+                    'currentBusiness',
+                    JSON.stringify(selectedBusiness),
+                );
+
+                setShowIntro(false);
+                setQuestStarted(true);
+                refetch(); // Refresh data to get updated 'started' status
+            } catch (error) {
+                toast.error("Impossible de démarrer l'aventure");
+            }
         }
-        setShowIntro(false);
-        setQuestStarted(true);
     };
 
     const handleReset = () => {
@@ -114,14 +103,17 @@ const BusinessGameTab = () => {
     };
 
     const handleStepClick = (step: any) => {
+        const business = selectedBusiness || activeBusiness;
+        if (!business) return;
+
         // Check if step is locked
-        const stepIndex = selectedBusiness.steps.findIndex(
+        const stepIndex = business.steps.findIndex(
             (s: any) => s.id === step.id,
         );
         const isLocked =
             !step.completed &&
             stepIndex > 0 &&
-            !selectedBusiness.steps[stepIndex - 1].completed;
+            !business.steps[stepIndex - 1].completed;
 
         if (isLocked) {
             toast.warning("Complétez les étapes précédentes d'abord");
@@ -133,9 +125,18 @@ const BusinessGameTab = () => {
             setPayingStep(step);
             setShowPayment(true);
         } else {
+            // SHOW DETAIL SHEET INSTEAD OF DIRECT NAV
+            setSelectedStep(step);
+            setShowStepDetail(true);
+        }
+    };
+
+    const handleStartLevel = () => {
+        if (selectedStep && selectedBusiness) {
+            setShowStepDetail(false);
             // Navigate to step detail page
             router.visit(
-                `/growth/business/${selectedBusiness.id}/step/${step.id}`,
+                `/growth/business/${selectedBusiness.id}/step/${selectedStep.id}`,
             );
         }
     };
@@ -192,32 +193,50 @@ const BusinessGameTab = () => {
                     completed: false,
                 },
             ],
+            started: false,
         },
     ];
 
     const displayBusinesses =
         businessModels.length > 0 ? businessModels : defaultBusinesses;
 
+    // Keep track of the last active business to prevent crashes during exit animations
+    const [activeBusiness, setActiveBusiness] = useState<any | null>(null);
+
+    useEffect(() => {
+        if (selectedBusiness) {
+            setActiveBusiness(selectedBusiness);
+        }
+    }, [selectedBusiness]);
+
     // Restore last selected business on mount
     useEffect(() => {
-        const currentBusiness = localStorage.getItem('currentBusiness');
-        if (currentBusiness && !selectedBusiness) {
+        const currentBusinessStr = localStorage.getItem('currentBusiness');
+        if (
+            currentBusinessStr &&
+            !selectedBusiness &&
+            displayBusinesses.length > 0
+        ) {
             try {
-                const business = JSON.parse(currentBusiness);
+                const business = JSON.parse(currentBusinessStr);
                 // Check if this business still exists in the list
                 const exists = displayBusinesses.find(
                     (b) => b.id === business.id,
                 );
-                if (exists && hasStartedQuest(business.id)) {
-                    setSelectedBusiness(business);
-                    setQuestStarted(true);
-                    setShowIntro(false);
+                if (exists) {
+                    setSelectedBusiness(exists);
+                    if (exists.started) {
+                        setQuestStarted(true);
+                        setShowIntro(false);
+                    }
                 }
             } catch (e) {
                 // Invalid JSON, ignore
             }
         }
     }, [displayBusinesses, selectedBusiness]);
+
+    const businessToRender = selectedBusiness || activeBusiness;
 
     if (isLoading) {
         return (
@@ -300,9 +319,7 @@ const BusinessGameTab = () => {
                                             </CardContent>
                                             <CardFooter>
                                                 <Button className="group/btn w-full bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg transition-all hover:shadow-emerald-500/50">
-                                                    {hasStartedQuest(
-                                                        business.id,
-                                                    )
+                                                    {business.started
                                                         ? 'Continuer'
                                                         : 'Démarrer'}{' '}
                                                     <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover/btn:translate-x-1" />
@@ -314,7 +331,7 @@ const BusinessGameTab = () => {
                             })}
                         </div>
                     </motion.div>
-                ) : (
+                ) : businessToRender ? (
                     <motion.div
                         key="game"
                         initial={{ opacity: 0, x: 20 }}
@@ -334,17 +351,17 @@ const BusinessGameTab = () => {
                                 variant="outline"
                                 className="border-emerald-500/50 px-4 py-1 text-lg text-emerald-600 dark:text-emerald-400"
                             >
-                                {selectedBusiness.title}
+                                {businessToRender.title}
                             </Badge>
                         </div>
 
                         <QuestGameMap
-                            business={selectedBusiness}
+                            business={businessToRender}
                             onCompleteStep={handleCompleteStep}
                             onStepClick={handleStepClick}
                         />
                     </motion.div>
-                )}
+                ) : null}
             </AnimatePresence>
 
             {/* Quest Introduction Bottom Sheet */}
@@ -354,6 +371,19 @@ const BusinessGameTab = () => {
                     onClose={() => setShowIntro(false)}
                     onStart={handleStartQuest}
                     business={selectedBusiness}
+                />
+            )}
+
+            {/* Quest Level Detail Bottom Sheet */}
+            {selectedBusiness && selectedStep && (
+                <QuestLevelDetailSheet
+                    isOpen={showStepDetail}
+                    onClose={() => setShowStepDetail(false)}
+                    onStart={handleStartLevel}
+                    step={selectedStep}
+                    index={selectedBusiness.steps.findIndex(
+                        (s: any) => s.id === selectedStep.id,
+                    )}
                 />
             )}
 

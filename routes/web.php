@@ -49,6 +49,7 @@ Route::group(['middleware' => ['auth']], function () {
         Route::get('/', [\App\Modules\Growth\Presentation\Controllers\GrowthController::class, 'index']);
         Route::post('/routine-kits/{id}/import', [\App\Modules\Growth\Presentation\Controllers\GrowthController::class, 'importRoutineKit']);
         Route::post('/progress', [\App\Modules\Growth\Presentation\Controllers\GrowthController::class, 'updateBusinessProgress']);
+        Route::post('/quest/start', [\App\Modules\Growth\Presentation\Controllers\GrowthController::class, 'startQuest']);
     });
 });
 

@@ -76,10 +76,12 @@ class GrowthService
         foreach ($models as $model) {
             $progress = $progressMap[$model->id] ?? null;
             if ($progress) {
+                $model->started = true;
                 foreach ($model->steps as $step) {
                     $step->completed = in_array($step->id, $progress->completedSteps);
                 }
             } else {
+                $model->started = false;
                 foreach ($model->steps as $step) {
                     $step->completed = false;
                 }
@@ -101,10 +103,12 @@ class GrowthService
         $progress = collect($progressRecords)->firstWhere('businessModelId', $businessId);
 
         if ($progress) {
+            $model->started = true;
             foreach ($model->steps as $step) {
                 $step->completed = in_array($step->id, $progress->completedSteps);
             }
         } else {
+            $model->started = false;
             foreach ($model->steps as $step) {
                 $step->completed = false;
             }
@@ -264,6 +268,9 @@ class GrowthService
 
     public function createBusinessModel(array $data): void
     {
+        // Note: Currently createBusinessModel does not support initial steps creation. 
+        // Steps are expected to be added via updates.
+        
         $model = new BusinessModel(
             Uuid::uuid4()->toString(),
             $data['title'],
@@ -279,7 +286,7 @@ class GrowthService
             $data['yield_potential'] ?? null,
             $this->parseJson($data['main_risks'] ?? null, []),
             $this->parseJson($data['business_plan'] ?? null, []),
-            []
+            $steps
         );
         $this->businessModelRepository->save($model);
     }
@@ -292,10 +299,30 @@ class GrowthService
         $steps = [];
         if (isset($data['steps'])) {
             $stepsData = $this->parseJson($data['steps'], []);
-            foreach ($stepsData as $stepData) {
+            foreach ($stepsData as $index => $stepData) {
                 $stepId = $stepData['id'] ?? Uuid::uuid4()->toString();
                 if (is_numeric($stepId) || strlen($stepId) < 10) {
                      $stepId = Uuid::uuid4()->toString();
+                }
+
+                // Handle Knowledge Images
+                $knowledge = $this->parseJson($stepData['knowledge'] ?? null, []);
+                
+                // Get uploaded files for this step if any
+                $uploadedFiles = $data['steps'][$index]['knowledge_images'] ?? [];
+                
+                if (!empty($uploadedFiles)) {
+                    // Ensure images array exists
+                    if (!isset($knowledge['images'])) {
+                        $knowledge['images'] = [];
+                    }
+                    
+                    foreach ($uploadedFiles as $file) {
+                        if ($file instanceof UploadedFile) {
+                            $path = $file->store('growth/knowledge', 'public');
+                            $knowledge['images'][] = Storage::url($path);
+                        }
+                    }
                 }
 
                 $steps[] = new BusinessStep(
@@ -306,7 +333,7 @@ class GrowthService
                     (int) ($stepData['order_index'] ?? 0),
                     (int) ($stepData['level'] ?? 1),
                     $stepData['objective'] ?? null,
-                    $this->parseJson($stepData['knowledge'] ?? null, []),
+                    $knowledge,
                     $this->parseJson($stepData['actions'] ?? null, []),
                     $this->parseJson($stepData['costs'] ?? null, []),
                     $this->parseJson($stepData['routines'] ?? null, []),
@@ -397,6 +424,22 @@ class GrowthService
 
         // 3. Existing
         return $data['existing_image'] ?? $existing;
+    }
+
+    public function startBusinessQuest(int $userId, string $businessModelId): void
+    {
+        $progress = $this->progressRepository->findByUserAndModel($userId, $businessModelId);
+        
+        if (!$progress) {
+            $progress = new UserBusinessProgress(
+                Uuid::uuid4()->toString(),
+                $userId,
+                $businessModelId,
+                [],
+                'in_progress'
+            );
+            $this->progressRepository->save($progress);
+        }
     }
 
     public function updateBusinessProgress(int $userId, string $businessModelId, string $stepId): void

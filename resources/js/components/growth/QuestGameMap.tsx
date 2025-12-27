@@ -42,8 +42,8 @@ export const QuestGameMap = ({
     const [isShaking, setIsShaking] = useState<string | null>(null);
 
     // Configuration
-    const verticalSpacing = 180; 
-    const horizontalAmplitude = 35; 
+    const verticalSpacing = 180;
+    const horizontalAmplitude = 35;
     const paddingTop = 100;
     const totalMapHeight = business.steps.length * verticalSpacing + 300;
 
@@ -54,15 +54,17 @@ export const QuestGameMap = ({
     };
 
     const generatePath = () => {
-        const points = business.steps.map((_, index) => getLevelPosition(index));
+        const points = business.steps.map((_, index) =>
+            getLevelPosition(index),
+        );
         if (points.length < 2) return '';
 
-        let path = `M ${points[0].x}% ${points[0].y}px`;
+        let path = `M ${points[0].x} ${points[0].y}`;
         for (let i = 1; i < points.length; i++) {
             const prev = points[i - 1];
             const curr = points[i];
             const midY = (prev.y + curr.y) / 2;
-            path += ` C ${prev.x}% ${midY}px, ${curr.x}% ${midY}px, ${curr.x}% ${curr.y}px`;
+            path += ` C ${prev.x} ${midY}, ${curr.x} ${midY}, ${curr.x} ${curr.y}`;
         }
         return path;
     };
@@ -77,12 +79,12 @@ export const QuestGameMap = ({
 
         if (points.length < 2) return '';
 
-        let path = `M ${points[0].x}% ${points[0].y}px`;
+        let path = `M ${points[0].x} ${points[0].y}`;
         for (let i = 1; i < points.length; i++) {
             const prev = points[i - 1];
             const curr = points[i];
             const midY = (prev.y + curr.y) / 2;
-            path += ` C ${prev.x}% ${midY}px, ${curr.x}% ${midY}px, ${curr.x}% ${curr.y}px`;
+            path += ` C ${prev.x} ${midY}, ${curr.x} ${midY}, ${curr.x} ${curr.y}`;
         }
         return path;
     };
@@ -99,7 +101,8 @@ export const QuestGameMap = ({
 
     useEffect(() => {
         if (mapRef.current && currentLevelIndex >= 0) {
-            const levelElements = mapRef.current.querySelectorAll('[data-level]');
+            const levelElements =
+                mapRef.current.querySelectorAll('[data-level]');
             const currentElement = levelElements[currentLevelIndex];
             if (currentElement) {
                 setTimeout(() => {
@@ -120,7 +123,7 @@ export const QuestGameMap = ({
 
     const handleStepClick = (step: Level, index: number) => {
         const isLocked = !step.completed && index !== currentLevelIndex;
-        
+
         if (isLocked) {
             setIsShaking(step.id);
             setTimeout(() => setIsShaking(null), 500);
@@ -168,10 +171,9 @@ export const QuestGameMap = ({
 
             {/* Game Map Container */}
             <div className="relative overflow-hidden rounded-3xl border-4 border-emerald-500/30 bg-emerald-500/[0.02] bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] shadow-inner shadow-emerald-500/10">
-                
                 <div
                     ref={mapRef}
-                    className="custom-scrollbar relative overflow-y-auto overflow-x-visible p-4 md:p-8"
+                    className="custom-scrollbar relative overflow-x-visible overflow-y-auto p-4 md:p-8"
                     style={{ height: '75vh', maxHeight: '800px' }}
                 >
                     <div
@@ -186,30 +188,73 @@ export const QuestGameMap = ({
                         <svg
                             className="pointer-events-none absolute inset-0 h-full w-full"
                             style={{ overflow: 'visible', zIndex: 0 }}
+                            viewBox={`0 0 100 ${totalMapHeight}`}
+                            preserveAspectRatio="none"
                         >
                             <defs>
                                 {/* Effet de lueur (Glow) pour la ligne active */}
-                                <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
-                                    <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+                                <filter
+                                    id="glow"
+                                    x="-20%"
+                                    y="-20%"
+                                    width="140%"
+                                    height="140%"
+                                >
+                                    <feGaussianBlur
+                                        stdDeviation="4"
+                                        result="coloredBlur"
+                                    />
                                     <feMerge>
-                                        <feMergeNode in="coloredBlur"/>
-                                        <feMergeNode in="SourceGraphic"/>
+                                        <feMergeNode in="coloredBlur" />
+                                        <feMergeNode in="SourceGraphic" />
                                     </feMerge>
                                 </filter>
 
                                 {/* Gradient Ligne SOMBRE (Chemin restant) */}
-                                <linearGradient id="darkPath" x1="0%" y1="0%" x2="0%" y2="100%">
-                                    <stop offset="0%" stopColor="#334155" stopOpacity="1" /> {/* Slate 700 */}
-                                    <stop offset="100%" stopColor="#1e293b" stopOpacity="1" /> {/* Slate 800 */}
+                                <linearGradient
+                                    id="darkPath"
+                                    x1="0%"
+                                    y1="0%"
+                                    x2="0%"
+                                    y2="100%"
+                                >
+                                    <stop
+                                        offset="0%"
+                                        stopColor="#334155"
+                                        stopOpacity="1"
+                                    />{' '}
+                                    {/* Slate 700 */}
+                                    <stop
+                                        offset="100%"
+                                        stopColor="#1e293b"
+                                        stopOpacity="1"
+                                    />{' '}
+                                    {/* Slate 800 */}
                                 </linearGradient>
 
                                 {/* Gradient Ligne CLAIRE (Chemin accompli) */}
-                                <linearGradient id="brightPath" x1="0%" y1="0%" x2="0%" y2="100%">
-                                    <stop offset="0%" stopColor="#34d399" stopOpacity="1" /> {/* Emerald 400 */}
-                                    <stop offset="100%" stopColor="#10b981" stopOpacity="1" /> {/* Emerald 500 */}
+                                <linearGradient
+                                    id="brightPath"
+                                    x1="0%"
+                                    y1="0%"
+                                    x2="0%"
+                                    y2="100%"
+                                >
+                                    <stop
+                                        offset="0%"
+                                        stopColor="#34d399"
+                                        stopOpacity="1"
+                                    />{' '}
+                                    {/* Emerald 400 */}
+                                    <stop
+                                        offset="100%"
+                                        stopColor="#10b981"
+                                        stopOpacity="1"
+                                    />{' '}
+                                    {/* Emerald 500 */}
                                 </linearGradient>
                             </defs>
-                            
+
                             {/* 1. Le chemin de fond (SOMBRE) - Relie TOUTES les étapes */}
                             <path
                                 d={generatePath()}
@@ -218,7 +263,7 @@ export const QuestGameMap = ({
                                 strokeWidth="12"
                                 strokeLinecap="round"
                             />
-                            
+
                             {/* 2. Le chemin de progression (CLAIREF + LUMINEUX) - Relie les étapes finies */}
                             <motion.path
                                 d={generateProgressPath()}
@@ -229,9 +274,13 @@ export const QuestGameMap = ({
                                 filter="url(#glow)" // Applique la lueur
                                 initial={{ pathLength: 0 }}
                                 animate={{ pathLength: 1 }}
-                                transition={{ duration: 1.5, ease: 'easeOut', delay: 0.3 }}
+                                transition={{
+                                    duration: 1.5,
+                                    ease: 'easeOut',
+                                    delay: 0.3,
+                                }}
                             />
-                            
+
                             {/* 3. Animation d'énergie sur la ligne active */}
                             {generateProgressPath() && (
                                 <motion.path
@@ -260,10 +309,11 @@ export const QuestGameMap = ({
                                 const isCompleted = step.completed;
                                 const isCurrent = index === currentLevelIndex;
                                 const isLocked = !isCompleted && !isCurrent;
-                                const Icon = LEVEL_ICONS[index % LEVEL_ICONS.length];
-                                
+                                const Icon =
+                                    LEVEL_ICONS[index % LEVEL_ICONS.length];
+
                                 // Logique anti-débordement pour le tooltip
-                                let showTooltipRight = position.x < 30; 
+                                let showTooltipRight = position.x < 30;
                                 let showTooltipLeft = position.x > 70;
 
                                 if (!showTooltipRight && !showTooltipLeft) {
@@ -276,9 +326,12 @@ export const QuestGameMap = ({
                                         key={step.id}
                                         data-level={index}
                                         initial={{ scale: 0, opacity: 0 }}
-                                        animate={{ 
-                                            scale: isShaking === step.id ? [1, 0.9, 1.1, 1] : 1, 
-                                            opacity: 1 
+                                        animate={{
+                                            scale:
+                                                isShaking === step.id
+                                                    ? [1, 0.9, 1.1, 1]
+                                                    : 1,
+                                            opacity: 1,
                                         }}
                                         transition={{
                                             scale: { duration: 0.4 },
@@ -294,22 +347,32 @@ export const QuestGameMap = ({
                                         className="group flex items-center justify-center"
                                     >
                                         {/* Tooltip Horizontal */}
-                                        <div 
-                                            className={`absolute top-1/2 w-48 p-3 rounded-xl border bg-background/95 backdrop-blur-md shadow-xl transition-all duration-300 opacity-0 group-hover:opacity-100 pointer-events-none z-20 ${
-                                                showTooltipLeft ? 'right-full mr-4 -translate-y-1/2' : 'left-full ml-4 -translate-y-1/2'
+                                        <div
+                                            className={`pointer-events-none absolute top-1/2 z-20 w-48 rounded-xl border bg-background/95 p-3 opacity-0 shadow-xl backdrop-blur-md transition-all duration-300 group-hover:opacity-100 ${
+                                                showTooltipLeft
+                                                    ? 'right-full mr-4 -translate-y-1/2'
+                                                    : 'left-full ml-4 -translate-y-1/2'
                                             }`}
                                         >
-                                            <div className={`absolute top-1/2 -translate-y-1/2 border-8 border-transparent ${showTooltipLeft ? 'right-[-16px] border-l-background' : 'left-[-16px] border-r-background'}`}></div>
-                                            
-                                            <div className="flex items-center gap-2 mb-1">
-                                                {isCompleted && <CheckCircle2 className="h-4 w-4 text-emerald-500" />}
-                                                {isLocked && <Lock className="h-4 w-4 text-muted-foreground" />}
-                                                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                                            <div
+                                                className={`absolute top-1/2 -translate-y-1/2 border-8 border-transparent ${showTooltipLeft ? 'right-[-16px] border-l-background' : 'left-[-16px] border-r-background'}`}
+                                            ></div>
+
+                                            <div className="mb-1 flex items-center gap-2">
+                                                {isCompleted && (
+                                                    <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                                                )}
+                                                {isLocked && (
+                                                    <Lock className="h-4 w-4 text-muted-foreground" />
+                                                )}
+                                                <span className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
                                                     Étape {index + 1}
                                                 </span>
                                             </div>
-                                            <h4 className="font-bold text-foreground text-sm mb-1">{step.title}</h4>
-                                            <p className="text-xs text-muted-foreground line-clamp-2 leading-tight">
+                                            <h4 className="mb-1 text-sm font-bold text-foreground">
+                                                {step.title}
+                                            </h4>
+                                            <p className="line-clamp-2 text-xs leading-tight text-muted-foreground">
                                                 {step.description}
                                             </p>
                                             {step.isPaid && (
@@ -322,12 +385,20 @@ export const QuestGameMap = ({
 
                                         {/* Level Node */}
                                         <motion.button
-                                            onClick={() => handleStepClick(step, index)}
+                                            onClick={() =>
+                                                handleStepClick(step, index)
+                                            }
                                             disabled={isLocked}
-                                            whileHover={!isLocked ? { scale: 1.1 } : {}}
-                                            whileTap={!isLocked ? { scale: 0.95 } : {}}
+                                            whileHover={
+                                                !isLocked ? { scale: 1.1 } : {}
+                                            }
+                                            whileTap={
+                                                !isLocked ? { scale: 0.95 } : {}
+                                            }
                                             className={`relative transition-all duration-300 outline-none ${
-                                                isLocked ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'
+                                                isLocked
+                                                    ? 'cursor-not-allowed opacity-70'
+                                                    : 'cursor-pointer'
                                             }`}
                                         >
                                             {/* Glow Effect for Current Level */}
@@ -335,7 +406,9 @@ export const QuestGameMap = ({
                                                 <motion.div
                                                     animate={{
                                                         scale: [1, 1.3, 1],
-                                                        opacity: [0.5, 0.8, 0.5],
+                                                        opacity: [
+                                                            0.5, 0.8, 0.5,
+                                                        ],
                                                     }}
                                                     transition={{
                                                         duration: 2,

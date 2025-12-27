@@ -83,6 +83,7 @@ export interface BusinessModel {
     yieldPotential?: string;
     mainRisks?: string[];
     businessPlan?: any;
+    started?: boolean;
     steps: BusinessStep[];
 }
 
@@ -100,6 +101,13 @@ export const growthApi = {
         const response = await axios.post(
             `/api/growth/routine-kits/${id}/import`,
         );
+        return response.data;
+    },
+
+    async startQuest(businessModelId: string): Promise<{ message: string }> {
+        const response = await axios.post('/api/growth/quest/start', {
+            business_model_id: businessModelId,
+        });
         return response.data;
     },
 

@@ -103,7 +103,7 @@ interface JourneyStep {
 
 interface CropJourney {
     id: string;
-    name: string;
+    title: string;
     description: string;
     icon: string;
     image: File | null;
@@ -155,7 +155,7 @@ const BusinessConfig = ({ item: propItem }: { item?: CropJourney }) => {
 
     const [cropJourney, setCropJourney] = useState<CropJourney>({
         id: selectedItem?.id || Date.now().toString(),
-        name: selectedItem?.name || '',
+        title: selectedItem?.title || '',
         description: selectedItem?.description || '',
         icon: selectedItem?.icon || 'Briefcase',
         image: selectedItem?.image || null,
@@ -234,7 +234,7 @@ const BusinessConfig = ({ item: propItem }: { item?: CropJourney }) => {
             }));
 
             const formData = new FormData();
-            formData.append('title', cropJourney.name);
+            formData.append('title', cropJourney.title);
             formData.append('description', cropJourney.description);
             formData.append('icon', cropJourney.icon);
             formData.append('difficulty', 'medium');
@@ -293,10 +293,37 @@ const BusinessConfig = ({ item: propItem }: { item?: CropJourney }) => {
                     );
                 }
 
-                // Send complex nested data as JSON strings
+                // Handle Knowledge Images (Separate Files from JSON)
+                const knowledgeImages = step.knowledge?.images || [];
+                const knowledgeFiles: File[] = [];
+                const knowledgeUrls: string[] = [];
+
+                knowledgeImages.forEach((img: any) => {
+                    if (img instanceof File) {
+                        knowledgeFiles.push(img);
+                    } else if (typeof img === 'string') {
+                        knowledgeUrls.push(img);
+                    }
+                });
+
+                // Append files to FormData
+                knowledgeFiles.forEach((file) => {
+                    formData.append(
+                        `steps[${index}][knowledge_images][]`,
+                        file,
+                    );
+                });
+
+                // Prepare knowledge object with only URLs
+                const knowledgeData = {
+                    ...step.knowledge,
+                    images: knowledgeUrls,
+                };
+
+                // Send complex nested data
                 formData.append(
                     `steps[${index}][knowledge]`,
-                    JSON.stringify(step.knowledge),
+                    JSON.stringify(knowledgeData),
                 );
                 formData.append(
                     `steps[${index}][actions]`,
@@ -729,7 +756,7 @@ const BusinessConfig = ({ item: propItem }: { item?: CropJourney }) => {
 
     return (
         <AppLayout>
-            <Head title={`Configuration - ${cropJourney.name}`} />
+            <Head title={`Configuration - ${cropJourney.title}`} />
             <Toaster
                 position="top-right"
                 theme={isDarkMode ? 'dark' : 'light'}
@@ -803,7 +830,7 @@ const BusinessConfig = ({ item: propItem }: { item?: CropJourney }) => {
                                 <h1
                                     className={`text-3xl font-bold ${isDarkMode ? 'text-white' : ''}`}
                                 >
-                                    {cropJourney.name}
+                                    {cropJourney.title}
                                 </h1>
                                 <p
                                     className={`${isDarkMode ? 'text-gray-400' : 'text-muted-foreground'}`}
@@ -1150,11 +1177,11 @@ const BusinessConfig = ({ item: propItem }: { item?: CropJourney }) => {
                                                 Nom de l'aventure
                                             </Label>
                                             <Input
-                                                value={cropJourney.name}
+                                                value={cropJourney.title}
                                                 onChange={(e) =>
                                                     setCropJourney({
                                                         ...cropJourney,
-                                                        name: e.target.value,
+                                                        title: e.target.value,
                                                     })
                                                 }
                                                 className={`transition-colors focus:ring-2 focus:ring-orange-500 ${
@@ -2533,8 +2560,7 @@ const BusinessConfig = ({ item: propItem }: { item?: CropJourney }) => {
                                                                                 : ''
                                                                         }
                                                                     >
-                                                                        Prix
-                                                                        (FCFA)
+                                                                        Prix ($)
                                                                     </Label>
                                                                     <div className="relative mt-1">
                                                                         <DollarSign className="absolute top-2.5 left-3 h-4 w-4 text-gray-400" />
@@ -3378,7 +3404,7 @@ const BusinessConfig = ({ item: propItem }: { item?: CropJourney }) => {
                                                         : ''
                                                 }
                                             >
-                                                Investissement estimé (€)
+                                                Investissement estimé ($)
                                             </Label>
                                             <Input
                                                 type="number"
@@ -3414,7 +3440,7 @@ const BusinessConfig = ({ item: propItem }: { item?: CropJourney }) => {
                                                         : ''
                                                 }
                                             >
-                                                Revenu attendu (€)
+                                                Revenu attendu ($)
                                             </Label>
                                             <Input
                                                 type="number"
@@ -3571,7 +3597,7 @@ const BusinessConfig = ({ item: propItem }: { item?: CropJourney }) => {
                                                         className={`font-semibold ${isDarkMode ? 'text-white' : ''}`}
                                                     >
                                                         {calculateTotalCosts().total.toLocaleString()}{' '}
-                                                        €
+                                                        $
                                                     </span>
                                                 </div>
                                                 <div className="flex justify-between">
@@ -3588,7 +3614,7 @@ const BusinessConfig = ({ item: propItem }: { item?: CropJourney }) => {
                                                         className={`font-semibold ${isDarkMode ? 'text-white' : ''}`}
                                                     >
                                                         {cropJourney.businessPlan.expectedRevenue.toLocaleString()}{' '}
-                                                        €
+                                                        $
                                                     </span>
                                                 </div>
                                                 <div className="flex justify-between">
@@ -3733,7 +3759,7 @@ const BusinessConfig = ({ item: propItem }: { item?: CropJourney }) => {
                                                                 className={`font-semibold ${isDarkMode ? 'text-white' : ''}`}
                                                             >
                                                                 {totalCategoryCost.toLocaleString()}{' '}
-                                                                €
+                                                                $
                                                             </span>
                                                         </div>
                                                     );
@@ -3818,15 +3844,15 @@ const BusinessConfig = ({ item: propItem }: { item?: CropJourney }) => {
                                                                 </td>
                                                                 <td className="p-2">
                                                                     {oneTimeCosts.toLocaleString()}{' '}
-                                                                    €
+                                                                    $
                                                                 </td>
                                                                 <td className="p-2">
                                                                     {recurringCosts.toLocaleString()}{' '}
-                                                                    €
+                                                                    $
                                                                 </td>
                                                                 <td className="p-2 font-semibold">
                                                                     {totalCost.toLocaleString()}{' '}
-                                                                    €
+                                                                    $
                                                                 </td>
                                                             </tr>
                                                         );
@@ -3840,15 +3866,15 @@ const BusinessConfig = ({ item: propItem }: { item?: CropJourney }) => {
                                                     </td>
                                                     <td className="p-2">
                                                         {calculateTotalCosts().totalOneTime.toLocaleString()}{' '}
-                                                        €
+                                                        $
                                                     </td>
                                                     <td className="p-2">
                                                         {calculateTotalCosts().totalRecurring.toLocaleString()}{' '}
-                                                        €
+                                                        $
                                                     </td>
                                                     <td className="p-2">
                                                         {calculateTotalCosts().total.toLocaleString()}{' '}
-                                                        €
+                                                        $
                                                     </td>
                                                 </tr>
                                             </tbody>

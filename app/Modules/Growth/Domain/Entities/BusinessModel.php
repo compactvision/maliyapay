@@ -26,4 +26,6 @@ class BusinessModel
         public readonly array $businessPlan = [],
         public readonly array $steps = [],
     ) {}
+
+    public bool $started = false;
 }
