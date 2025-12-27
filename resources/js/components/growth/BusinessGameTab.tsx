@@ -150,55 +150,8 @@ const BusinessGameTab = () => {
         }
     };
 
-    const defaultBusinesses = [
-        {
-            id: 'ecommerce',
-            title: 'E-commerce',
-            icon: 'ShoppingCart',
-            description:
-                'Lancez votre boutique en ligne et vendez des produits au monde entier.',
-            difficulty: 'Moyen',
-            potential: 'Élevé',
-            steps: [
-                {
-                    id: '1',
-                    title: 'Étude de marché',
-                    description:
-                        'Analysez la concurrence et trouvez votre niche.',
-                    completed: false,
-                },
-                {
-                    id: '2',
-                    title: 'Sourcing produits',
-                    description: 'Trouvez des fournisseurs fiables.',
-                    completed: false,
-                },
-                {
-                    id: '3',
-                    title: 'Création du site',
-                    description:
-                        'Configurez votre boutique Shopify ou WooCommerce.',
-                    completed: false,
-                },
-                {
-                    id: '4',
-                    title: 'Marketing digital',
-                    description: 'Lancez vos premières publicités.',
-                    completed: false,
-                },
-                {
-                    id: '5',
-                    title: 'Première vente',
-                    description: 'Le moment de vérité !',
-                    completed: false,
-                },
-            ],
-            started: false,
-        },
-    ];
-
-    const displayBusinesses =
-        businessModels.length > 0 ? businessModels : defaultBusinesses;
+    // Suppression de defaultBusinesses comme demandé
+    const displayBusinesses = businessModels;
 
     // Keep track of the last active business to prevent crashes during exit animations
     const [activeBusiness, setActiveBusiness] = useState<any | null>(null);
@@ -272,64 +225,78 @@ const BusinessGameTab = () => {
                             </p>
                         </div>
 
-                        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                            {displayBusinesses.map((business, idx) => {
-                                const Icon =
-                                    ICON_MAP[
-                                        business.icon as keyof typeof ICON_MAP
-                                    ] || Rocket;
-                                return (
-                                    <motion.div
-                                        key={business.id}
-                                        whileHover={{ scale: 1.05 }}
-                                        whileTap={{ scale: 0.95 }}
-                                        initial={{ opacity: 0, y: 20 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        transition={{ delay: idx * 0.1 }}
-                                    >
-                                        <Card
-                                            className="group flex h-full cursor-pointer flex-col border-2 transition-all hover:border-emerald-500 hover:shadow-lg hover:shadow-emerald-500/20"
-                                            onClick={() =>
-                                                handleSelectBusiness(business)
-                                            }
+                        {/* Ajout de la condition pour vérifier s'il y a des business */}
+                        {displayBusinesses.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-16 text-center">
+                                <Briefcase className="mb-4 h-16 w-16 text-muted-foreground opacity-50" />
+                                <h4 className="text-xl font-semibold text-foreground">
+                                    Aucune quête business disponible
+                                </h4>
+                                <p className="mt-2 text-muted-foreground">
+                                    Revenez plus tard pour découvrir de nouvelles
+                                    aventures.
+                                </p>
+                            </div>
+                        ) : (
+                            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                                {displayBusinesses.map((business, idx) => {
+                                    const Icon =
+                                        ICON_MAP[
+                                            business.icon as keyof typeof ICON_MAP
+                                        ] || Rocket;
+                                    return (
+                                        <motion.div
+                                            key={business.id}
+                                            whileHover={{ scale: 1.05 }}
+                                            whileTap={{ scale: 0.95 }}
+                                            initial={{ opacity: 0, y: 20 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            transition={{ delay: idx * 0.1 }}
                                         >
-                                            <CardHeader>
-                                                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500/10 transition-colors group-hover:bg-emerald-500/20">
-                                                    <Icon className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
-                                                </div>
-                                                <CardTitle>
-                                                    {business.title}
-                                                </CardTitle>
-                                                <div className="mt-2 flex gap-2">
-                                                    <Badge variant="secondary">
-                                                        {business.difficulty}
-                                                    </Badge>
-                                                    <Badge
-                                                        variant="outline"
-                                                        className="border-emerald-500/50 text-emerald-600 dark:text-emerald-400"
-                                                    >
-                                                        {business.potential}
-                                                    </Badge>
-                                                </div>
-                                            </CardHeader>
-                                            <CardContent className="flex-grow">
-                                                <CardDescription className="text-base">
-                                                    {business.description}
-                                                </CardDescription>
-                                            </CardContent>
-                                            <CardFooter>
-                                                <Button className="group/btn w-full bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg transition-all hover:shadow-emerald-500/50">
-                                                    {business.started
-                                                        ? 'Continuer'
-                                                        : 'Démarrer'}{' '}
-                                                    <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover/btn:translate-x-1" />
-                                                </Button>
-                                            </CardFooter>
-                                        </Card>
-                                    </motion.div>
-                                );
-                            })}
-                        </div>
+                                            <Card
+                                                className="group flex h-full cursor-pointer flex-col border-2 transition-all hover:border-emerald-500 hover:shadow-lg hover:shadow-emerald-500/20"
+                                                onClick={() =>
+                                                    handleSelectBusiness(business)
+                                                }
+                                            >
+                                                <CardHeader>
+                                                    <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500/10 transition-colors group-hover:bg-emerald-500/20">
+                                                        <Icon className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
+                                                    </div>
+                                                    <CardTitle>
+                                                        {business.title}
+                                                    </CardTitle>
+                                                    <div className="mt-2 flex gap-2">
+                                                        <Badge variant="secondary">
+                                                            {business.difficulty}
+                                                        </Badge>
+                                                        <Badge
+                                                            variant="outline"
+                                                            className="border-emerald-500/50 text-emerald-600 dark:text-emerald-400"
+                                                        >
+                                                            {business.potential}
+                                                        </Badge>
+                                                    </div>
+                                                </CardHeader>
+                                                <CardContent className="flex-grow">
+                                                    <CardDescription className="text-base">
+                                                        {business.description}
+                                                    </CardDescription>
+                                                </CardContent>
+                                                <CardFooter>
+                                                    <Button className="group/btn w-full bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg transition-all hover:shadow-emerald-500/50">
+                                                        {business.started
+                                                            ? 'Continuer'
+                                                            : 'Démarrer'}{' '}
+                                                        <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover/btn:translate-x-1" />
+                                                    </Button>
+                                                </CardFooter>
+                                            </Card>
+                                        </motion.div>
+                                    );
+                                })}
+                            </div>
+                        )}
                     </motion.div>
                 ) : businessToRender ? (
                     <motion.div
