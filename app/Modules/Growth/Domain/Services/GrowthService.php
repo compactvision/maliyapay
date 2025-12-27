@@ -14,6 +14,7 @@ use App\Modules\Growth\Domain\Repositories\BusinessModelRepositoryInterface;
 use App\Modules\Growth\Domain\Repositories\RoutineKitRepositoryInterface;
 use App\Modules\Growth\Domain\Repositories\UserBusinessProgressRepositoryInterface;
 use App\Modules\Growth\Domain\Entities\UserBusinessProgress;
+use App\Modules\Growth\Infrastructure\Models\AdviceViewModel;
 use Ramsey\Uuid\Uuid;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -34,12 +35,32 @@ class GrowthService
 
     public function getAllAdvices(): array
     {
-        return $this->adviceRepository->findAll();
+        $advices = $this->adviceRepository->findAll();
+        
+        // Add view counts to each advice
+        foreach ($advices as $advice) {
+            $viewCount = \App\Modules\Growth\Infrastructure\Models\AdviceModel::where('id', $advice->id)
+                ->withCount('views')
+                ->first();
+            $advice->viewsCount = $viewCount ? $viewCount->views_count : 0;
+        }
+        
+        return $advices;
     }
 
     public function getAllRoutineKits(): array
     {
-        return $this->routineKitRepository->findAll();
+        $kits = $this->routineKitRepository->findAll();
+        
+        // Add import counts to each kit
+        foreach ($kits as $kit) {
+            $importCount = \App\Modules\Growth\Infrastructure\Models\RoutineKitModel::where('id', $kit->id)
+                ->withCount('imports')
+                ->first();
+            $kit->imports = $importCount ? $importCount->imports_count : 0;
+        }
+        
+        return $kits;
     }
 
     public function getAllBusinessModelsWithProgress(int $userId): array
@@ -67,6 +88,31 @@ class GrowthService
 
         return $models;
     }
+
+    public function getBusinessModelWithProgress(int $userId, string $businessId): mixed
+    {
+        $model = $this->businessModelRepository->findById($businessId);
+        
+        if (!$model) {
+            return null;
+        }
+
+        $progressRecords = $this->progressRepository->findByUserId($userId);
+        $progress = collect($progressRecords)->firstWhere('businessModelId', $businessId);
+
+        if ($progress) {
+            foreach ($model->steps as $step) {
+                $step->completed = in_array($step->id, $progress->completedSteps);
+            }
+        } else {
+            foreach ($model->steps as $step) {
+                $step->completed = false;
+            }
+        }
+
+        return $model;
+    }
+
 
     public function createAdvice(array $data): void
     {
@@ -380,5 +426,32 @@ class GrowthService
         }
 
         $this->progressRepository->save($progress);
+    }
+
+    public function trackAdviceView(string $adviceId, int $userId): bool
+    {
+        try {
+            // Check if user has already viewed this advice
+            $existingView = AdviceViewModel::where('user_id', $userId)
+                ->where('advice_id', $adviceId)
+                ->first();
+            
+            if ($existingView) {
+                return false; // Already viewed
+            }
+            
+            // Create new view record
+            AdviceViewModel::create([
+                'id' => Uuid::uuid4()->toString(),
+                'user_id' => $userId,
+                'advice_id' => $adviceId,
+                'viewed_at' => now(),
+            ]);
+            
+            return true;
+        } catch (\Exception $e) {
+            \Log::error('Failed to track advice view: ' . $e->getMessage());
+            return false;
+        }
     }
 }

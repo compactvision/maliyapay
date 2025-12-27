@@ -12,6 +12,7 @@ export interface Advice {
     videoUrl?: string;
     readingTimeMinutes?: number;
     views?: number;
+    viewsCount?: number;
     shares?: number;
     engagement?: number;
     growth?: number;

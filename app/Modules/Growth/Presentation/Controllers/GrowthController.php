@@ -27,17 +27,44 @@ class GrowthController extends Controller
         ]);
     }
 
-    public function showAdvice(string $id): \Inertia\Response
+    public function showAdvice(string $id, Request $request): \Inertia\Response
     {
         $advice = $this->growthService->getAdvice($id);
         if (!$advice) {
             abort(404);
         }
 
+        // Track the view
+        if ($request->user()) {
+            $this->growthService->trackAdviceView($id, (int) $request->user()->id);
+        }
+
         return Inertia::render('growth/AdviceDetail', [
             'advice' => $advice,
         ]);
     }
+
+    public function showQuestStep(string $businessId, string $stepId, Request $request): \Inertia\Response
+    {
+        $business = $this->growthService->getBusinessModelWithProgress((int) $request->user()->id, $businessId);
+        
+        if (!$business) {
+            abort(404, 'Business model not found');
+        }
+
+        // Find the step
+        $step = collect($business->steps)->firstWhere('id', $stepId);
+        
+        if (!$step) {
+            abort(404, 'Step not found');
+        }
+
+        return Inertia::render('growth/QuestStepDetail', [
+            'business' => $business,
+            'stepId' => $stepId,
+        ]);
+    }
+
 
     public function updateBusinessProgress(Request $request): JsonResponse
     {

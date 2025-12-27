@@ -69,8 +69,8 @@ const RoutinesTab = () => {
                     className="mb-8"
                 >
                     <div className="mb-2 flex items-center gap-2">
-                        <div className="rounded-full bg-primary/10 p-2">
-                            <Sparkles className="h-5 w-5 text-primary" />
+                        <div className="rounded-full bg-emerald-500/10 p-2">
+                            <Sparkles className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
                         </div>
                         <h3 className="text-2xl font-bold text-foreground">
                             Kits de Routines
@@ -115,14 +115,14 @@ const RoutinesTab = () => {
                                         <div className="absolute top-3 right-3 flex gap-2">
                                             {kit.isPaid ? (
                                                 <div className="flex items-center gap-1.5 rounded-full bg-background/90 px-3 py-1 shadow-sm backdrop-blur">
-                                                    <Sparkles className="h-3.5 w-3.5 text-yellow-500" />
+                                                    <Sparkles className="h-3.5 w-3.5 text-emerald-500" />
                                                     <span className="text-xs font-bold text-foreground">
                                                         Premium
                                                     </span>
                                                 </div>
                                             ) : (
                                                 <div className="flex items-center gap-1.5 rounded-full bg-background/90 px-3 py-1 shadow-sm backdrop-blur">
-                                                    <Gift className="h-3.5 w-3.5 text-green-500" />
+                                                    <Gift className="h-3.5 w-3.5 text-emerald-500" />
                                                     <span className="text-xs font-bold text-foreground">
                                                         Gratuit
                                                     </span>
@@ -194,10 +194,10 @@ const RoutinesTab = () => {
                                                 </div>
                                             ) : (
                                                 <div className="flex items-center gap-2">
-                                                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-green-500/10">
-                                                        <Zap className="h-4 w-4 text-green-500" />
+                                                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500/10">
+                                                        <Zap className="h-4 w-4 text-emerald-500" />
                                                     </div>
-                                                    <span className="font-bold text-green-600 dark:text-green-500">
+                                                    <span className="font-bold text-emerald-600 dark:text-emerald-500">
                                                         Gratuit
                                                     </span>
                                                 </div>
@@ -211,7 +211,7 @@ const RoutinesTab = () => {
                                                 className={`transition-all duration-300 ${
                                                     kit.isPaid
                                                         ? 'bg-foreground text-background hover:bg-foreground/90'
-                                                        : 'bg-primary text-primary-foreground hover:bg-primary/90'
+                                                        : 'bg-emerald-600 text-white hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600'
                                                 }`}
                                             >
                                                 {kit.isPaid ? (

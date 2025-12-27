@@ -34,4 +34,14 @@ class RoutineKitModel extends Model
     {
         return $this->hasMany(RoutineKitTaskModel::class, 'kit_id');
     }
+
+    public function imports()
+    {
+        return $this->hasMany(RoutineKitImportModel::class, 'kit_id');
+    }
+
+    public function getImportsCountAttribute()
+    {
+        return $this->imports()->count();
+    }
 }

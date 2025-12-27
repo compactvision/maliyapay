@@ -32,4 +32,14 @@ class AdviceModel extends Model
         'featured' => 'boolean',
         'images' => 'array',
     ];
+
+    public function views()
+    {
+        return $this->hasMany(AdviceViewModel::class, 'advice_id');
+    }
+
+    public function getViewsCountAttribute()
+    {
+        return $this->views()->count();
+    }
 }

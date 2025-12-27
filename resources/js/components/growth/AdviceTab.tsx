@@ -8,7 +8,7 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useTasks } from '@/hooks/useTasks';
 import { motion } from 'framer-motion';
-import { CheckCircle2, Circle, Image as ImageIcon } from 'lucide-react';
+import { CheckCircle2, Circle, Eye, Image as ImageIcon } from 'lucide-react';
 import { useEffect } from 'react';
 
 import { useGrowth } from '@/hooks/useGrowth';
@@ -32,6 +32,7 @@ const AdviceTab = () => {
             publishedAt: '23 Déc 2025',
             images: [],
             readingTimeMinutes: 5,
+            viewsCount: 0,
         },
         {
             id: '2',
@@ -42,6 +43,7 @@ const AdviceTab = () => {
             publishedAt: '22 Déc 2025',
             images: [],
             readingTimeMinutes: 7,
+            viewsCount: 0,
         },
         {
             id: '3',
@@ -52,6 +54,7 @@ const AdviceTab = () => {
             publishedAt: '20 Déc 2025',
             images: [],
             readingTimeMinutes: 4,
+            viewsCount: 0,
         },
     ];
 
@@ -97,7 +100,7 @@ const AdviceTab = () => {
                                                   className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                                               />
                                           ) : (
-                                              <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-blue-500 to-purple-600">
+                                              <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-emerald-500 to-teal-600">
                                                   <ImageIcon className="h-12 w-12 text-white/20" />
                                               </div>
                                           )}
@@ -112,7 +115,7 @@ const AdviceTab = () => {
                                       </div>
 
                                       <CardContent className="p-5">
-                                          <CardTitle className="mb-2 text-lg leading-tight group-hover:text-primary">
+                                          <CardTitle className="mb-2 text-lg leading-tight transition-colors group-hover:text-emerald-600 dark:group-hover:text-emerald-400">
                                               {news.title}
                                           </CardTitle>
                                           <CardDescription className="line-clamp-2 text-sm text-muted-foreground">
@@ -129,10 +132,22 @@ const AdviceTab = () => {
                                                         ).toLocaleDateString()
                                                       : 'Récemment'}
                                               </span>
-                                              <span>
-                                                  {news.readingTimeMinutes || 5}{' '}
-                                                  min lecture
-                                              </span>
+                                              <div className="flex items-center gap-3">
+                                                  {news.viewsCount !==
+                                                      undefined && (
+                                                      <div className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
+                                                          <Eye className="h-3.5 w-3.5" />
+                                                          <span className="font-medium">
+                                                              {news.viewsCount}
+                                                          </span>
+                                                      </div>
+                                                  )}
+                                                  <span>
+                                                      {news.readingTimeMinutes ||
+                                                          5}{' '}
+                                                      min
+                                                  </span>
+                                              </div>
                                           </div>
                                       </div>
                                   </Card>

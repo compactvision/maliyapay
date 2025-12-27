@@ -8,6 +8,7 @@ import {
     BarChart3,
     Calendar,
     CheckSquare,
+    Goal,
     LayoutDashboard,
     LineChart,
     LogOut,
@@ -147,8 +148,8 @@ const mainNavItems = [
 const mobileNavItems = [
     { title: 'Accueil', url: '/', icon: LayoutDashboard },
     { title: 'Transactions', url: '/transaction', icon: ArrowUpDown },
+    { title: 'Croissance', url: '/growth', icon: Goal },
     { title: 'Tâches', url: '/task', icon: CheckSquare },
-    { title: 'Croissance', url: '/growth', icon: Sparkles },
     { title: 'Performance', url: '/habits', icon: LineChart },
 ];
 
@@ -464,6 +465,14 @@ export const RightMenu = () => {
                     >
                         <Tags className="h-5 w-5" />
                         Catégories
+                    </Link>
+                    <Link
+                        href="/statistic"
+                        onClick={closeRightMenu}
+                        className="flex items-center gap-3 rounded-lg px-3 py-2 text-gray-600 transition-colors hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"
+                    >
+                        <BarChart3 className="h-5 w-5" />
+                        Statistiques
                     </Link>
                     <Link
                         href="/routine"

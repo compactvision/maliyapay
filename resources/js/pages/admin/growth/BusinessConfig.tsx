@@ -173,7 +173,30 @@ const BusinessConfig = ({ item: propItem }: { item?: CropJourney }) => {
             roi: selectedItem?.businessPlan?.roi || 0,
             paybackPeriod: selectedItem?.businessPlan?.paybackPeriod || '',
         },
-        steps: selectedItem?.steps || [],
+        steps: (selectedItem?.steps || []).map((step: any) => ({
+            ...step,
+            knowledge: {
+                title: step.knowledge?.title || '',
+                content: step.knowledge?.content || [],
+                images: step.knowledge?.images || [],
+            },
+            actions: {
+                title: step.actions?.title || '',
+                description: step.actions?.description || '',
+                steps: step.actions?.steps || [],
+                tools: step.actions?.tools || [],
+                duration: step.actions?.duration || '',
+            },
+            costs: step.costs || [],
+            routines: step.routines || [],
+            progression: {
+                xpReward: step.progression?.xpReward || 100,
+                validationCriteria: step.progression?.validationCriteria || [],
+                nextLevelUnlock: step.progression?.nextLevelUnlock ?? true,
+            },
+            locked: step.locked ?? false,
+            completed: step.completed ?? false,
+        })),
     });
 
     useEffect(() => {
@@ -1929,7 +1952,12 @@ const BusinessConfig = ({ item: propItem }: { item?: CropJourney }) => {
                                                                     Contenu
                                                                 </Label>
                                                                 <div className="space-y-2">
-                                                                    {step.knowledge.content.map(
+                                                                    {(
+                                                                        step
+                                                                            .knowledge
+                                                                            ?.content ||
+                                                                        []
+                                                                    ).map(
                                                                         (
                                                                             item,
                                                                             itemIndex,
@@ -2084,7 +2112,12 @@ const BusinessConfig = ({ item: propItem }: { item?: CropJourney }) => {
                                                                         .length >
                                                                         0 && (
                                                                         <div className="mt-3 grid grid-cols-2 gap-2">
-                                                                            {step.knowledge.images.map(
+                                                                            {(
+                                                                                step
+                                                                                    .knowledge
+                                                                                    ?.images ||
+                                                                                []
+                                                                            ).map(
                                                                                 (
                                                                                     img,
                                                                                     imgIdx,
@@ -2230,7 +2263,12 @@ const BusinessConfig = ({ item: propItem }: { item?: CropJourney }) => {
                                                                     Étapes
                                                                 </Label>
                                                                 <div className="space-y-2">
-                                                                    {step.actions.steps.map(
+                                                                    {(
+                                                                        step
+                                                                            .actions
+                                                                            ?.steps ||
+                                                                        []
+                                                                    ).map(
                                                                         (
                                                                             item,
                                                                             itemIndex,
@@ -2569,7 +2607,10 @@ const BusinessConfig = ({ item: propItem }: { item?: CropJourney }) => {
                                                                 </Button>
                                                             </div>
                                                             <div className="space-y-3">
-                                                                {step.costs.map(
+                                                                {(
+                                                                    step.costs ||
+                                                                    []
+                                                                ).map(
                                                                     (cost) => (
                                                                         <div
                                                                             key={
@@ -2855,7 +2896,10 @@ const BusinessConfig = ({ item: propItem }: { item?: CropJourney }) => {
                                                                 </Button>
                                                             </div>
                                                             <div className="space-y-3">
-                                                                {step.routines.map(
+                                                                {(
+                                                                    step.routines ||
+                                                                    []
+                                                                ).map(
                                                                     (task) => (
                                                                         <div
                                                                             key={
@@ -3168,7 +3212,12 @@ const BusinessConfig = ({ item: propItem }: { item?: CropJourney }) => {
                                                                 validation
                                                             </Label>
                                                             <div className="space-y-2">
-                                                                {step.progression.validationCriteria.map(
+                                                                {(
+                                                                    step
+                                                                        .progression
+                                                                        ?.validationCriteria ||
+                                                                    []
+                                                                ).map(
                                                                     (
                                                                         criteria,
                                                                         criteriaIndex,

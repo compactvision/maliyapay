@@ -12,6 +12,7 @@ use App\Modules\Routine\Domain\Repositories\RoutineTaskRepositoryInterface;
 use App\Modules\Routine\Domain\ValueObjects\DayOfWeek;
 use App\Modules\Routine\Domain\ValueObjects\TimeRange;
 use App\Modules\Task\Domain\ValueObjects\TaskPriority;
+use App\Modules\Growth\Infrastructure\Models\RoutineKitImportModel;
 use DateTimeImmutable;
 use Ramsey\Uuid\Uuid;
 
@@ -70,6 +71,22 @@ class RoutineImportService
                 orderIndex: $task->orderIndex
             );
             $this->routineTaskRepository->save($routineTask);
+        }
+        
+        // Track the import
+        try {
+            RoutineKitImportModel::firstOrCreate(
+                [
+                    'user_id' => $userId,
+                    'kit_id' => $kitId,
+                ],
+                [
+                    'id' => Uuid::uuid4()->toString(),
+                    'imported_at' => now(),
+                ]
+            );
+        } catch (\Exception $e) {
+            \Log::warning('Failed to track routine kit import: ' . $e->getMessage());
         }
     }
 }
