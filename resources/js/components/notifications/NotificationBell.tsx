@@ -16,6 +16,7 @@ export function NotificationBell() {
         isLoading,
         fetchNotifications,
         markAsRead,
+        markAllAsRead,
         deleteNotification,
     } = useNotifications();
     const [isOpen, setIsOpen] = useState(false);
