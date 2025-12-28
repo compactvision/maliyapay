@@ -48,6 +48,7 @@ export function NotificationBell() {
                         notifications={notifications}
                         isLoading={isLoading}
                         onMarkAsRead={markAsRead}
+                        onMarkAllAsRead={markAllAsRead}
                         onDelete={deleteNotification}
                         onClose={() => setIsOpen(false)}
                     />

@@ -1,14 +1,15 @@
 import { Notification } from '@/api/notificationApi';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { router } from '@inertiajs/react';
 import { Bell, CheckCheck } from 'lucide-react';
 import { NotificationItem } from './NotificationItem';
-import { router } from '@inertiajs/react';
 
 interface NotificationPanelProps {
     notifications: Notification[];
     isLoading: boolean;
     onMarkAsRead: (id: string) => void;
+    onMarkAllAsRead: () => void;
     onDelete: (id: string) => void;
     onClose: () => void;
 }
@@ -17,6 +18,7 @@ export function NotificationPanel({
     notifications,
     isLoading,
     onMarkAsRead,
+    onMarkAllAsRead,
     onDelete,
     onClose,
 }: NotificationPanelProps) {
@@ -30,7 +32,12 @@ export function NotificationPanel({
                     <h2 className="font-semibold">Notifications</h2>
                 </div>
                 {hasUnread && (
-                    <Button variant="ghost" size="sm" className="h-8 text-xs">
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 text-xs"
+                        onClick={onMarkAllAsRead}
+                    >
                         <CheckCheck className="mr-1 h-3 w-3" />
                         Tout marquer comme lu
                     </Button>
