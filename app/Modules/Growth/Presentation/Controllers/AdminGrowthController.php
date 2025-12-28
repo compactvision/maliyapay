@@ -96,6 +96,7 @@ class AdminGrowthController extends Controller
             'tasks.*.time_start' => 'nullable|string',
             'tasks.*.time_end' => 'nullable|string',
             'tasks.*.priority' => 'nullable|string|in:low,medium,high',
+            'tasks.*.xp' => 'nullable|integer|min:0',
             'images' => 'nullable|array',
         ]);
 
@@ -130,6 +131,7 @@ class AdminGrowthController extends Controller
             'tasks.*.time_start' => 'nullable|string',
             'tasks.*.time_end' => 'nullable|string',
             'tasks.*.priority' => 'nullable|string|in:low,medium,high',
+            'tasks.*.xp' => 'nullable|integer|min:0',
             'images' => 'nullable|array',
             'existing_images' => 'nullable|array',
         ]);

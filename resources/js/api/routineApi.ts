@@ -21,6 +21,7 @@ export interface RoutineTask {
     timeEnd: string | null;
     timeRange: string;
     priority: 'low' | 'medium' | 'high';
+    xp: number;
     orderIndex: number;
     createdAt: string;
     updatedAt: string;
@@ -72,6 +73,11 @@ export const routineApi = {
 
     async getTasksForDay(dayOfWeek: number): Promise<RoutineTask[]> {
         const response = await axios.get(`/api/routine-tasks/day/${dayOfWeek}`);
+        return response.data.tasks;
+    },
+
+    async getAllRoutineTasks(): Promise<RoutineTask[]> {
+        const response = await axios.get('/api/routine-tasks');
         return response.data.tasks;
     },
 

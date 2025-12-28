@@ -3,7 +3,6 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
 {
@@ -12,8 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('budgets', function (Blueprint $table) {
-            $table->dropUnique('budgets_user_id_category_id_unique');
+        Schema::table('users', function (Blueprint $table) {
+            //
         });
     }
 
@@ -22,7 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        // Restore the old constraint if needed
-        DB::statement('ALTER TABLE budgets ADD UNIQUE KEY budgets_user_id_category_id_unique (user_id, category_id)');
+        Schema::table('users', function (Blueprint $table) {
+            //
+        });
     }
 };

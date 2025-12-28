@@ -56,6 +56,7 @@ class EloquentRoutineKitRepository implements RoutineKitRepositoryInterface
                 'time_start' => $task->timeStart,
                 'time_end' => $task->timeEnd,
                 'priority' => $task->priority,
+                'xp' => $task->xp,
             ]);
         }
     }
@@ -78,6 +79,7 @@ class EloquentRoutineKitRepository implements RoutineKitRepositoryInterface
                 $taskModel->time_start,
                 $taskModel->time_end,
                 $taskModel->priority,
+                (int) $taskModel->xp,
             );
         })->all();
 

@@ -29,6 +29,7 @@ class EloquentRoutineTaskRepository implements RoutineTaskRepositoryInterface
                 'time_end' => $routineTask->timeRange()->formatEnd(),
                 'priority' => $routineTask->priority()->value,
                 'order_index' => $routineTask->orderIndex(),
+                'xp' => $routineTask->xp(),
                 'created_at' => $routineTask->createdAt()->format('Y-m-d H:i:s'),
                 'updated_at' => $routineTask->updatedAt()->format('Y-m-d H:i:s'),
             ]
@@ -104,7 +105,8 @@ class EloquentRoutineTaskRepository implements RoutineTaskRepositoryInterface
             priority: TaskPriority::fromString($row->priority),
             orderIndex: $row->order_index,
             createdAt: new DateTimeImmutable($row->created_at),
-            updatedAt: new DateTimeImmutable($row->updated_at)
+            updatedAt: new DateTimeImmutable($row->updated_at),
+            xp: (int) ($row->xp ?? 0)
         );
     }
 }

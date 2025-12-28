@@ -222,7 +222,8 @@ class GrowthService
                     isset($taskData['day_of_week']) ? (int)$taskData['day_of_week'] : null,
                     $taskData['time_start'] ?? null,
                     $taskData['time_end'] ?? null,
-                    $taskData['priority'] ?? 'medium'
+                    $taskData['priority'] ?? 'medium',
+                    (int) ($taskData['xp'] ?? 0)
                 );
             }
         }
@@ -268,7 +269,8 @@ class GrowthService
                     isset($taskData['day_of_week']) ? (int)$taskData['day_of_week'] : null,
                     $taskData['time_start'] ?? null,
                     $taskData['time_end'] ?? null,
-                    $taskData['priority'] ?? 'medium'
+                    $taskData['priority'] ?? 'medium',
+                    (int) ($taskData['xp'] ?? 0)
                 );
             }
         } else {

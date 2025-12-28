@@ -42,6 +42,7 @@ interface Task {
     timeEnd: string;
     priority: 'low' | 'medium' | 'high';
     completed: boolean;
+    xp: number;
 }
 
 interface DayTasks {
@@ -88,6 +89,7 @@ const transformTasksToWeeklyFormat = (tasks?: RoutineKitTask[]): DayTasks[] => {
                 timeEnd: task.timeEnd || '10:00',
                 priority: task.priority || 'medium',
                 completed: task.completed || false,
+                xp: task.xp || 10,
             });
         }
     });
@@ -160,6 +162,7 @@ const KitConfig = ({ item: propItem }: { item?: RoutineKit }) => {
                         time_start: task.timeStart, // ✅ snake_case
                         time_end: task.timeEnd, // ✅ snake_case
                         priority: task.priority,
+                        xp: task.xp,
                     })),
             );
 
@@ -231,6 +234,7 @@ const KitConfig = ({ item: propItem }: { item?: RoutineKit }) => {
             timeEnd: '10:00',
             priority: 'medium',
             completed: false,
+            xp: 10,
         };
 
         setConfigForm((prev) => ({
@@ -1002,6 +1006,49 @@ const KitConfig = ({ item: propItem }: { item?: RoutineKit }) => {
                                                                             🔴
                                                                             Haute
                                                                         </button>
+                                                                    </div>
+                                                                </div>
+                                                                <div className="space-y-2">
+                                                                    <Label
+                                                                        className={`text-sm ${isDarkMode ? 'text-gray-300' : ''}`}
+                                                                    >
+                                                                        XP
+                                                                    </Label>
+                                                                    <div className="flex items-center gap-2">
+                                                                        <Sparkles className="h-4 w-4 text-yellow-500" />
+                                                                        <Input
+                                                                            type="number"
+                                                                            value={
+                                                                                task.xp ||
+                                                                                10
+                                                                            }
+                                                                            onChange={(
+                                                                                e,
+                                                                            ) =>
+                                                                                updateTask(
+                                                                                    dayIndex,
+                                                                                    taskIndex,
+                                                                                    'xp',
+                                                                                    parseInt(
+                                                                                        e
+                                                                                            .target
+                                                                                            .value,
+                                                                                    ) ||
+                                                                                        0,
+                                                                                )
+                                                                            }
+                                                                            className={`w-24 text-sm transition-colors focus:ring-2 focus:ring-purple-500 ${
+                                                                                isDarkMode
+                                                                                    ? 'border-gray-600 bg-gray-700 text-white'
+                                                                                    : ''
+                                                                            }`}
+                                                                            placeholder="XP"
+                                                                        />
+                                                                        <span
+                                                                            className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}
+                                                                        >
+                                                                            XP
+                                                                        </span>
                                                                     </div>
                                                                 </div>
                                                             </div>

@@ -14,7 +14,7 @@ class ToggleTaskCompletionCommandHandler
     ) {
     }
 
-    public function handle(ToggleTaskCompletionCommand $command): void
+    public function handle(ToggleTaskCompletionCommand $command): \App\Modules\Task\Domain\Entities\Task
     {
         $task = $this->taskRepository->findById(Uuid::fromString($command->taskId));
 
@@ -37,5 +37,7 @@ class ToggleTaskCompletionCommandHandler
                 new \DateTimeImmutable()
             );
         }
+
+        return $task;
     }
 }

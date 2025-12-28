@@ -22,6 +22,7 @@ class RoutineKitTaskModel extends Model
         'time_start',
         'time_end',
         'priority',
+        'xp',
     ];
 
     public function kit()

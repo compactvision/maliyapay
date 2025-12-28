@@ -156,3 +156,39 @@ export function useRoutineTasksForDay(dayOfWeek: number) {
         refetch: fetchTasks,
     };
 }
+
+// Hook to get ALL routine tasks (not filtered by day)
+export function useAllRoutineTasks() {
+    const [routineTasks, setRoutineTasks] = useState<RoutineTask[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    const fetchAllTasks = useCallback(async () => {
+        try {
+            setIsLoading(true);
+            setError(null);
+            const data = await routineApi.getAllRoutineTasks();
+            setRoutineTasks(data);
+        } catch (err) {
+            const errorMessage =
+                err instanceof Error
+                    ? err.message
+                    : 'Erreur lors du chargement des tâches de routine';
+            setError(errorMessage);
+            // Don't show toast for this, it's background data
+        } finally {
+            setIsLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        fetchAllTasks();
+    }, [fetchAllTasks]);
+
+    return {
+        routineTasks,
+        isLoading,
+        error,
+        refetch: fetchAllTasks,
+    };
+}

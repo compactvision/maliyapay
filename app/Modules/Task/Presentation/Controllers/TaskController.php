@@ -144,10 +144,11 @@ class TaskController extends Controller
         );
 
         try {
-            $this->toggleCompletionHandler->handle($command);
+            $task = $this->toggleCompletionHandler->handle($command);
 
             return response()->json([
                 'message' => 'État de la tâche modifié avec succès',
+                'task' => (new TaskResource($task))->toArray($request),
             ]);
         } catch (\DomainException $e) {
             return response()->json([

@@ -68,7 +68,8 @@ class RoutineImportService
                 dayOfWeek: DayOfWeek::from($task->dayOfWeek),
                 timeRange: TimeRange::create($task->timeStart, $task->timeEnd),
                 priority: TaskPriority::from($task->priority),
-                orderIndex: $task->orderIndex
+                orderIndex: $task->orderIndex,
+                xp: $task->xp
             );
             $this->routineTaskRepository->save($routineTask);
         }
@@ -88,5 +89,10 @@ class RoutineImportService
         } catch (\Exception $e) {
             \Log::warning('Failed to track routine kit import: ' . $e->getMessage());
         }
+
+        // Generate tasks for today immediately so user sees them
+        // We use app() helper to avoid modifying constructor if possible, or we can refactor constructor.
+        // Refactoring constructor is cleaner.
+        app(\App\Modules\Routine\Domain\Services\TaskGeneratorService::class)->generateTasksForToday($userId);
     }
 }

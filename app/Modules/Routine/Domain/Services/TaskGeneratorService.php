@@ -52,7 +52,8 @@ class TaskGeneratorService
                 title: $routineTask->title(),
                 description: $routineTask->description(),
                 priority: $routineTask->priority()->value,
-                dueDate: $date->format('Y-m-d')
+                dueDate: $date->format('Y-m-d'),
+                xp: $routineTask->xp()
             );
 
             $task = $this->createTaskHandler->handle($command);

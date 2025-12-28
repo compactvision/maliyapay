@@ -19,7 +19,8 @@ class Task
         private ?DateTimeImmutable $dueDate,
         private bool $completed,
         private DateTimeImmutable $createdAt,
-        private DateTimeImmutable $updatedAt
+        private DateTimeImmutable $updatedAt,
+        private int $xp = 0
     ) {
     }
 
@@ -29,7 +30,8 @@ class Task
         string $title,
         ?string $description,
         TaskPriority $priority,
-        ?DateTimeImmutable $dueDate
+        ?DateTimeImmutable $dueDate,
+        int $xp = 0
     ): self {
         $now = new DateTimeImmutable();
         return new self(
@@ -41,7 +43,8 @@ class Task
             dueDate: $dueDate,
             completed: false,
             createdAt: $now,
-            updatedAt: $now
+            updatedAt: $now,
+            xp: $xp
         );
     }
 
@@ -54,7 +57,8 @@ class Task
         ?DateTimeImmutable $dueDate,
         bool $completed,
         DateTimeImmutable $createdAt,
-        DateTimeImmutable $updatedAt
+        DateTimeImmutable $updatedAt,
+        int $xp = 0
     ): self {
         return new self(
             id: $id,
@@ -65,7 +69,8 @@ class Task
             dueDate: $dueDate,
             completed: $completed,
             createdAt: $createdAt,
-            updatedAt: $updatedAt
+            updatedAt: $updatedAt,
+            xp: $xp
         );
     }
 
@@ -144,6 +149,11 @@ class Task
     public function updatedAt(): DateTimeImmutable
     {
         return $this->updatedAt;
+    }
+
+    public function xp(): int
+    {
+        return $this->xp;
     }
 
     public function isOverdue(): bool

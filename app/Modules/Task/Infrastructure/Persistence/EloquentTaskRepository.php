@@ -25,6 +25,7 @@ class EloquentTaskRepository implements TaskRepositoryInterface
                 'priority' => $task->priority()->value,
                 'due_date' => $task->dueDate()?->format('Y-m-d'),
                 'completed' => $task->completed(),
+                'xp' => $task->xp(),
                 'created_at' => $task->createdAt()->format('Y-m-d H:i:s'),
                 'updated_at' => $task->updatedAt()->format('Y-m-d H:i:s'),
             ]
@@ -82,7 +83,8 @@ class EloquentTaskRepository implements TaskRepositoryInterface
             dueDate: $row->due_date ? new DateTimeImmutable($row->due_date) : null,
             completed: (bool) $row->completed,
             createdAt: new DateTimeImmutable($row->created_at),
-            updatedAt: new DateTimeImmutable($row->updated_at)
+            updatedAt: new DateTimeImmutable($row->updated_at),
+            xp: (int) ($row->xp ?? 0)
         );
     }
 
@@ -109,5 +111,26 @@ class EloquentTaskRepository implements TaskRepositoryInterface
             ->get();
 
         return $rows->map(fn($row) => $this->hydrate($row))->all();
+    }
+
+    public function findByRoutineTaskAndDate(UuidInterface $routineTaskId, \DateTimeInterface $date): array
+    {
+        $rows = DB::table('tasks')
+            ->where('routine_task_id', $routineTaskId->toString())
+            ->where('due_date', $date->format('Y-m-d'))
+            ->get();
+
+        return $rows->map(fn($row) => $this->hydrate($row))->all();
+    }
+
+    public function linkToRoutineTask(UuidInterface $taskId, UuidInterface $routineTaskId, \DateTimeInterface $date): void
+    {
+        DB::table('tasks')
+            ->where('id', $taskId->toString())
+            ->update([
+                'routine_task_id' => $routineTaskId->toString(),
+                // due_date is likely already set by creation, but we can ensure it matches or just ignore if consistent
+                // 'due_date' => $date->format('Y-m-d'), 
+            ]);
     }
 }

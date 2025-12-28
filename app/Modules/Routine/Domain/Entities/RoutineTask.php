@@ -22,7 +22,8 @@ class RoutineTask
         private TaskPriority $priority,
         private int $orderIndex,
         private DateTimeImmutable $createdAt,
-        private DateTimeImmutable $updatedAt
+        private DateTimeImmutable $updatedAt,
+        private int $xp = 0
     ) {
     }
 
@@ -34,7 +35,8 @@ class RoutineTask
         DayOfWeek $dayOfWeek,
         TimeRange $timeRange,
         TaskPriority $priority,
-        int $orderIndex = 0
+        int $orderIndex = 0,
+        int $xp = 0
     ): self {
         $now = new DateTimeImmutable();
         return new self(
@@ -47,7 +49,8 @@ class RoutineTask
             priority: $priority,
             orderIndex: $orderIndex,
             createdAt: $now,
-            updatedAt: $now
+            updatedAt: $now,
+            xp: $xp
         );
     }
 
@@ -61,7 +64,8 @@ class RoutineTask
         TaskPriority $priority,
         int $orderIndex,
         DateTimeImmutable $createdAt,
-        DateTimeImmutable $updatedAt
+        DateTimeImmutable $updatedAt,
+        int $xp = 0
     ): self {
         return new self(
             id: $id,
@@ -73,7 +77,8 @@ class RoutineTask
             priority: $priority,
             orderIndex: $orderIndex,
             createdAt: $createdAt,
-            updatedAt: $updatedAt
+            updatedAt: $updatedAt,
+            xp: $xp
         );
     }
 
@@ -143,5 +148,10 @@ class RoutineTask
     public function updatedAt(): DateTimeImmutable
     {
         return $this->updatedAt;
+    }
+
+    public function xp(): int
+    {
+        return $this->xp;
     }
 }

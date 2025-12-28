@@ -115,6 +115,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     // Routines
     Route::middleware('permission:view routines')->group(function () {
         Route::get('routines', [RoutineController::class, 'index']);
+        Route::get('routine-tasks', [RoutineController::class, 'allTasks']);
         Route::get('routine-tasks/day/{dayOfWeek}', [RoutineController::class, 'tasksForDay']);
         
         // Routine Tasks view

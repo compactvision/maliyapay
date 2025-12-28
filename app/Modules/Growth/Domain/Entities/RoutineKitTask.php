@@ -16,5 +16,6 @@ class RoutineKitTask
         public readonly ?string $timeStart,
         public readonly ?string $timeEnd,
         public readonly string $priority,
+        public readonly int $xp = 0,
     ) {}
 }

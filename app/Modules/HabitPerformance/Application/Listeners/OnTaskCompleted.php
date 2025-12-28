@@ -16,7 +16,8 @@ class OnTaskCompleted
 {
     public function __construct(
         private PerformanceMetricRepositoryInterface $metricRepository,
-        private GamificationProfileRepositoryInterface $gamificationRepository
+        private GamificationProfileRepositoryInterface $gamificationRepository,
+        private \App\Modules\Task\Domain\Repositories\TaskRepositoryInterface $taskRepository
     ) {
     }
 
@@ -51,7 +52,18 @@ class OnTaskCompleted
         }
 
         // Award XP for completing a task
-        $profile->addXp(10); // 10 XP per task
+        $task = $this->taskRepository->findById($event->taskId);
+        $xpToAward = $task ? $task->xp() : 10;
+        
+        // Ensure at least 10 XP (or keep as fallback?)
+        // If 0 XP is configured, maybe user wants 0?
+        // Let's assume if it is Routine Task it might have specific XP, otherwise default 10.
+        // Actually, if it's 0, let's give 10 default.
+        if ($xpToAward === 0) {
+            $xpToAward = 10;
+        }
+
+        $profile->addXp($xpToAward); // Dynamic XP
         $profile->addCoins(5); // 5 Coins per task
         
         // Update Streak

@@ -27,5 +27,15 @@ interface TaskRepositoryInterface
     /**
      * @return Task[]
      */
+    /**
+     * @return Task[]
+     */
     public function findByUserIdAndDateRange(int $userId, \DateTimeInterface $startDate, \DateTimeInterface $endDate): array;
+
+    /**
+     * @return Task[]
+     */
+    public function findByRoutineTaskAndDate(UuidInterface $routineTaskId, \DateTimeInterface $date): array;
+
+    public function linkToRoutineTask(UuidInterface $taskId, UuidInterface $routineTaskId, \DateTimeInterface $date): void;
 }

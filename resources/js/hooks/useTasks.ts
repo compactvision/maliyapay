@@ -70,15 +70,12 @@ export function useTasks() {
 
     const toggleCompletion = useCallback(async (id: string) => {
         try {
-            await taskApi.toggleCompletion(id);
+            const updatedTask = await taskApi.toggleCompletion(id);
             setTasks((prev) =>
-                prev.map((task) =>
-                    task.id === id
-                        ? { ...task, completed: !task.completed }
-                        : task,
-                ),
+                prev.map((task) => (task.id === id ? updatedTask : task)),
             );
             toast.success('État de la tâche modifié');
+            return updatedTask; // Return the updated task with XP
         } catch (err) {
             const errorMessage =
                 err instanceof Error

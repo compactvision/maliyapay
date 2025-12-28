@@ -32,6 +32,7 @@ export interface RoutineKitTask {
     timeEnd: string | null;
     priority: 'low' | 'medium' | 'high';
     completed?: boolean;
+    xp?: number;
 }
 
 export interface RoutineKit {

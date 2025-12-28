@@ -8,6 +8,8 @@ export interface Task {
     dueDate: string | null;
     completed: boolean;
     isOverdue: boolean;
+    xp: number;
+    routineTaskId?: string;
     createdAt: string;
     updatedAt: string;
 }
@@ -41,8 +43,9 @@ export const taskApi = {
         await axios.put(`/api/tasks/${id}`, data);
     },
 
-    async toggleCompletion(id: string): Promise<void> {
-        await axios.post(`/api/tasks/${id}/toggle`);
+    async toggleCompletion(id: string): Promise<Task> {
+        const response = await axios.post(`/api/tasks/${id}/toggle`);
+        return response.data.task;
     },
 
     async deleteTask(id: string): Promise<void> {

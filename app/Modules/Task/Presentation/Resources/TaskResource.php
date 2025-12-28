@@ -24,6 +24,7 @@ class TaskResource extends JsonResource
             'dueDate' => $this->task->dueDate()?->format('Y-m-d'),
             'completed' => $this->task->completed(),
             'isOverdue' => $this->task->isOverdue(),
+            'xp' => $this->task->xp(),
             'createdAt' => $this->task->createdAt()->format('Y-m-d H:i:s'),
             'updatedAt' => $this->task->updatedAt()->format('Y-m-d H:i:s'),
         ];

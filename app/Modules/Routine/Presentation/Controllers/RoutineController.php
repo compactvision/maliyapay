@@ -175,4 +175,24 @@ class RoutineController extends Controller
             ),
         ]);
     }
+
+    public function allTasks(Request $request): JsonResponse
+    {
+        $userId = $request->user()->id;
+
+        // Get all routine tasks for all days (1-7)
+        $allTasks = [];
+        for ($day = 1; $day <= 7; $day++) {
+            $query = new GetRoutineTasksForDayQuery($userId, $day);
+            $dayTasks = $this->getRoutineTasksForDayHandler->handle($query);
+            $allTasks = array_merge($allTasks, $dayTasks);
+        }
+
+        return response()->json([
+            'tasks' => array_map(
+                fn($task) => (new RoutineTaskResource($task))->toArray($request),
+                $allTasks
+            ),
+        ]);
+    }
 }

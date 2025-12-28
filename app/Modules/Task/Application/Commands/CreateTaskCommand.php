@@ -11,7 +11,8 @@ class CreateTaskCommand
         public readonly string $title,
         public readonly ?string $description,
         public readonly string $priority,
-        public readonly ?string $dueDate
+        public readonly ?string $dueDate,
+        public readonly int $xp = 0
     ) {
     }
 }
