@@ -76,7 +76,7 @@ class EloquentTaskRepository implements TaskRepositoryInterface
     {
         return Task::reconstitute(
             id: Uuid::fromString($row->id),
-            userId: $row->user_id,
+            userId: (int) $row->user_id,
             title: $row->title,
             description: $row->description,
             priority: TaskPriority::fromString($row->priority),
