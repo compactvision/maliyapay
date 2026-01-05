@@ -25,6 +25,12 @@ class RoutineKitTaskModel extends Model
         'xp',
     ];
 
+    protected $casts = [
+        'order_index' => 'integer',
+        'day_of_week' => 'integer',
+        'xp' => 'integer',
+    ];
+
     public function kit()
     {
         return $this->belongsTo(RoutineKitModel::class, 'kit_id');

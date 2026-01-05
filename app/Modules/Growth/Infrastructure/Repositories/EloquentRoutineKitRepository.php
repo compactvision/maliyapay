@@ -74,7 +74,7 @@ class EloquentRoutineKitRepository implements RoutineKitRepositoryInterface
                 $taskModel->kit_id,
                 $taskModel->title,
                 $taskModel->description,
-                $taskModel->order_index,
+                (int) $taskModel->order_index,
                 $taskModel->day_of_week,
                 $taskModel->time_start,
                 $taskModel->time_end,
