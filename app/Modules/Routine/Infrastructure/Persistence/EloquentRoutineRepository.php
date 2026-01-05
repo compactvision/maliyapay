@@ -80,7 +80,7 @@ class EloquentRoutineRepository implements RoutineRepositoryInterface
     {
         return Routine::reconstitute(
             id: Uuid::fromString($row->id),
-            userId: $row->user_id,
+            userId: (int) $row->user_id,
             name: $row->name,
             color: $row->color,
             isActive: (bool) $row->is_active,

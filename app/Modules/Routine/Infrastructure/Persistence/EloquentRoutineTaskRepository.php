@@ -100,10 +100,10 @@ class EloquentRoutineTaskRepository implements RoutineTaskRepositoryInterface
             routineId: Uuid::fromString($row->routine_id),
             title: $row->title,
             description: $row->description,
-            dayOfWeek: DayOfWeek::fromInt($row->day_of_week),
+            dayOfWeek: DayOfWeek::fromInt((int) $row->day_of_week),
             timeRange: TimeRange::create($row->time_start, $row->time_end),
             priority: TaskPriority::fromString($row->priority),
-            orderIndex: $row->order_index,
+            orderIndex: (int) $row->order_index,
             createdAt: new DateTimeImmutable($row->created_at),
             updatedAt: new DateTimeImmutable($row->updated_at),
             xp: (int) ($row->xp ?? 0)
