@@ -26,7 +26,8 @@ class CreateTaskCommandHandler
             description: $command->description,
             priority: TaskPriority::fromString($command->priority),
             dueDate: $command->dueDate ? new DateTimeImmutable($command->dueDate) : null,
-            xp: $command->xp
+            xp: $command->xp,
+            routineTaskId: $command->routineTaskId ? Uuid::fromString($command->routineTaskId) : null
         );
 
         $this->taskRepository->save($task);

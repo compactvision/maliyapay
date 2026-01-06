@@ -19,6 +19,7 @@ export interface CreateTaskData {
     description?: string;
     priority: 'low' | 'medium' | 'high';
     dueDate?: string;
+    routineTaskId?: string;
 }
 
 export interface UpdateTaskData {

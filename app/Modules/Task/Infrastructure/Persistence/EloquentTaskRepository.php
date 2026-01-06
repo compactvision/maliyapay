@@ -26,6 +26,7 @@ class EloquentTaskRepository implements TaskRepositoryInterface
                 'due_date' => $task->dueDate()?->format('Y-m-d'),
                 'completed' => $task->completed(),
                 'xp' => $task->xp(),
+                'routine_task_id' => $task->routineTaskId()?->toString(),
                 'created_at' => $task->createdAt()->format('Y-m-d H:i:s'),
                 'updated_at' => $task->updatedAt()->format('Y-m-d H:i:s'),
             ]
@@ -82,9 +83,10 @@ class EloquentTaskRepository implements TaskRepositoryInterface
             priority: TaskPriority::fromString($row->priority),
             dueDate: $row->due_date ? new DateTimeImmutable($row->due_date) : null,
             completed: (bool) $row->completed,
-            createdAt: new DateTimeImmutable($row->created_at),
-            updatedAt: new DateTimeImmutable($row->updated_at),
-            xp: (int) ($row->xp ?? 0)
+            createdAt: new \DateTimeImmutable($row->created_at),
+            updatedAt: new \DateTimeImmutable($row->updated_at),
+            xp: (int) $row->xp,
+            routineTaskId: isset($row->routine_task_id) && $row->routine_task_id ? Uuid::fromString($row->routine_task_id) : null
         );
     }
 

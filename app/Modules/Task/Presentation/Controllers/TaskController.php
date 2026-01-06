@@ -53,13 +53,13 @@ class TaskController extends Controller
     public function store(CreateTaskRequest $request): JsonResponse
     {
         $userId = $request->user()->id;
-
         $command = new CreateTaskCommand(
             userId: $userId,
             title: $request->input('title'),
             description: $request->input('description'),
             priority: $request->input('priority'),
-            dueDate: $request->input('dueDate')
+            dueDate: $request->input('dueDate'),
+            routineTaskId: $request->input('routineTaskId')
         );
 
         try {

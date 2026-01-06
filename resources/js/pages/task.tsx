@@ -203,12 +203,12 @@ export default function TaskPage() {
         // For virtual routine tasks, create them first then complete
         if (task.isRoutine && task.id.startsWith('routine-')) {
             try {
-                // Create the task from the routine template
                 const newTask = await createTask({
                     title: task.title,
                     description: task.description || '',
                     priority: task.priority,
                     dueDate: task.dueDate,
+                    routineTaskId: task.routineTaskId,
                 });
 
                 // Immediately toggle it to completed

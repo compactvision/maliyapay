@@ -20,7 +20,8 @@ class Task
         private bool $completed,
         private DateTimeImmutable $createdAt,
         private DateTimeImmutable $updatedAt,
-        private int $xp = 0
+        private int $xp = 0,
+        private ?UuidInterface $routineTaskId = null
     ) {
     }
 
@@ -31,7 +32,8 @@ class Task
         ?string $description,
         TaskPriority $priority,
         ?DateTimeImmutable $dueDate,
-        int $xp = 0
+        int $xp = 0,
+        ?UuidInterface $routineTaskId = null
     ): self {
         $now = new DateTimeImmutable();
         return new self(
@@ -44,7 +46,8 @@ class Task
             completed: false,
             createdAt: $now,
             updatedAt: $now,
-            xp: $xp
+            xp: $xp,
+            routineTaskId: $routineTaskId
         );
     }
 
@@ -58,7 +61,8 @@ class Task
         bool $completed,
         DateTimeImmutable $createdAt,
         DateTimeImmutable $updatedAt,
-        int $xp = 0
+        int $xp = 0,
+        ?UuidInterface $routineTaskId = null
     ): self {
         return new self(
             id: $id,
@@ -70,7 +74,8 @@ class Task
             completed: $completed,
             createdAt: $createdAt,
             updatedAt: $updatedAt,
-            xp: $xp
+            xp: $xp,
+            routineTaskId: $routineTaskId
         );
     }
 
@@ -154,6 +159,11 @@ class Task
     public function xp(): int
     {
         return $this->xp;
+    }
+
+    public function routineTaskId(): ?UuidInterface
+    {
+        return $this->routineTaskId;
     }
 
     public function isOverdue(): bool
