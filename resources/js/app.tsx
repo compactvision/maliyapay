@@ -78,6 +78,8 @@ router.on('invalid', (event) => {
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
+import { OnboardingOverlay } from './components/onboarding/OnboardingOverlay';
+
 createInertiaApp({
     title: (title) => (title ? `${title} - ${appName}` : appName),
     resolve: async (name) => {
@@ -132,6 +134,7 @@ createInertiaApp({
                             <LayoutProvider>
                                 <App {...props} />
                                 <Toaster />
+                                <OnboardingOverlay />
                             </LayoutProvider>
                         </QuickActionProvider>
                     </NotificationProvider>

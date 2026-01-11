@@ -1,6 +1,6 @@
 {
-    "name": "MaliyaPay - Gestion Financière",
-    "short_name": "MaliyaPay",
+    "name": "MaliyaFlow - Gestion Financière",
+    "short_name": "MaliyaFlow",
     "description": "Application de gestion financière personnelle avec suivi des transactions, budgets et catégories",
     "start_url": "/",
     "display": "standalone",
