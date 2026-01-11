@@ -45,15 +45,17 @@ export const OnboardingOverlay: React.FC = () => {
         : 'maliyaflow_onboarded_guest';
 
     useEffect(() => {
-        if (auth?.isAuthenticated && !isVisible) {
-            const hasOnboarded = localStorage.getItem(storageKey);
-            if (!hasOnboarded) {
+        if (auth?.isAuthenticated && auth?.user && !isVisible) {
+            const hasOnboardedLocally = localStorage.getItem(storageKey);
+            const hasOnboardedOnBackend = !!auth.user.onboarded_at;
+
+            if (!hasOnboardedLocally && !hasOnboardedOnBackend) {
                 // Small delay for better UX after login
-                const timer = setTimeout(() => setIsVisible(true), 1000);
+                const timer = setTimeout(() => setIsVisible(true), 1500);
                 return () => clearTimeout(timer);
             }
         }
-    }, [auth?.isAuthenticated, auth?.user?.id, storageKey]);
+    }, [auth?.isAuthenticated, auth?.user?.onboarded_at, storageKey]);
 
     const handleNext = () => {
         if (currentStep < STEPS.length - 1) {
@@ -65,6 +67,7 @@ export const OnboardingOverlay: React.FC = () => {
 
     const handleComplete = () => {
         localStorage.setItem(storageKey, 'true');
+        auth?.completeOnboarding();
         setIsVisible(false);
     };
 

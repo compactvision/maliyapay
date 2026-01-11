@@ -18,6 +18,7 @@ export interface User {
     auto_lock_enabled?: boolean;
     auto_lock_timeout?: number;
     pin_code_set?: boolean;
+    onboarded_at?: string | null;
 }
 
 export interface LoginCredentials {

@@ -31,6 +31,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'pin_code',
         'auto_lock_enabled',
         'auto_lock_timeout',
+        'onboarded_at',
     ];
 
     /**
@@ -61,6 +62,7 @@ class User extends Authenticatable implements MustVerifyEmail
             'two_factor_confirmed_at' => 'datetime',
             'auto_lock_enabled' => 'boolean',
             'auto_lock_timeout' => 'integer',
+            'onboarded_at' => 'datetime',
         ];
     }
 

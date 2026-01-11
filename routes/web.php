@@ -41,6 +41,9 @@ Route::group(['middleware' => ['auth']], function () {
         ->middleware(['permission:view settings']) // Users should edit their own profile
         ->name('profile.update');
 
+    Route::post('/onboarding/complete', [\App\Modules\Identity\Presentation\Controllers\ProfileController::class, 'completeOnboarding'])
+        ->name('onboarding.complete');
+
     Route::patch('/password', [\App\Http\Controllers\Settings\PasswordController::class, 'update'])
         ->middleware(['permission:edit settings'])
         ->name('profile.password.update');

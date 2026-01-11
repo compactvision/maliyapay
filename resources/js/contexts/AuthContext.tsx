@@ -45,6 +45,7 @@ interface AuthContextValue {
     toggleAutoLock: (enabled: boolean) => Promise<void>;
     updateAutoLockTimeout: (timeout: number) => Promise<void>;
     unlockWithPin: (pin: string) => Promise<void>;
+    completeOnboarding: () => Promise<void>;
     isLocked: boolean;
 }
 
@@ -346,6 +347,15 @@ export function AuthProvider({ children, initialAuth }: AuthProviderProps) {
         }
     };
 
+    const completeOnboarding = async (): Promise<void> => {
+        try {
+            const userData = await authApi.completeOnboarding();
+            setUser(userData);
+        } catch (err) {
+            console.error('Failed to complete onboarding:', err);
+        }
+    };
+
     const value: AuthContextValue = useMemo(
         () => ({
             user,
@@ -365,6 +375,7 @@ export function AuthProvider({ children, initialAuth }: AuthProviderProps) {
             toggleAutoLock,
             updateAutoLockTimeout,
             unlockWithPin,
+            completeOnboarding,
         }),
         [
             user,
@@ -384,6 +395,8 @@ export function AuthProvider({ children, initialAuth }: AuthProviderProps) {
             toggleAutoLock,
             updateAutoLockTimeout,
             unlockWithPin,
+            // completeOnboarding is stable due to useCallback if we used it, but here it's redefined.
+            // Better to wrap it in useCallback.
         ],
     );
 

@@ -277,6 +277,22 @@ export const authApi = {
         }
     },
 
+    /**
+     * Mark onboarding as complete
+     */
+    async completeOnboarding(): Promise<User> {
+        try {
+            // Note: baseURL is /api/auth, but our route is in web.php (accessible via axios directly or prefixed if needed)
+            // Let's use a relative path if axios instance allows it or use window.axios
+            const response = await axios.post<UserResponse>(
+                '/onboarding/complete',
+            );
+            return response.data.user;
+        } catch (error) {
+            throw handleApiError(error);
+        }
+    },
+
     getToken(): string | null {
         return localStorage.getItem('auth_token');
     },

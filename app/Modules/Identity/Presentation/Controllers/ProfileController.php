@@ -68,7 +68,26 @@ class ProfileController extends Controller
                 ]),
             ]);
         }
-
         return Redirect::route('profile.show');
+    }
+
+    public function completeOnboarding(Request $request): RedirectResponse|Response
+    {
+        $user = $request->user();
+        if (!$user->onboarded_at) {
+            $user->onboarded_at = now();
+            $user->save();
+        }
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'message' => 'Onboarding complété',
+                'user' => array_merge($user->toArray(), [
+                    'roles' => $user->getRoleNames(),
+                ]),
+            ]);
+        }
+
+        return Redirect::back();
     }
 }
