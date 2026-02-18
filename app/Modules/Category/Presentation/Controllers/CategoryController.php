@@ -115,6 +115,15 @@ class CategoryController extends Controller
 
     /**
      * Create a new category
+     * 
+     * @response 201 {
+     *  "id": "550e8400-e29b-41d4-a716-446655440000",
+     *  "name": "Courses",
+     *  "type": "expense",
+     *  "color": "#FF5733",
+     *  "created_at": "2024-02-18T14:00:00.000000Z",
+     *  "updated_at": "2024-02-18T14:00:00.000000Z"
+     * }
      */
     public function store(CreateCategoryRequest $request): JsonResponse
     {
@@ -148,6 +157,15 @@ class CategoryController extends Controller
 
     /**
      * Update an existing category
+     * 
+     * @response 200 {
+     *  "id": "550e8400-e29b-41d4-a716-446655440000",
+     *  "name": "Courses Alimentaires",
+     *  "type": "expense",
+     *  "color": "#FF5733",
+     *  "created_at": "2024-02-18T14:00:00.000000Z",
+     *  "updated_at": "2024-02-18T14:05:00.000000Z"
+     * }
      */
     public function update(UpdateCategoryRequest $request, string $id): JsonResponse
     {

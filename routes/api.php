@@ -26,14 +26,15 @@ Route::group(['prefix' => 'auth'], function () {
     Route::post('/email/verification-notification', [AuthController::class, 'sendVerificationEmail'])
         ->middleware(['auth:sanctum', 'throttle:6,1']);
 
+    Route::post('/email/verify', [AuthController::class, 'verifyEmail'])
+        ->middleware(['auth:sanctum', 'throttle:6,1']);
+
     // Password Reset
     Route::post('/forgot-password', [AuthController::class, 'forgotPassword'])
-        ->middleware('guest')
-        ->name('api.password.email');
+        ->middleware('guest');
 
     Route::post('/reset-password', [AuthController::class, 'resetPassword'])
-        ->middleware('guest')
-        ->name('api.password.update');
+        ->middleware('guest');
 
     // PIN & Auto-lock
     Route::post('/pin/verify', [PinController::class, 'verify']); // Public, but requires email + PIN

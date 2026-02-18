@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use Carbon\Carbon;
 
 /**
  * AuthController
@@ -340,6 +341,9 @@ class AuthController extends Controller
     /**
      * Send email verification notification
      */
+    /**
+     * Send email verification notification
+     */
     public function sendVerificationEmail(Request $request): JsonResponse
     {
         $user = $request->user();
@@ -350,49 +354,93 @@ class AuthController extends Controller
             ], Response::HTTP_BAD_REQUEST);
         }
 
-        $user->sendEmailVerificationNotification();
+        // Generate 6-digit PIN
+        $pin = str_pad((string)random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+
+        // Store PIN and expiry
+        $user->forceFill([
+            'email_verification_pin' => Hash::make($pin),
+            'email_verification_pin_expires_at' => Carbon::now()->addMinutes(5),
+        ])->save();
+
+        // Send notification
+        $user->notify(new \App\Notifications\CustomVerifyEmail($pin));
 
         return response()->json([
-            'message' => 'Email de vérification envoyé',
+            'message' => 'Un code de vérification vous a été envoyé par email',
         ]);
     }
 
     /**
-     * Verify email address
+     * Verify email address with PIN
      */
-    /**
-     * Verify email address
-     */
-    public function verifyEmail(Request $request)
+    public function verifyEmail(Request $request): JsonResponse
     {
-        $user = User::findOrFail($request->route('id'));
+        $request->validate([
+            'pin' => ['required', 'string', 'size:6'],
+        ]);
 
-        if (!hash_equals(
-            (string) $request->route('hash'),
-            sha1($user->getEmailForVerification())
-        )) {
-            return redirect('/verify-email?error=Lien de vérification invalide');
-        }
+        $user = $request->user();
 
         if ($user->hasVerifiedEmail()) {
-            return redirect('/');
+            return response()->json([
+                'message' => 'Email déjà vérifié',
+            ]);
+        }
+
+        if (!$user->email_verification_pin || !$user->email_verification_pin_expires_at) {
+             throw ValidationException::withMessages([
+                'pin' => ['Aucun code de vérification actif.'],
+            ]);
+        }
+
+        if (Carbon::now()->gt($user->email_verification_pin_expires_at)) {
+             throw ValidationException::withMessages([
+                'pin' => ['Le code de vérification a expiré.'],
+            ]);
+        }
+
+        if (!Hash::check($request->pin, $user->email_verification_pin)) {
+            throw ValidationException::withMessages([
+                'pin' => ['Code de vérification incorrect.'],
+            ]);
         }
 
         if ($user->markEmailAsVerified()) {
             event(new Verified($user));
         }
 
-        return redirect('/settings/security?onboarding=true');
+        // Clear PIN
+        $user->forceFill([
+            'email_verification_pin' => null,
+            'email_verification_pin_expires_at' => null,
+        ])->save();
+
+        return response()->json([
+            'message' => 'Email vérifié avec succès',
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'avatar' => $user->avatar,
+                'email_verified_at' => $user->email_verified_at,
+                'roles' => $user->getRoleNames(),
+                'permissions' => $user->getAllPermissions()->pluck('name'),
+                'created_at' => $user->created_at,
+            ],
+        ]);
     }
 
     /**
-     * Send password reset link
+     * Send password reset PIN
      */
     public function forgotPassword(Request $request): JsonResponse
     {
         $request->validate([
             'email' => ['required', 'email'],
         ]);
+
+        $user = User::where('email', $request->email)->first();
 
         // Rate limiting
         $key = 'forgot-password.' . $request->ip();
@@ -403,31 +451,43 @@ class AuthController extends Controller
             ]);
         }
 
-        $status = Password::sendResetLink(
-            $request->only('email')
-        );
-
-        if ($status === Password::RESET_LINK_SENT) {
-            RateLimiter::clear($key);
+        if (!$user) {
+            RateLimiter::hit($key, 300); // 5 minutes
+            
+            // To prevent user enumeration, we return success even if email not found
+            // But for development/debugging, maybe we want to know? 
+            // Let's follow standard security practice and return success
             return response()->json([
-                'message' => 'Email de réinitialisation envoyé',
+                'message' => 'Si un compte existe avec cet email, un code de réinitialisation a été envoyé.',
             ]);
         }
 
-        RateLimiter::hit($key, 300); // 5 minutes
+        // Generate 6-digit PIN
+        $pin = str_pad((string)random_int(0, 999999), 6, '0', STR_PAD_LEFT);
 
-        throw ValidationException::withMessages([
-            'email' => ['Aucun compte trouvé avec cet email.'],
+        // Store PIN and expiry
+        $user->forceFill([
+            'password_reset_pin' => Hash::make($pin),
+            'password_reset_pin_expires_at' => Carbon::now()->addMinutes(5),
+        ])->save();
+
+        // Send notification
+        $user->notify(new \App\Notifications\CustomResetPassword($pin));
+
+        RateLimiter::clear($key);
+
+        return response()->json([
+            'message' => 'Email de réinitialisation envoyé',
         ]);
     }
 
     /**
-     * Reset password
+     * Reset password with PIN
      */
     public function resetPassword(Request $request): JsonResponse
     {
         $request->validate([
-            'token' => ['required'],
+            'pin' => ['required', 'string', 'size:6'],
             'email' => ['required', 'email'],
             'password' => [
                 'required',
@@ -438,30 +498,47 @@ class AuthController extends Controller
             ],
         ], [
             'password.regex' => 'Le mot de passe doit contenir au moins une majuscule, une minuscule et un chiffre',
+            'pin.size' => 'Le code PIN doit contenir 6 chiffres',
         ]);
 
-        $status = Password::reset(
-            $request->only('email', 'password', 'password_confirmation', 'token'),
-            function (User $user, string $password) {
-                $user->forceFill([
-                    'password' => Hash::make($password)
-                ])->setRememberToken(Str::random(60));
+        $user = User::where('email', $request->email)->first();
 
-                $user->save();
-
-                // Revoke all tokens
-                $user->tokens()->delete();
-            }
-        );
-
-        if ($status === Password::PASSWORD_RESET) {
-            return response()->json([
-                'message' => 'Mot de passe réinitialisé avec succès',
+        if (!$user) {
+             throw ValidationException::withMessages([
+                'email' => ['Aucun compte trouvé avec cet email.'],
             ]);
         }
 
-        throw ValidationException::withMessages([
-            'email' => ['Le lien de réinitialisation est invalide ou expiré.'],
+        if (!$user->password_reset_pin || !$user->password_reset_pin_expires_at) {
+             throw ValidationException::withMessages([
+                'pin' => ['Aucun code de réinitialisation actif.'],
+            ]);
+        }
+
+        if (Carbon::now()->gt($user->password_reset_pin_expires_at)) {
+             throw ValidationException::withMessages([
+                'pin' => ['Le code de réinitialisation a expiré.'],
+            ]);
+        }
+
+        if (!Hash::check($request->pin, $user->password_reset_pin)) {
+            throw ValidationException::withMessages([
+                'pin' => ['Code PIN incorrect.'],
+            ]);
+        }
+
+        // Reset password
+        $user->forceFill([
+            'password' => Hash::make($request->password),
+            'password_reset_pin' => null,
+            'password_reset_pin_expires_at' => null,
+        ])->setRememberToken(Str::random(60))->save();
+
+        // Revoke all tokens
+        $user->tokens()->delete();
+
+        return response()->json([
+            'message' => 'Mot de passe réinitialisé avec succès',
         ]);
     }
 }

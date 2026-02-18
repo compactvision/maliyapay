@@ -32,6 +32,10 @@ class User extends Authenticatable implements MustVerifyEmail
         'auto_lock_enabled',
         'auto_lock_timeout',
         'onboarded_at',
+        'email_verification_pin',
+        'email_verification_pin_expires_at',
+        'password_reset_pin',
+        'password_reset_pin_expires_at',
     ];
 
     /**
@@ -45,6 +49,8 @@ class User extends Authenticatable implements MustVerifyEmail
         'two_factor_recovery_codes',
         'remember_token',
         'pin_code',
+        'email_verification_pin',
+        'password_reset_pin',
     ];
 
     /**
@@ -63,6 +69,8 @@ class User extends Authenticatable implements MustVerifyEmail
             'auto_lock_enabled' => 'boolean',
             'auto_lock_timeout' => 'integer',
             'onboarded_at' => 'datetime',
+            'email_verification_pin_expires_at' => 'datetime',
+            'password_reset_pin_expires_at' => 'datetime',
         ];
     }
 

@@ -12,6 +12,7 @@ Route::get('/email/verify/{id}/{hash}', [\App\Modules\Identity\Presentation\Cont
     ->name('verification.verify');
 Route::get('/forgot-password', [PageController::class, 'forgotPassword'])->name('password.request');
 Route::get('/reset-password/{token}', [PageController::class, 'resetPassword'])->name('password.reset');
+Route::view('/api-documentation', 'scribe.index');
 
 
 // Protected routes (auth required via Sanctum)

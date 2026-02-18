@@ -24,8 +24,12 @@ class CategoryResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        /** @var CategoryDTO $category */
+        /** @var CategoryDTO|null $category */
         $category = $this->resource;
+
+        if ($category === null) {
+            return [];
+        }
 
         return [
             'id' => $category->id,

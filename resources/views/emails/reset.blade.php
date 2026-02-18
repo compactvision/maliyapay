@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,6 +14,7 @@
             line-height: 1.6;
             color: #333;
         }
+
         .container {
             max-width: 600px;
             margin: 40px auto;
@@ -21,11 +23,13 @@
             overflow: hidden;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
         }
+
         .header {
             background: linear-gradient(135deg, #000000 0%, #333333 100%);
             padding: 40px 20px;
             text-align: center;
         }
+
         .logo {
             font-size: 28px;
             font-weight: 800;
@@ -33,13 +37,16 @@
             text-decoration: none;
             letter-spacing: -0.5px;
         }
+
         .sparkle {
             color: #fbbf24;
         }
+
         .content {
             padding: 40px;
             text-align: center;
         }
+
         .icon-circle {
             width: 64px;
             height: 64px;
@@ -50,20 +57,24 @@
             justify-content: center;
             margin-bottom: 24px;
         }
+
         .icon {
             font-size: 32px;
         }
+
         h1 {
             margin: 0 0 16px;
             color: #18181b;
             font-size: 24px;
             font-weight: 700;
         }
+
         p {
             margin: 0 0 24px;
             color: #52525b;
             font-size: 16px;
         }
+
         .btn {
             display: inline-block;
             background-color: #18181b;
@@ -75,9 +86,11 @@
             margin: 24px 0;
             transition: background-color 0.3s ease;
         }
+
         .btn:hover {
             background-color: #3f3f46;
         }
+
         .footer {
             background-color: #fafafa;
             padding: 24px;
@@ -86,12 +99,14 @@
             color: #a1a1aa;
             border-top: 1px solid #e4e4e7;
         }
+
         .link {
             color: #18181b;
             text-decoration: underline;
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <div class="header">
@@ -99,31 +114,34 @@
                 MaliyaPay<span class="sparkle">✦</span>
             </div>
         </div>
-        
+
         <div class="content">
             <div class="icon-circle">
                 <span class="icon">🔒</span>
             </div>
-            
+
             <h1>Mot de passe oublié ?</h1>
-            
+
             <p>Bonjour {{ $user->name }},</p>
-            
-            <p>Nous avons reçu une demande de réinitialisation de mot de passe pour votre compte MaliyaPay.</p>
-            
-            <a href="{{ $url }}" class="btn">Réinitialiser mon mot de passe</a>
-            
+
+            <p>Nous avons reçu une demande de réinitialisation de mot de passe pour votre compte MaliyaFlow. Voici votre
+                code de vérification :</p>
+
+            <div
+                style="background-color: #f4f4f5; border-radius: 8px; padding: 16px; margin: 24px 0; font-size: 32px; font-weight: 800; letter-spacing: 4px; color: #18181b;">
+                {{ $pin }}
+            </div>
+
             <p style="font-size: 14px; color: #71717a;">
-                Ce lien de réinitialisation expirera dans {{ $count }} minutes.<br>
+                Ce code expirera dans 5 minutes.<br>
                 Si vous n'avez pas demandé cette réinitialisation, aucune action n'est requise.
             </p>
         </div>
-        
+
         <div class="footer">
             <p>&copy; {{ date('Y') }} MaliyaPay. Tous droits réservés.</p>
-            <p>Si le bouton ne fonctionne pas, copiez et collez ce lien dans votre navigateur :<br>
-            <a href="{{ $url }}" class="link">{{ $url }}</a></p>
         </div>
     </div>
 </body>
+
 </html>
