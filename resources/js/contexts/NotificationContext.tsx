@@ -152,13 +152,20 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
         }
     }, [fetchNotifications]);
 
+    /*
+    ### 2. Pusher Initialization and Safety Guards
+    - **Issue**: The application was crashing with "Uncaught You must pass your app key when you instantiate Pusher" and subsequent "TypeError: Cannot read properties of undefined (reading 'private')" when the `VITE_PUSHER_APP_KEY` was missing in production.
+    - **Fix**:
+        - Added a safety check in [echo.ts](file:///Users/jmak_vie/Dev/Compact/maliyapay/resources/js/echo.ts) to skip initialization if the key is missing.
+        - Added guards in [NotificationContext.tsx](file:///Users/jmak_vie/Dev/Compact/maliyapay/resources/js/contexts/NotificationContext.tsx) to prevent calling `window.Echo.private()` or `window.Echo.leave()` when Echo is not initialized.
+    */
     // Initial fetch and Real-time listener
     useEffect(() => {
         // Initial fetch
         fetchUnreadCount();
         fetchNotifications(); // Initial load of notifications to fill the list
 
-        if (user?.id) {
+        if (user?.id && window.Echo) {
             console.log(`Listening to App.Models.User.${user.id}`);
             window.Echo.private(`App.Models.User.${user.id}`).listen(
                 'NotificationCreated',
@@ -189,7 +196,9 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
             );
 
             return () => {
-                window.Echo.leave(`App.Models.User.${user.id}`);
+                if (window.Echo) {
+                    window.Echo.leave(`App.Models.User.${user.id}`);
+                }
             };
         }
     }, [
