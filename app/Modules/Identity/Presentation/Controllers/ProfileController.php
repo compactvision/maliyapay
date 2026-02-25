@@ -23,7 +23,7 @@ class ProfileController extends Controller
         ]);
     }
 
-    public function update(Request $request): RedirectResponse
+    public function update(Request $request): \Symfony\Component\HttpFoundation\Response
     {
         $user = $request->user();
 
@@ -71,7 +71,7 @@ class ProfileController extends Controller
         return Redirect::route('profile.show');
     }
 
-    public function completeOnboarding(Request $request): RedirectResponse|Response
+    public function completeOnboarding(Request $request): \Symfony\Component\HttpFoundation\Response
     {
         $user = $request->user();
         if (!$user->onboarded_at) {
