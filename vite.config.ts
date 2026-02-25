@@ -94,7 +94,7 @@ export default defineConfig({
                 ],
             },
             workbox: {
-                navigateFallback: '/',
+                // navigateFallback: '/',
                 runtimeCaching: [
                     {
                         urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
