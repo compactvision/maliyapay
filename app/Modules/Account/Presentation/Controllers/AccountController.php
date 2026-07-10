@@ -8,15 +8,18 @@ use App\Http\Controllers\Controller;
 use App\Modules\Account\Application\Commands\AddCurrencyToAccountCommand;
 use App\Modules\Account\Application\Commands\CreateAccountCommand;
 use App\Modules\Account\Application\Commands\DeleteAccountCommand;
+use App\Modules\Account\Application\Commands\ExchangeCurrencyCommand;
 use App\Modules\Account\Application\Handlers\AddCurrencyToAccountHandler;
 use App\Modules\Account\Application\Handlers\CreateAccountHandler;
 use App\Modules\Account\Application\Handlers\DeleteAccountHandler;
+use App\Modules\Account\Application\Handlers\ExchangeCurrencyHandler;
 use App\Modules\Account\Application\Handlers\GetAccountByIdHandler;
 use App\Modules\Account\Application\Handlers\GetAllAccountsHandler;
 use App\Modules\Account\Application\Queries\GetAccountByIdQuery;
 use App\Modules\Account\Application\Queries\GetAllAccountsQuery;
 use App\Modules\Account\Presentation\Requests\AddCurrencyRequest;
 use App\Modules\Account\Presentation\Requests\CreateAccountRequest;
+use App\Modules\Account\Presentation\Requests\ExchangeCurrencyRequest;
 use App\Modules\Account\Presentation\Resources\AccountCollection;
 use App\Modules\Account\Presentation\Resources\AccountResource;
 use Illuminate\Http\JsonResponse;
@@ -30,9 +33,9 @@ class AccountController extends Controller
         private readonly AddCurrencyToAccountHandler $addCurrencyHandler,
         private readonly GetAllAccountsHandler $getAllHandler,
         private readonly GetAccountByIdHandler $getByIdHandler,
-        private readonly DeleteAccountHandler $deleteHandler
-    ) {
-    }
+        private readonly DeleteAccountHandler $deleteHandler,
+        private readonly ExchangeCurrencyHandler $exchangeCurrencyHandler
+    ) {}
 
     public function index(): JsonResponse
     {
@@ -113,12 +116,42 @@ class AccountController extends Controller
                 'message' => 'Currency added successfully',
             ], Response::HTTP_OK);
         } catch (\InvalidArgumentException $e) { // Account not found
-             return response()->json(['message' => $e->getMessage()], Response::HTTP_NOT_FOUND);
+            return response()->json(['message' => $e->getMessage()], Response::HTTP_NOT_FOUND);
         } catch (\DomainException $e) { // Currency exists
-             return response()->json(['message' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
+            return response()->json(['message' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
         } catch (\Exception $e) {
             return response()->json([
                 'message' => 'Failed to add currency',
+                'error' => $e->getMessage(),
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function exchange(ExchangeCurrencyRequest $request, string $id): JsonResponse
+    {
+        try {
+            $command = new ExchangeCurrencyCommand(
+                accountId: Uuid::fromString($id),
+                userId: (string) auth()->id(),
+                fromCurrency: strtoupper($request->input('from_currency')),
+                toCurrency: strtoupper($request->input('to_currency')),
+                amount: (float) $request->input('amount'),
+                rate: (float) $request->input('rate')
+            );
+
+            $convertedAmount = $this->exchangeCurrencyHandler->handle($command);
+
+            return response()->json([
+                'message' => 'Exchange completed successfully',
+                'converted_amount' => $convertedAmount,
+            ], Response::HTTP_OK);
+        } catch (\InvalidArgumentException $e) {
+            return response()->json(['message' => $e->getMessage()], Response::HTTP_NOT_FOUND);
+        } catch (\DomainException $e) {
+            return response()->json(['message' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Failed to exchange currencies',
                 'error' => $e->getMessage(),
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }

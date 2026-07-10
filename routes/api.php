@@ -1,18 +1,18 @@
 <?php
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
-use App\Modules\Category\Presentation\Controllers\CategoryController;
 use App\Modules\Account\Presentation\Controllers\AccountController;
+use App\Modules\Budget\Presentation\Controllers\BudgetController;
+use App\Modules\Category\Presentation\Controllers\CategoryController;
 use App\Modules\Identity\Presentation\Controllers\AuthController;
 use App\Modules\Identity\Presentation\Controllers\PinController;
-use App\Modules\Budget\Presentation\Controllers\BudgetController;
-use App\Modules\Transaction\Presentation\Controllers\TransactionController;
-use App\Modules\Task\Presentation\Controllers\TaskController;
+use App\Modules\Notification\Presentation\Controllers\NotificationController;
 use App\Modules\Routine\Presentation\Controllers\RoutineController;
 use App\Modules\Routine\Presentation\Controllers\RoutineTaskController;
-use App\Modules\Notification\Presentation\Controllers\NotificationController;
+use App\Modules\Task\Presentation\Controllers\TaskController;
+use App\Modules\Transaction\Presentation\Controllers\TransactionController;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Broadcast;
+use Illuminate\Support\Facades\Route;
 
 Broadcast::routes(['middleware' => ['auth:sanctum']]);
 
@@ -42,16 +42,17 @@ Route::group(['prefix' => 'auth'], function () {
     Route::middleware(['auth:sanctum'])->group(function () {
         Route::get('/user', function (Request $request) {
             $user = $request->user();
+
             return response()->json([
                 'user' => array_merge($user->toArray(), [
                     'roles' => $user->getRoleNames(),
-                ])
+                ]),
             ]);
         });
         Route::post('/pin/setup', [PinController::class, 'setup']);
         Route::post('/pin/toggle', [PinController::class, 'toggleAutoLock']);
         Route::post('/pin/settings', [PinController::class, 'updateSettings']);
-        
+
         // Profile & Password updates (API versions)
         Route::put('/profile', [\App\Modules\Identity\Presentation\Controllers\ProfileController::class, 'update']);
         Route::post('/password', [\App\Http\Controllers\Settings\PasswordController::class, 'update']);
@@ -68,7 +69,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('categories', [CategoryController::class, 'store'])->middleware('permission:create categories');
     Route::put('categories/{id}', [CategoryController::class, 'update'])->middleware('permission:edit categories');
     Route::delete('categories/{id}', [CategoryController::class, 'destroy'])->middleware('permission:delete categories');
-    
+
     // Accounts
     Route::middleware('permission:view accounts')->group(function () {
         Route::get('accounts', [AccountController::class, 'index']);
@@ -78,6 +79,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::middleware('permission:edit accounts')->group(function () {
         Route::put('accounts/{id}', [AccountController::class, 'update']);
         Route::post('/accounts/{id}/currencies', [AccountController::class, 'addCurrency']);
+        Route::post('/accounts/{id}/exchange', [AccountController::class, 'exchange']);
     });
     Route::delete('accounts/{id}', [AccountController::class, 'destroy'])->middleware('permission:delete accounts');
 
@@ -118,22 +120,22 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::get('routines', [RoutineController::class, 'index']);
         Route::get('routine-tasks', [RoutineController::class, 'allTasks']);
         Route::get('routine-tasks/day/{dayOfWeek}', [RoutineController::class, 'tasksForDay']);
-        
+
         // Routine Tasks view
         Route::get('routines/{routineId}/tasks', [RoutineTaskController::class, 'index']);
     });
-    
+
     Route::post('routines', [RoutineController::class, 'store'])->middleware('permission:create routines');
-    
+
     Route::middleware('permission:edit routines')->group(function () {
         Route::put('routines/{id}', [RoutineController::class, 'update']);
         Route::post('routines/{id}/toggle', [RoutineController::class, 'toggleActive']);
-        
+
         // Routine Tasks edit
         Route::post('routines/{routineId}/tasks', [RoutineTaskController::class, 'store']);
         Route::put('routines/{routineId}/tasks/{taskId}', [RoutineTaskController::class, 'update']);
     });
-    
+
     Route::middleware('permission:delete routines')->group(function () {
         Route::delete('routines/{id}', [RoutineController::class, 'destroy']);
         Route::delete('routines/{routineId}/tasks/{taskId}', [RoutineTaskController::class, 'destroy']);
@@ -147,7 +149,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::delete('notifications/delete-all', [NotificationController::class, 'deleteAll']);
         Route::post('notifications/{id}/mark-as-read', [NotificationController::class, 'markAsRead']);
     });
-    
+
     Route::middleware('permission:delete notifications')->group(function () {
         Route::delete('notifications/{id}', [NotificationController::class, 'delete']);
     });
