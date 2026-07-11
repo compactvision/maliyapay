@@ -10,7 +10,6 @@ use App\Modules\Transaction\Application\Commands\CreateTransactionCommand;
 use App\Modules\Transaction\Domain\Entities\Transaction;
 use App\Modules\Transaction\Domain\Repositories\TransactionRepositoryInterface;
 use App\Modules\Transaction\Domain\ValueObjects\TransactionType;
-use DateTimeImmutable;
 use Exception;
 use Ramsey\Uuid\Uuid;
 
@@ -20,14 +19,17 @@ class CreateTransactionHandler
         private readonly TransactionRepositoryInterface $transactionRepository,
         private readonly BudgetRepositoryInterface $budgetRepository,
         private readonly AccountRepositoryInterface $accountRepository
-    ) {
-    }
+    ) {}
 
     public function handle(CreateTransactionCommand $command): void
     {
         // 1. Business Logic: Budget Check (for Expenses)
         if ($command->type === TransactionType::EXPENSE) {
-            $budget = $this->budgetRepository->findByCategory($command->userId, $command->categoryId);
+            $budget = $this->budgetRepository->findByCategoryAndCurrency(
+                $command->userId,
+                $command->categoryId,
+                $command->currency
+            );
 
             if ($budget) {
                 // Calculate period dates
@@ -36,7 +38,7 @@ class CreateTransactionHandler
                     'weekly' => $command->date->modify('monday this week')->setTime(0, 0, 0),
                     'monthly' => $command->date->modify('first day of this month')->setTime(0, 0, 0),
                 };
-                
+
                 $endDate = match ($budget->period()->value) {
                     'daily' => $command->date->setTime(23, 59, 59),
                     'weekly' => $command->date->modify('sunday this week')->setTime(23, 59, 59),
@@ -48,7 +50,8 @@ class CreateTransactionHandler
                     $command->userId,
                     $command->categoryId,
                     $startDate,
-                    $endDate
+                    $endDate,
+                    $command->currency
                 );
 
                 if (($spent + $command->amount) > $budget->amount()) {
@@ -59,8 +62,8 @@ class CreateTransactionHandler
 
         // 2. Account Update
         $account = $this->accountRepository->findById(Uuid::fromString($command->accountId), $command->userId);
-        if (!$account) {
-            throw new Exception("Account not found");
+        if (! $account) {
+            throw new Exception('Account not found');
         }
 
         if ($command->type === TransactionType::EXPENSE) {

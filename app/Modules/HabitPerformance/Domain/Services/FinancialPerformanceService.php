@@ -6,11 +6,11 @@ namespace App\Modules\HabitPerformance\Domain\Services;
 
 use App\Models\User;
 use App\Modules\Budget\Domain\Repositories\BudgetRepositoryInterface;
-use App\Modules\Transaction\Domain\Repositories\TransactionRepositoryInterface;
+use App\Modules\Budget\Domain\ValueObjects\BudgetPeriod;
 use App\Modules\HabitPerformance\Domain\DTOs\BudgetPerformanceDTO;
 use App\Modules\HabitPerformance\Domain\Repositories\GamificationProfileRepositoryInterface;
 use App\Modules\Notification\Domain\Services\NotificationService;
-use App\Modules\Budget\Domain\ValueObjects\BudgetPeriod;
+use App\Modules\Transaction\Domain\Repositories\TransactionRepositoryInterface;
 use App\Modules\Transaction\Domain\ValueObjects\TransactionType;
 use Carbon\Carbon;
 
@@ -21,8 +21,7 @@ class FinancialPerformanceService
         private TransactionRepositoryInterface $transactionRepository,
         private GamificationProfileRepositoryInterface $gamificationRepository,
         private NotificationService $notificationService
-    ) {
-    }
+    ) {}
 
     public function calculateMonthlyPerformance(User $user, ?Carbon $month = null): BudgetPerformanceDTO
     {
@@ -32,7 +31,7 @@ class FinancialPerformanceService
 
         // Get all budgets for the user
         $budgets = $this->budgetRepository->findAllByUser((string) $user->id);
-        
+
         // Get all transactions for the month
         $transactions = collect($this->transactionRepository->findByUserAndPeriod(
             (string) $user->id,
@@ -54,28 +53,30 @@ class FinancialPerformanceService
 
             // Calculate spending for this category
             $categorySpending = $transactions
-                ->filter(fn($t) => $t->categoryId() === $budget->categoryId())
-                ->filter(fn($t) => $t->type() === TransactionType::EXPENSE)
-                ->sum(fn($t) => $t->amount());
+                ->filter(fn ($t) => $t->categoryId() === $budget->categoryId())
+                ->filter(fn ($t) => $t->currency() === $budget->currency())
+                ->filter(fn ($t) => $t->type() === TransactionType::EXPENSE)
+                ->sum(fn ($t) => $t->amount());
 
             $totalSpent += $categorySpending;
 
-        // Check if over budget
-        if ($categorySpending > $budget->amount()) {
-            $categoriesOverBudget[] = [
-                'category_id' => $budget->categoryId(),
-                'name' => $budget->categoryName() ?? 'Unknown',
-                'budget' => $budget->amount(),
-                'spent' => $categorySpending,
-                'overage' => $categorySpending - $budget->amount()
-            ];
+            // Check if over budget
+            if ($categorySpending > $budget->amount()) {
+                $categoriesOverBudget[] = [
+                    'category_id' => $budget->categoryId(),
+                    'name' => $budget->categoryName() ?? 'Unknown',
+                    'budget' => $budget->amount(),
+                    'currency' => $budget->currency(),
+                    'spent' => $categorySpending,
+                    'overage' => $categorySpending - $budget->amount(),
+                ];
+            }
         }
-    }
 
         // Calculate Income for Balance Context
         $totalIncome = $transactions
-            ->filter(fn($t) => $t->type() === TransactionType::INCOME)
-            ->sum(fn($t) => $t->amount());
+            ->filter(fn ($t) => $t->type() === TransactionType::INCOME)
+            ->sum(fn ($t) => $t->amount());
 
         $balanceAvailable = $totalIncome > 0 ? $totalIncome : $totalBudget; // Fallback to budget if no income tracked
 
@@ -84,31 +85,31 @@ class FinancialPerformanceService
         $today = (int) Carbon::now()->format('d');
         $daysInMonth = (int) $endOfMonth->format('d');
         $monthProgress = $today / $daysInMonth;
-        
+
         $spendingRatio = $balanceAvailable > 0 ? $totalSpent / $balanceAvailable : 0;
 
         if ($spendingRatio > 0.5) {
             if ($monthProgress < 0.5) {
                 // Critical
-                $advice[] = "⚠️ Alerte : Vous avez consommé 50% de vos ressources avant la mi-mois.";
-                $advice[] = "Réduisez les dépenses immédiatement.";
+                $advice[] = '⚠️ Alerte : Vous avez consommé 50% de vos ressources avant la mi-mois.';
+                $advice[] = 'Réduisez les dépenses immédiatement.';
             } else {
-                 if ($spendingRatio > 0.9) {
-                     $advice[] = "🚨 Attention, budget presque épuisé.";
-                 } else {
-                     $advice[] = "Info: Vous avez passé le cap des 50%.";
-                 }
+                if ($spendingRatio > 0.9) {
+                    $advice[] = '🚨 Attention, budget presque épuisé.';
+                } else {
+                    $advice[] = 'Info: Vous avez passé le cap des 50%.';
+                }
             }
         } elseif ($monthProgress > 0.8 && $spendingRatio < 0.5) {
-             $advice[] = "🌟 Excellent ! Fin de mois proche et moins de 50% dépensé.";
-             $advice[] = "Discipline financière récompensée.";
+            $advice[] = '🌟 Excellent ! Fin de mois proche et moins de 50% dépensé.';
+            $advice[] = 'Discipline financière récompensée.';
         }
 
         if (empty($advice)) {
-            $advice[] = "Votre gestion est stable.";
+            $advice[] = 'Votre gestion est stable.';
         }
-        
-        $adviceString = implode(" ", $advice);
+
+        $adviceString = implode(' ', $advice);
 
         return BudgetPerformanceDTO::create(
             totalBudget: $totalBudget,
@@ -155,7 +156,7 @@ class FinancialPerformanceService
     public function checkBudgetThresholds(User $user): void
     {
         $performance = $this->calculateMonthlyPerformance($user);
-        
+
         $spendingPercent = $performance->spendingRatio * 100;
 
         // Send notifications at specific thresholds

@@ -40,36 +40,40 @@ class BudgetNotificationService
     {
         // 2. Calculer les dépenses pour la période
         $startDate = $this->getStartDate(BudgetPeriod::from($budget->period));
-        
+
         $totalExpenses = DB::table('transactions')
             ->where('user_id', $budget->user_id)
             // Si le budget est lié à une catégorie spécifique
-            ->when($budget->category_id, function($query) use ($budget) {
+            ->when($budget->category_id, function ($query) use ($budget) {
                 return $query->where('category_id', $budget->category_id);
             })
+            ->where('currency', $budget->currency)
             ->where('type', 'expense') // On suppose que 'expense' est le type pour les dépenses
             ->where('created_at', '>=', $startDate)
             ->sum('amount');
 
         // 3. Calculer le pourcentage
-        if ($budget->amount <= 0) return;
-        
+        if ($budget->amount <= 0) {
+            return;
+        }
+
         $percentage = ($totalExpenses / $budget->amount) * 100;
 
         // 4. Générer les notifications
-        
+
         // Seuil critique (80%)
         if ($percentage >= 80) {
             // Vérifier si une notification a déjà été envoyée aujourd'hui pour ce budget
             // Pour éviter le spam. Ici on simplifie.
-            
+
             $this->createNotification(
                 $budget->user_id,
                 NotificationType::BUDGET_CRITICAL,
                 NotificationPriority::HIGH,
                 "Budget critique : {$percentage}% atteint",
-                "Attention ! Vous avez consommé " . number_format($percentage, 1) . "% de votre budget ({$budget->amount} {$budget->currency}). Dépenses : {$totalExpenses}"
+                'Attention ! Vous avez consommé '.number_format($percentage, 1)."% de votre budget ({$budget->amount} {$budget->currency}). Dépenses : {$totalExpenses}"
             );
+
             return;
         }
 
@@ -88,8 +92,8 @@ class BudgetNotificationService
     private function getStartDate(BudgetPeriod $period): Carbon
     {
         $now = Carbon::now();
-        
-        return match($period) {
+
+        return match ($period) {
             BudgetPeriod::DAILY => $now->startOfDay(),
             BudgetPeriod::WEEKLY => $now->startOfWeek(),
             BudgetPeriod::MONTHLY => $now->startOfMonth(),
@@ -98,9 +102,9 @@ class BudgetNotificationService
 
     private function createNotification(
         int $userId,
-        NotificationType $type, 
-        NotificationPriority $priority, 
-        string $title, 
+        NotificationType $type,
+        NotificationPriority $priority,
+        string $title,
         string $message
     ): void {
         // Vérifier les préférences utilisateur
@@ -114,7 +118,7 @@ class BudgetNotificationService
 
         // Logique anti-spam simplifiée : on pourrait vérifier en DB si une notif similaire existe depuis X temps
         // Ici on suppose que le cron tourne à une fréquence raisonnable (ex: 1h)
-        
+
         // Vérification basique pour ne pas spammer toutes les heures si on est toujours au même niveau
         $exists = DB::table('notifications')
             ->where('user_id', $userId)
@@ -122,7 +126,9 @@ class BudgetNotificationService
             ->where('created_at', '>=', Carbon::now()->subHours(24)) // Une fois par 24h max pour le même type
             ->exists();
 
-        if ($exists) return;
+        if ($exists) {
+            return;
+        }
 
         $command = new CreateNotificationCommand(
             userId: $userId,

@@ -123,8 +123,8 @@ Reponse:
 | --- | --- | --- | --- | --- |
 | GET | `/api/budgets` | `view budgets` | Liste les budgets et calcule `spent_amount` sur la periode courante. | aucun |
 | GET | `/api/budgets/{id}` | `view budgets` | Route declaree pour detail budget. | attention: l'action `show` n'est pas encore implementee dans `BudgetController` |
-| POST | `/api/budgets` | `create budgets` | Cree ou definit un budget. | `category_id`, `amount`, `currency`, `period` (`daily`, `weekly`, `monthly`) |
-| PUT | `/api/budgets/{id}` | `edit budgets` | Route declaree pour modification budget. | attention: l'action `update` n'est pas encore implementee dans `BudgetController` |
+| POST | `/api/budgets` | `create budgets` | Cree ou definit un budget. Accepte aussi un budget equivalent pour la meme categorie dans une autre devise. | `category_id`, `amount`, `currency`, `period` (`daily`, `weekly`, `monthly`), optionnels: `equivalent_amount`, `equivalent_currency` |
+| PUT | `/api/budgets/{id}` | `edit budgets` | Modifie un budget existant. | `category_id`, `amount`, `currency`, `period` (`daily`, `weekly`, `monthly`) |
 | DELETE | `/api/budgets/{id}` | `delete budgets` | Supprime un budget. | aucun |
 
 ## Dashboard et statistiques

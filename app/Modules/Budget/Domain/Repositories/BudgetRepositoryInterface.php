@@ -10,8 +10,14 @@ use Ramsey\Uuid\UuidInterface;
 interface BudgetRepositoryInterface
 {
     public function save(Budget $budget): void;
+
     public function findById(UuidInterface $id): ?Budget;
+
     public function findByCategory(string $userId, string $categoryId): ?Budget;
+
+    public function findByCategoryAndCurrency(string $userId, string $categoryId, string $currency): ?Budget;
+
     public function findAllByUser(string $userId): array;
+
     public function delete(UuidInterface $id): void;
 }

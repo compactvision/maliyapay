@@ -20,6 +20,8 @@ class SetBudgetRequest extends FormRequest
             'amount' => ['required', 'numeric', 'min:0'],
             'currency' => ['required', 'string', 'size:3'],
             'period' => ['required', 'string', 'in:daily,weekly,monthly'],
+            'equivalent_amount' => ['nullable', 'numeric', 'min:0'],
+            'equivalent_currency' => ['nullable', 'string', 'size:3', 'different:currency', 'required_with:equivalent_amount'],
         ];
     }
 }

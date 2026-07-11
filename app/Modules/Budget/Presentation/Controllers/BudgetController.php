@@ -22,23 +22,22 @@ class BudgetController extends Controller
         private readonly DeleteBudgetHandler $deleteHandler,
         private readonly BudgetRepositoryInterface $repository,
         private readonly \App\Modules\Transaction\Domain\Repositories\TransactionRepositoryInterface $transactionRepository
-    ) {
-    }
+    ) {}
 
     public function index(): JsonResponse
     {
         $userId = (string) auth()->id();
         $budgets = $this->repository->findAllByUser($userId);
-        
+
         $data = array_map(function ($b) use ($userId) {
             // Calculate period dates
-            $now = new \DateTimeImmutable();
+            $now = new \DateTimeImmutable;
             $startDate = match ($b->period()->value) {
                 'daily' => $now->setTime(0, 0, 0),
                 'weekly' => $now->modify('monday this week')->setTime(0, 0, 0),
                 'monthly' => $now->modify('first day of this month')->setTime(0, 0, 0),
             };
-            
+
             $endDate = match ($b->period()->value) {
                 'daily' => $now->setTime(23, 59, 59),
                 'weekly' => $now->modify('sunday this week')->setTime(23, 59, 59),
@@ -49,7 +48,8 @@ class BudgetController extends Controller
                 $userId,
                 $b->categoryId(),
                 $startDate,
-                $endDate
+                $endDate,
+                $b->currency()
             );
 
             return [
@@ -63,25 +63,56 @@ class BudgetController extends Controller
         }, $budgets);
 
         return response()->json([
-            'data' => $data
+            'data' => $data,
         ]);
     }
 
     public function store(SetBudgetRequest $request): JsonResponse
     {
+        $this->saveBudgetFromRequest($request);
+
+        return response()->json([
+            'message' => 'Budget set successfully',
+        ], Response::HTTP_OK);
+    }
+
+    public function update(SetBudgetRequest $request, string $id): JsonResponse
+    {
+        $budget = $this->repository->findById(Uuid::fromString($id));
+
+        abort_if(
+            $budget === null || $budget->userId() !== (string) auth()->id(),
+            Response::HTTP_NOT_FOUND
+        );
+
+        $this->saveBudgetFromRequest($request);
+
+        return response()->json([
+            'message' => 'Budget updated successfully',
+        ], Response::HTTP_OK);
+    }
+
+    private function saveBudgetFromRequest(SetBudgetRequest $request): void
+    {
         $command = new SetBudgetCommand(
             userId: (string) auth()->id(),
             categoryId: $request->input('category_id'),
             amount: (float) $request->input('amount'),
-            currency: $request->input('currency'),
+            currency: strtoupper($request->input('currency')),
             period: $request->input('period')
         );
 
         $this->setHandler->handle($command);
 
-        return response()->json([
-            'message' => 'Budget set successfully',
-        ], Response::HTTP_OK);
+        if ($request->filled('equivalent_amount') && $request->filled('equivalent_currency')) {
+            $this->setHandler->handle(new SetBudgetCommand(
+                userId: (string) auth()->id(),
+                categoryId: $request->input('category_id'),
+                amount: (float) $request->input('equivalent_amount'),
+                currency: strtoupper($request->input('equivalent_currency')),
+                period: $request->input('period')
+            ));
+        }
     }
 
     public function destroy(string $id): JsonResponse

@@ -10,10 +10,16 @@ use DateTimeImmutable;
 interface TransactionRepositoryInterface
 {
     public function save(Transaction $transaction): void;
-    public function getSpentAmountForCategory(string $userId, string $categoryId, DateTimeImmutable $startDate, DateTimeImmutable $endDate): float;
+
+    public function getSpentAmountForCategory(string $userId, string $categoryId, DateTimeImmutable $startDate, DateTimeImmutable $endDate, ?string $currency = null): float;
+
     public function getIncomeAmountForCategory(string $userId, string $categoryId, DateTimeImmutable $startDate, DateTimeImmutable $endDate): float;
+
     public function findAllByUser(string $userId, ?int $limit = null): array;
+
     public function findByUserAndPeriod(string $userId, DateTimeImmutable $startDate, DateTimeImmutable $endDate): array;
+
     public function findById(string $id, string $userId): ?Transaction;
+
     public function delete(Transaction $transaction): void;
 }

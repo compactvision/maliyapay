@@ -32,11 +32,12 @@ class EloquentTransactionRepository implements TransactionRepositoryInterface
         );
     }
 
-    public function getSpentAmountForCategory(string $userId, string $categoryId, DateTimeImmutable $startDate, DateTimeImmutable $endDate): float
+    public function getSpentAmountForCategory(string $userId, string $categoryId, DateTimeImmutable $startDate, DateTimeImmutable $endDate, ?string $currency = null): float
     {
         return (float) TransactionModel::where('user_id', $userId)
             ->where('category_id', $categoryId)
             ->where('type', TransactionType::EXPENSE->value)
+            ->when($currency, fn ($query) => $query->where('currency', strtoupper($currency)))
             ->whereBetween('date', [$startDate, $endDate])
             ->sum('amount');
     }
@@ -77,9 +78,10 @@ class EloquentTransactionRepository implements TransactionRepositoryInterface
     public function findById(string $id, string $userId): ?Transaction
     {
         $model = TransactionModel::where('id', $id)->where('user_id', $userId)->first();
-        if (!$model) {
+        if (! $model) {
             return null;
         }
+
         return $this->toDomain($model);
     }
 

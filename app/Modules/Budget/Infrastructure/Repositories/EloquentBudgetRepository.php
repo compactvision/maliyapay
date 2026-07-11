@@ -16,8 +16,7 @@ class EloquentBudgetRepository implements BudgetRepositoryInterface
 {
     public function __construct(
         private readonly BudgetModel $model
-    ) {
-    }
+    ) {}
 
     public function save(Budget $budget): void
     {
@@ -36,6 +35,7 @@ class EloquentBudgetRepository implements BudgetRepositoryInterface
     public function findById(UuidInterface $id): ?Budget
     {
         $model = $this->model->with(['category'])->find($id->toString());
+
         return $model ? $this->toDomainEntity($model) : null;
     }
 
@@ -45,6 +45,18 @@ class EloquentBudgetRepository implements BudgetRepositoryInterface
             ->with(['category'])
             ->where('user_id', $userId)
             ->where('category_id', $categoryId)
+            ->first();
+
+        return $model ? $this->toDomainEntity($model) : null;
+    }
+
+    public function findByCategoryAndCurrency(string $userId, string $categoryId, string $currency): ?Budget
+    {
+        $model = $this->model
+            ->with(['category'])
+            ->where('user_id', $userId)
+            ->where('category_id', $categoryId)
+            ->where('currency', strtoupper($currency))
             ->first();
 
         return $model ? $this->toDomainEntity($model) : null;

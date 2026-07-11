@@ -14,13 +14,16 @@ final class SetBudgetHandler
 {
     public function __construct(
         private readonly BudgetRepositoryInterface $repository
-    ) {
-    }
+    ) {}
 
     public function handle(SetBudgetCommand $command): void
     {
-        // Check if budget exists for this category/user
-        $existingBudget = $this->repository->findByCategory($command->userId, $command->categoryId);
+        // One budget can exist per category and per currency.
+        $existingBudget = $this->repository->findByCategoryAndCurrency(
+            $command->userId,
+            $command->categoryId,
+            $command->currency
+        );
 
         if ($existingBudget) {
             // Update
@@ -29,10 +32,10 @@ final class SetBudgetHandler
                 userId: $command->userId,
                 categoryId: $command->categoryId,
                 amount: $command->amount,
-                currency: $command->currency,
+                currency: strtoupper($command->currency),
                 period: BudgetPeriod::fromString($command->period),
                 createdAt: $existingBudget->createdAt(),
-                updatedAt: new \DateTimeImmutable()
+                updatedAt: new \DateTimeImmutable
             );
         } else {
             // Create
@@ -41,7 +44,7 @@ final class SetBudgetHandler
                 userId: $command->userId,
                 categoryId: $command->categoryId,
                 amount: $command->amount,
-                currency: $command->currency,
+                currency: strtoupper($command->currency),
                 period: BudgetPeriod::fromString($command->period)
             );
         }

@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Modules\HabitPerformance\Domain\Services;
 
 use App\Modules\Budget\Domain\Repositories\BudgetRepositoryInterface;
-use App\Modules\Transaction\Domain\Repositories\TransactionRepositoryInterface;
 use App\Modules\Transaction\Domain\Entities\Transaction;
+use App\Modules\Transaction\Domain\Repositories\TransactionRepositoryInterface;
 use App\Modules\Transaction\Domain\ValueObjects\TransactionType;
 use DateTimeImmutable;
 
@@ -15,8 +15,7 @@ class FinancialAnalysisService
     public function __construct(
         private TransactionRepositoryInterface $transactionRepository,
         private BudgetRepositoryInterface $budgetRepository
-    ) {
-    }
+    ) {}
 
     public function analyze(int $userId): array
     {
@@ -34,17 +33,17 @@ class FinancialAnalysisService
         // Fetch budgets
         $budgets = $this->budgetRepository->findAllByUser($userIdStr);
 
-        // Calculate totals by category
+        // Calculate totals by category and currency.
         $spentByCategory = [];
         $totalSpent = 0.0;
         foreach ($transactions as $transaction) {
             /** @var Transaction $transaction */
-            if ($transaction->type() === TransactionType::EXPENSE) { 
-                $catId = $transaction->categoryId();
-                if (!isset($spentByCategory[$catId])) {
-                    $spentByCategory[$catId] = 0.0;
+            if ($transaction->type() === TransactionType::EXPENSE) {
+                $key = $transaction->categoryId().':'.$transaction->currency();
+                if (! isset($spentByCategory[$key])) {
+                    $spentByCategory[$key] = 0.0;
                 }
-                $spentByCategory[$catId] += $transaction->amount();
+                $spentByCategory[$key] += $transaction->amount();
                 $totalSpent += $transaction->amount();
             }
         }
@@ -53,11 +52,12 @@ class FinancialAnalysisService
         $categoriesReport = [];
         $budgetCompliedCount = 0;
         $totalBudgetLimit = 0.0;
-        
+
         foreach ($budgets as $budget) {
             $catId = $budget->categoryId();
+            $key = $catId.':'.$budget->currency();
             $limit = $budget->amount();
-            $spent = $spentByCategory[$catId] ?? 0.0;
+            $spent = $spentByCategory[$key] ?? 0.0;
             $totalBudgetLimit += $limit;
 
             $status = 'ok';
@@ -74,20 +74,21 @@ class FinancialAnalysisService
 
             $categoriesReport[] = [
                 'categoryId' => $catId,
+                'currency' => $budget->currency(),
                 'limit' => $limit,
                 'spent' => $spent,
                 'remaining' => max(0, $limit - $spent),
                 'status' => $status,
-                'color' => $color
+                'color' => $color,
             ];
         }
 
         // Calculate income for Balance
         $totalIncome = 0.0;
         foreach ($transactions as $transaction) {
-             if ($transaction->type() === TransactionType::INCOME) {
-                 $totalIncome += $transaction->amount();
-             }
+            if ($transaction->type() === TransactionType::INCOME) {
+                $totalIncome += $transaction->amount();
+            }
         }
         $monthlyBalance = $totalIncome - $totalSpent;
 
@@ -98,18 +99,18 @@ class FinancialAnalysisService
 
         // 1. Rule: Balance 50% check
         // We need "Balance Mensuelle Disponible". Assuming this means Income for the month?
-        // Or "Beginning Balance + Income"? 
+        // Or "Beginning Balance + Income"?
         // User says: "Comparer les dépenses à la balance mensuelle disponible"
         // Let's assume Balance Available = Total Income.
         $balanceAvailable = $totalIncome; // Simplified for this context
-        
+
         $spendingRatio = 0.0;
         if ($balanceAvailable > 0) {
             $spendingRatio = $totalSpent / $balanceAvailable;
         }
 
         // Current day of month for context (e.g. if 50% spent on day 2, that's bad)
-        $today = (int) (new DateTimeImmutable())->format('d');
+        $today = (int) (new DateTimeImmutable)->format('d');
         $daysInMonth = (int) $endOfMonth->format('d');
         $monthProgress = $today / $daysInMonth;
 
@@ -118,40 +119,40 @@ class FinancialAnalysisService
             if ($monthProgress < 0.5) {
                 // Critical: Spent > 50% before mid-month
                 $advice[] = "⚠️ Alerte : Vous avez déjà consommé plus de 50% de vos revenus alors que le mois n'est pas fini.";
-                $advice[] = "💡 Conseil : Réduisez drastiquement les dépenses non essentielles.";
+                $advice[] = '💡 Conseil : Réduisez drastiquement les dépenses non essentielles.';
                 $financialStatus = 'Danger';
             } else {
-                // Normal usage? 
+                // Normal usage?
                 if ($spendingRatio > 0.8 && $monthProgress < 0.8) {
-                     $advice[] = "⚠️ Attention : Vos dépenses accélèrent trop vite.";
+                    $advice[] = '⚠️ Attention : Vos dépenses accélèrent trop vite.';
                 } else {
-                     $advice[] = "ℹ️ Vous avez utilisé plus de la moitié de votre budget.";
+                    $advice[] = 'ℹ️ Vous avez utilisé plus de la moitié de votre budget.';
                 }
             }
         } elseif ($spendingRatio < 0.5 && $monthProgress > 0.8) {
-             // End of month approaching and still < 50% spent? Excellent!
-             $advice[] = "🌟 Excellent ! Vous avez dépensé moins de 50% de vos revenus ce mois-ci.";
-             $advice[] = "💰 C'est le moment idéal pour mettre de côté ou investir.";
-             $financialStatus = 'Saver';
+            // End of month approaching and still < 50% spent? Excellent!
+            $advice[] = '🌟 Excellent ! Vous avez dépensé moins de 50% de vos revenus ce mois-ci.';
+            $advice[] = "💰 C'est le moment idéal pour mettre de côté ou investir.";
+            $financialStatus = 'Saver';
         }
 
         // Balance feedback
         if ($monthlyBalance > 0) {
-            $advice[] = "✅ Balance positive : +" . number_format($monthlyBalance, 2);
+            $advice[] = '✅ Balance positive : +'.number_format($monthlyBalance, 2);
         } elseif ($monthlyBalance < 0) {
-            $advice[] = "🛑 Balance négative : " . number_format($monthlyBalance, 2);
+            $advice[] = '🛑 Balance négative : '.number_format($monthlyBalance, 2);
         }
 
         // Budget compliance
         if (count($budgets) > 0) {
             $overBudgetCount = count($budgets) - $budgetCompliedCount;
             if ($overBudgetCount === 0) {
-                 $advice[] = "🏆 Tous vos budgets sont respectés. Continuez ainsi !";
+                $advice[] = '🏆 Tous vos budgets sont respectés. Continuez ainsi !';
             } else {
-                 $advice[] = "🚨 $overBudgetCount catégories ont dépassé leur budget.";
+                $advice[] = "🚨 $overBudgetCount catégories ont dépassé leur budget.";
             }
         } else {
-            $advice[] = "conseil : Définissez des budgets pour mieux suivre vos dépenses.";
+            $advice[] = 'conseil : Définissez des budgets pour mieux suivre vos dépenses.';
         }
 
         // Score (0-100)
@@ -160,19 +161,19 @@ class FinancialAnalysisService
             $overBudgetCount = count($budgets) - $budgetCompliedCount;
             $score -= ($overBudgetCount * 20);
         } else {
-             $score = 50; 
+            $score = 50;
         }
         $score = max(0, $score);
 
         return [
             'score' => $score,
-            'summary' => "Balance: " . number_format($monthlyBalance, 2) . ". Budgets: $budgetCompliedCount/" . count($budgets) . " respectés.",
+            'summary' => 'Balance: '.number_format($monthlyBalance, 2).". Budgets: $budgetCompliedCount/".count($budgets).' respectés.',
             'monthlyBalance' => $monthlyBalance,
             'totalIncome' => $totalIncome,
             'totalExpenses' => $totalSpent,
             'categories' => $categoriesReport,
             'advice' => $advice,
-            'financialStatus' => $financialStatus
+            'financialStatus' => $financialStatus,
         ];
     }
 }
