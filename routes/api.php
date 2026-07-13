@@ -5,6 +5,7 @@ use App\Modules\Budget\Presentation\Controllers\BudgetController;
 use App\Modules\Category\Presentation\Controllers\CategoryController;
 use App\Modules\Identity\Presentation\Controllers\AuthController;
 use App\Modules\Identity\Presentation\Controllers\PinController;
+use App\Modules\Growth\Presentation\Controllers\GrowthController;
 use App\Modules\Notification\Presentation\Controllers\NotificationController;
 use App\Modules\Routine\Presentation\Controllers\RoutineController;
 use App\Modules\Routine\Presentation\Controllers\RoutineTaskController;
@@ -61,6 +62,12 @@ Route::group(['prefix' => 'auth'], function () {
 
 Route::middleware(['auth:sanctum'])->group(function () {
     // Protected Routes
+    // Growth (shared by the PWA session and mobile Bearer tokens)
+    Route::get('growth', [GrowthController::class, 'index']);
+    Route::post('growth/routine-kits/{id}/import', [GrowthController::class, 'importRoutineKit']);
+    Route::post('growth/progress', [GrowthController::class, 'updateBusinessProgress']);
+    Route::post('growth/quest/start', [GrowthController::class, 'startQuest']);
+
     // Categories
     Route::middleware('permission:view categories')->group(function () {
         Route::get('categories', [CategoryController::class, 'index']);
