@@ -13,6 +13,7 @@ use App\Modules\Budget\Domain\Repositories\BudgetRepositoryInterface;
 use App\Modules\Budget\Presentation\Requests\SetBudgetRequest;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\DB;
 use Ramsey\Uuid\Uuid;
 
 class BudgetController extends Controller
@@ -69,7 +70,7 @@ class BudgetController extends Controller
 
     public function store(SetBudgetRequest $request): JsonResponse
     {
-        $this->saveBudgetFromRequest($request);
+        DB::transaction(fn () => $this->saveBudgetFromRequest($request));
 
         return response()->json([
             'message' => 'Budget set successfully',
@@ -85,7 +86,7 @@ class BudgetController extends Controller
             Response::HTTP_NOT_FOUND
         );
 
-        $this->saveBudgetFromRequest($request);
+        DB::transaction(fn () => $this->saveBudgetFromRequest($request));
 
         return response()->json([
             'message' => 'Budget updated successfully',
