@@ -99,7 +99,7 @@ createInertiaApp({
             name === 'auth/reset-password' ||
             name === 'auth/two-factor-challenge';
 
-        const isSpecialPage = name === 'verify-email';
+        const isPublicPage = name === 'verify-email' || name === 'privacy';
 
         if (isGuestPage) {
             return {
@@ -109,7 +109,7 @@ createInertiaApp({
                     </GuestGuard>
                 ),
             };
-        } else if (isSpecialPage) {
+        } else if (isPublicPage) {
             return page;
         } else {
             return {

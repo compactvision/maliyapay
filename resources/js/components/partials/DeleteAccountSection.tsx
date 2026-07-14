@@ -17,7 +17,7 @@ export function DeleteAccountSection() {
 
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
-        destroy(route('profile.destroy'), {
+        destroy(route('settings.profile.destroy'), {
             onSuccess: () => toast.success('Compte supprimé.'),
             onError: () => toast.error('Le mot de passe est incorrect.'),
             preserveScroll: true,

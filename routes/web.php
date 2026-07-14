@@ -1,9 +1,15 @@
 <?php
 
 use App\Http\Controllers\PageController;
+use App\Http\Controllers\PrivacyController;
 use Illuminate\Support\Facades\Route;
 
 // Public routes (no auth required)
+Route::get('/privacy', [PrivacyController::class, 'show'])->name('privacy');
+Route::post('/privacy/requests', [PrivacyController::class, 'store'])
+    ->middleware('throttle:5,10')
+    ->name('privacy.requests.store');
+Route::redirect('/privacy-policy', '/privacy', 301);
 Route::get('/login', [PageController::class, 'auth'])->name('login');
 Route::get('/register', [PageController::class, 'auth'])->name('register');
 Route::get('/verify-email', [PageController::class, 'verifyEmail'])->name('verification.notice');
@@ -13,7 +19,6 @@ Route::get('/email/verify/{id}/{hash}', [\App\Modules\Identity\Presentation\Cont
 Route::get('/forgot-password', [PageController::class, 'forgotPassword'])->name('password.request');
 Route::get('/reset-password/{token}', [PageController::class, 'resetPassword'])->name('password.reset');
 Route::view('/api-documentation', 'scribe.index');
-
 
 // Protected routes (auth required via Sanctum)
 Route::group(['middleware' => ['auth']], function () {
@@ -30,7 +35,7 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('/growth', [PageController::class, 'growth'])->middleware(['permission:view tasks'])->name('growth');
     Route::get('/growth/advice/{id}', [\App\Modules\Growth\Presentation\Controllers\GrowthController::class, 'showAdvice'])->name('growth.advice.show');
     Route::get('/growth/business/{businessId}/step/{stepId}', [\App\Modules\Growth\Presentation\Controllers\GrowthController::class, 'showQuestStep'])->name('growth.quest.step.show');
-    
+
     Route::group(['middleware' => ['verified', 'feature.enabled:performance', 'permission:view habit-performance']], function () {
         Route::get('/habits', [\App\Modules\HabitPerformance\Presentation\Controllers\HabitPerformanceController::class, 'index'])->name('habit-performance.index');
         Route::post('/habits/bonus', [\App\Modules\HabitPerformance\Presentation\Controllers\HabitPerformanceController::class, 'claimBonus'])->middleware('permission:manage habit-performance')->name('habit-performance.bonus');
@@ -51,10 +56,6 @@ Route::group(['middleware' => ['auth']], function () {
 
 });
 
-
-
-
-
 // Admin Routes
 Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function () {
     // Settings
@@ -71,7 +72,7 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
     Route::middleware('permission:manage roles')->group(function () {
         Route::resource('roles', \App\Modules\Identity\Presentation\Controllers\RoleController::class)->except(['create', 'edit', 'show']);
     });
-    
+
     Route::middleware('permission:manage permissions')->group(function () {
         Route::resource('permissions', \App\Modules\Identity\Presentation\Controllers\PermissionController::class)->except(['create', 'edit', 'show']);
     });
@@ -87,11 +88,11 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
         Route::post('/advices', [\App\Modules\Growth\Presentation\Controllers\AdminGrowthController::class, 'storeAdvice']);
         Route::put('/advices/{id}', [\App\Modules\Growth\Presentation\Controllers\AdminGrowthController::class, 'updateAdvice']);
         Route::delete('/advices/{id}', [\App\Modules\Growth\Presentation\Controllers\AdminGrowthController::class, 'destroyAdvice']);
-        
+
         Route::post('/routine-kits', [\App\Modules\Growth\Presentation\Controllers\AdminGrowthController::class, 'storeRoutineKit']);
         Route::put('/routine-kits/{id}', [\App\Modules\Growth\Presentation\Controllers\AdminGrowthController::class, 'updateRoutineKit']);
         Route::delete('/routine-kits/{id}', [\App\Modules\Growth\Presentation\Controllers\AdminGrowthController::class, 'destroyRoutineKit']);
-        
+
         Route::post('/business-models', [\App\Modules\Growth\Presentation\Controllers\AdminGrowthController::class, 'storeBusinessModel']);
         Route::put('/business-models/{id}', [\App\Modules\Growth\Presentation\Controllers\AdminGrowthController::class, 'updateBusinessModel']);
         Route::delete('/business-models/{id}', [\App\Modules\Growth\Presentation\Controllers\AdminGrowthController::class, 'destroyBusinessModel']);

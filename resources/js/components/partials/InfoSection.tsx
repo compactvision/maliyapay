@@ -76,7 +76,7 @@ export function InfoSection({
     {
       icon: Shield,
       title: "Politique de confidentialité",
-      action: () => window.open("/privacy-policy", "_blank"),
+      action: () => window.open("/privacy", "_blank"),
       color: "text-purple-500",
       gradient: "from-purple-400/20 to-purple-600/20"
     },
@@ -204,13 +204,13 @@ export function InfoSection({
                 <Button
                   variant="ghost"
                   className="w-full justify-start gap-3 h-auto p-4 hover:bg-slate-100/70 dark:hover:bg-slate-700/50"
-                  onClick={() => window.open("mailto:support@example.com")}
+                  onClick={() => window.open("mailto:privacy@maliyaflow.com")}
                 >
                   <Mail className="h-5 w-5 md:h-6 md:w-6 flex-shrink-0" />
                   <div className="text-left">
                     <div className="font-medium text-base md:text-lg">Contacter le support</div>
                     <div className="text-sm md:text-base text-slate-500 dark:text-slate-400">
-                      support@example.com
+                      privacy@maliyaflow.com
                     </div>
                   </div>
                 </Button>
