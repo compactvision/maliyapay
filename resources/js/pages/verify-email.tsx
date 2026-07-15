@@ -1,12 +1,16 @@
 import { AuthGuard } from '@/components/auth/AuthGuard';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { useAuth } from '@/hooks/useAuth';
+import { router } from '@inertiajs/react';
 import { CheckCircle2, Loader2, Mail } from 'lucide-react';
-import { useState } from 'react';
+import { FormEvent, useState } from 'react';
 
 export default function VerifyEmail() {
-    const { sendVerificationEmail, user } = useAuth();
+    const { sendVerificationEmail, user, verifyEmail } = useAuth();
     const [isLoading, setIsLoading] = useState(false);
+    const [isVerifying, setIsVerifying] = useState(false);
+    const [pin, setPin] = useState('');
     const [message, setMessage] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
 
@@ -26,6 +30,33 @@ export default function VerifyEmail() {
             );
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    const handleVerify = async (event: FormEvent) => {
+        event.preventDefault();
+
+        if (!/^\d{6}$/.test(pin)) {
+            setError('Saisissez le code à 6 chiffres reçu par email.');
+            return;
+        }
+
+        setIsVerifying(true);
+        setError(null);
+        setMessage(null);
+
+        try {
+            await verifyEmail(pin);
+            setMessage('Votre adresse email est maintenant vérifiée.');
+            router.visit('/');
+        } catch (err) {
+            setError(
+                err instanceof Error
+                    ? err.message
+                    : 'Code de vérification invalide',
+            );
+        } finally {
+            setIsVerifying(false);
         }
     };
 
@@ -90,23 +121,56 @@ export default function VerifyEmail() {
                                     {user?.email}
                                 </p>
                                 <p className="mt-4 text-sm text-white/60">
-                                    Cliquez sur le lien dans l'e-mail pour
-                                    activer votre compte. Si vous ne le voyez
-                                    pas, vérifiez vos spams.
+                                    Saisissez le code à 6 chiffres reçu par
+                                    email. Il reste valable pendant 5 minutes.
                                 </p>
                             </div>
 
-                            {/* Bouton d'action principal */}
-                            <div className="mt-8">
+                            <form
+                                onSubmit={handleVerify}
+                                className="mt-8 space-y-4"
+                            >
+                                <Input
+                                    value={pin}
+                                    onChange={(event) =>
+                                        setPin(
+                                            event.target.value
+                                                .replace(/\D/g, '')
+                                                .slice(0, 6),
+                                        )
+                                    }
+                                    inputMode="numeric"
+                                    autoComplete="one-time-code"
+                                    maxLength={6}
+                                    aria-label="Code de vérification à 6 chiffres"
+                                    placeholder="000000"
+                                    className="h-14 border-white/10 bg-white/5 text-center text-2xl tracking-[0.5em] text-white placeholder:text-white/20"
+                                    autoFocus
+                                />
                                 <Button
-                                    onClick={handleResend}
+                                    type="submit"
                                     className="h-12 w-full bg-gradient-to-r from-emerald-500 to-sky-400 text-base font-semibold text-white shadow-lg shadow-emerald-500/25 transition-all duration-300 hover:shadow-xl hover:shadow-emerald-500/40 active:scale-95"
+                                    disabled={isVerifying || pin.length !== 6}
+                                >
+                                    {isVerifying ? (
+                                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                                    ) : null}
+                                    Vérifier mon email
+                                </Button>
+                            </form>
+
+                            <div className="mt-4">
+                                <Button
+                                    type="button"
+                                    onClick={handleResend}
+                                    variant="outline"
+                                    className="h-12 w-full border-white/10 bg-transparent text-white hover:bg-white/10 hover:text-white"
                                     disabled={isLoading}
                                 >
                                     {isLoading ? (
                                         <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                                     ) : null}
-                                    Renvoyer l'e-mail
+                                    Renvoyer un nouveau code
                                 </Button>
                             </div>
 

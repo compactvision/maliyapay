@@ -34,6 +34,7 @@ interface AuthContextValue {
     logout: () => Promise<void>;
     refreshUser: () => Promise<void>;
     sendVerificationEmail: () => Promise<void>;
+    verifyEmail: (pin: string) => Promise<void>;
     forgotPassword: (email: string) => Promise<void>;
     resetPassword: (data: {
         token: string;
@@ -261,6 +262,19 @@ export function AuthProvider({ children, initialAuth }: AuthProviderProps) {
         }
     };
 
+    const verifyEmail = async (pin: string): Promise<void> => {
+        try {
+            const verifiedUser = await authApi.verifyEmail(pin);
+            setUser(verifiedUser);
+        } catch (err) {
+            throw new Error(
+                err instanceof Error
+                    ? err.message
+                    : 'Code de vérification invalide',
+            );
+        }
+    };
+
     const forgotPassword = async (email: string): Promise<void> => {
         try {
             await authApi.forgotPassword({ email });
@@ -369,6 +383,7 @@ export function AuthProvider({ children, initialAuth }: AuthProviderProps) {
             logout,
             refreshUser,
             sendVerificationEmail,
+            verifyEmail,
             forgotPassword,
             resetPassword,
             setupPin,
@@ -389,6 +404,7 @@ export function AuthProvider({ children, initialAuth }: AuthProviderProps) {
             logout,
             refreshUser,
             sendVerificationEmail,
+            verifyEmail,
             forgotPassword,
             resetPassword,
             setupPin,

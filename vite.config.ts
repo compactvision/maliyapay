@@ -94,7 +94,9 @@ export default defineConfig({
                 ],
             },
             workbox: {
-                // navigateFallback: '/',
+                // Laravel renders navigation responses dynamically; there is
+                // no public/index.html for Workbox to precache as an SPA shell.
+                navigateFallback: null,
                 runtimeCaching: [
                     {
                         urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,

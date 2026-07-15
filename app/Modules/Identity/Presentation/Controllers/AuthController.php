@@ -6,21 +6,22 @@ namespace App\Modules\Identity\Presentation\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Auth\Events\Verified;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
-use Carbon\Carbon;
 
 /**
  * AuthController
- * 
+ *
  * Handles authentication operations (register, login, logout)
  */
 class AuthController extends Controller
@@ -38,7 +39,7 @@ class AuthController extends Controller
                 'string',
                 'min:8',
                 'confirmed',
-                'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/'
+                'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/',
             ],
         ], [
             'password.regex' => 'Le mot de passe doit contenir au moins une majuscule, une minuscule et un chiffre',
@@ -46,14 +47,18 @@ class AuthController extends Controller
         ]);
 
         try {
-            $user = User::create([
-                'name' => $request->name,
-                'email' => $request->email,
-                'password' => Hash::make($request->password),
-            ]);
+            $user = DB::transaction(function () use ($request): User {
+                $user = User::create([
+                    'name' => $request->name,
+                    'email' => $request->email,
+                    'password' => Hash::make($request->password),
+                ]);
 
-            // Assign default role
-            $user->assignRole('user');
+                $user->assignRole('user');
+                $user->sendEmailVerificationNotification();
+
+                return $user;
+            });
 
             // Explicitly log the user in to establish a session
             Auth::login($user);
@@ -62,7 +67,7 @@ class AuthController extends Controller
             $token = $user->createToken('auth-token')->plainTextToken;
 
             return response()->json([
-                'message' => 'Inscription réussie',
+                'message' => 'Inscription réussie. Un code de vérification vous a été envoyé par email.',
                 'user' => [
                     'id' => $user->id,
                     'name' => $user->name,
@@ -92,7 +97,7 @@ class AuthController extends Controller
         ]);
 
         // Rate limiting
-        $key = 'login.' . $request->ip();
+        $key = 'login.'.$request->ip();
         if (RateLimiter::tooManyAttempts($key, 5)) {
             $seconds = RateLimiter::availableIn($key);
             throw ValidationException::withMessages([
@@ -101,9 +106,9 @@ class AuthController extends Controller
         }
 
         // Attempt authentication
-        if (!Auth::attempt($request->only('email', 'password'), $request->boolean('remember'))) {
+        if (! Auth::attempt($request->only('email', 'password'), $request->boolean('remember'))) {
             RateLimiter::hit($key, 60);
-            
+
             throw ValidationException::withMessages([
                 'email' => ['Les identifiants fournis sont incorrects.'],
             ]);
@@ -216,7 +221,7 @@ class AuthController extends Controller
     {
         // Revoke current token if it exists and is deletable (not a TransientToken)
         $token = $request->user()->currentAccessToken();
-        
+
         if ($token && method_exists($token, 'delete')) {
             $token->delete();
         }
@@ -241,7 +246,7 @@ class AuthController extends Controller
         $user = $request->user();
 
         // If authenticated via token but no session, establish session for web routes
-        if ($user && !Auth::guard('web')->check() && $request->hasSession()) {
+        if ($user && ! Auth::guard('web')->check() && $request->hasSession()) {
             Auth::guard('web')->login($user);
         }
 
@@ -268,7 +273,7 @@ class AuthController extends Controller
 
         $request->validate([
             'name' => ['sometimes', 'string', 'min:2', 'max:255'],
-            'email' => ['sometimes', 'email', 'unique:users,email,' . $user->id],
+            'email' => ['sometimes', 'email', 'unique:users,email,'.$user->id],
         ]);
 
         try {
@@ -304,7 +309,7 @@ class AuthController extends Controller
                 'min:8',
                 'confirmed',
                 'different:current_password',
-                'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/'
+                'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/',
             ],
         ], [
             'password.regex' => 'Le mot de passe doit contenir au moins une majuscule, une minuscule et un chiffre',
@@ -313,7 +318,7 @@ class AuthController extends Controller
         $user = $request->user();
 
         // Verify current password
-        if (!Hash::check($request->current_password, $user->password)) {
+        if (! Hash::check($request->current_password, $user->password)) {
             throw ValidationException::withMessages([
                 'current_password' => ['Le mot de passe actuel est incorrect.'],
             ]);
@@ -341,9 +346,6 @@ class AuthController extends Controller
     /**
      * Send email verification notification
      */
-    /**
-     * Send email verification notification
-     */
     public function sendVerificationEmail(Request $request): JsonResponse
     {
         $user = $request->user();
@@ -354,17 +356,7 @@ class AuthController extends Controller
             ], Response::HTTP_BAD_REQUEST);
         }
 
-        // Generate 6-digit PIN
-        $pin = str_pad((string)random_int(0, 999999), 6, '0', STR_PAD_LEFT);
-
-        // Store PIN and expiry
-        $user->forceFill([
-            'email_verification_pin' => Hash::make($pin),
-            'email_verification_pin_expires_at' => Carbon::now()->addMinutes(5),
-        ])->save();
-
-        // Send notification
-        $user->notify(new \App\Notifications\CustomVerifyEmail($pin));
+        $user->sendEmailVerificationNotification();
 
         return response()->json([
             'message' => 'Un code de vérification vous a été envoyé par email',
@@ -388,19 +380,19 @@ class AuthController extends Controller
             ]);
         }
 
-        if (!$user->email_verification_pin || !$user->email_verification_pin_expires_at) {
-             throw ValidationException::withMessages([
+        if (! $user->email_verification_pin || ! $user->email_verification_pin_expires_at) {
+            throw ValidationException::withMessages([
                 'pin' => ['Aucun code de vérification actif.'],
             ]);
         }
 
         if (Carbon::now()->gt($user->email_verification_pin_expires_at)) {
-             throw ValidationException::withMessages([
+            throw ValidationException::withMessages([
                 'pin' => ['Le code de vérification a expiré.'],
             ]);
         }
 
-        if (!Hash::check($request->pin, $user->email_verification_pin)) {
+        if (! Hash::check($request->pin, $user->email_verification_pin)) {
             throw ValidationException::withMessages([
                 'pin' => ['Code de vérification incorrect.'],
             ]);
@@ -443,7 +435,7 @@ class AuthController extends Controller
         $user = User::where('email', $request->email)->first();
 
         // Rate limiting
-        $key = 'forgot-password.' . $request->ip();
+        $key = 'forgot-password.'.$request->ip();
         if (RateLimiter::tooManyAttempts($key, 3)) {
             $seconds = RateLimiter::availableIn($key);
             throw ValidationException::withMessages([
@@ -451,11 +443,11 @@ class AuthController extends Controller
             ]);
         }
 
-        if (!$user) {
+        if (! $user) {
             RateLimiter::hit($key, 300); // 5 minutes
-            
+
             // To prevent user enumeration, we return success even if email not found
-            // But for development/debugging, maybe we want to know? 
+            // But for development/debugging, maybe we want to know?
             // Let's follow standard security practice and return success
             return response()->json([
                 'message' => 'Si un compte existe avec cet email, un code de réinitialisation a été envoyé.',
@@ -463,7 +455,7 @@ class AuthController extends Controller
         }
 
         // Generate 6-digit PIN
-        $pin = str_pad((string)random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+        $pin = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
 
         // Store PIN and expiry
         $user->forceFill([
@@ -494,7 +486,7 @@ class AuthController extends Controller
                 'string',
                 'min:8',
                 'confirmed',
-                'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/'
+                'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/',
             ],
         ], [
             'password.regex' => 'Le mot de passe doit contenir au moins une majuscule, une minuscule et un chiffre',
@@ -503,25 +495,25 @@ class AuthController extends Controller
 
         $user = User::where('email', $request->email)->first();
 
-        if (!$user) {
-             throw ValidationException::withMessages([
+        if (! $user) {
+            throw ValidationException::withMessages([
                 'email' => ['Aucun compte trouvé avec cet email.'],
             ]);
         }
 
-        if (!$user->password_reset_pin || !$user->password_reset_pin_expires_at) {
-             throw ValidationException::withMessages([
+        if (! $user->password_reset_pin || ! $user->password_reset_pin_expires_at) {
+            throw ValidationException::withMessages([
                 'pin' => ['Aucun code de réinitialisation actif.'],
             ]);
         }
 
         if (Carbon::now()->gt($user->password_reset_pin_expires_at)) {
-             throw ValidationException::withMessages([
+            throw ValidationException::withMessages([
                 'pin' => ['Le code de réinitialisation a expiré.'],
             ]);
         }
 
-        if (!Hash::check($request->pin, $user->password_reset_pin)) {
+        if (! Hash::check($request->pin, $user->password_reset_pin)) {
             throw ValidationException::withMessages([
                 'pin' => ['Code PIN incorrect.'],
             ]);

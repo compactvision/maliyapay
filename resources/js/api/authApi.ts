@@ -191,6 +191,21 @@ export const authApi = {
     },
 
     /**
+     * Verify the authenticated user's email with the six-digit code.
+     */
+    async verifyEmail(pin: string): Promise<User> {
+        try {
+            const response = await api.post<UserResponse>('/email/verify', {
+                pin,
+            });
+
+            return response.data.user;
+        } catch (error) {
+            throw handleApiError(error);
+        }
+    },
+
+    /**
      * Forgot password
      */
     async forgotPassword(data: { email: string }): Promise<void> {
