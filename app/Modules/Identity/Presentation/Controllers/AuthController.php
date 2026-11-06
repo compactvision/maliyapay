@@ -520,11 +520,12 @@ class AuthController extends Controller
         }
 
         // Reset password
+        $user->setRememberToken(Str::random(60));
         $user->forceFill([
             'password' => Hash::make($request->password),
             'password_reset_pin' => null,
             'password_reset_pin_expires_at' => null,
-        ])->setRememberToken(Str::random(60))->save();
+        ])->save();
 
         // Revoke all tokens
         $user->tokens()->delete();
