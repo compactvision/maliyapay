@@ -5,6 +5,7 @@ use App\Modules\Budget\Presentation\Controllers\BudgetController;
 use App\Modules\Category\Presentation\Controllers\CategoryController;
 use App\Modules\Identity\Presentation\Controllers\AuthController;
 use App\Modules\Identity\Presentation\Controllers\PinController;
+use App\Modules\Identity\Presentation\Controllers\ProfileController;
 use App\Modules\Growth\Presentation\Controllers\GrowthController;
 use App\Modules\Notification\Presentation\Controllers\NotificationController;
 use App\Modules\Routine\Presentation\Controllers\RoutineController;
@@ -55,7 +56,9 @@ Route::group(['prefix' => 'auth'], function () {
         Route::post('/pin/settings', [PinController::class, 'updateSettings']);
 
         // Profile & Password updates (API versions)
-        Route::put('/profile', [\App\Modules\Identity\Presentation\Controllers\ProfileController::class, 'update']);
+        Route::put('/profile', [ProfileController::class, 'update']);
+        Route::delete('/profile', [ProfileController::class, 'destroy'])
+            ->middleware('throttle:6,1');
         Route::post('/password', [\App\Http\Controllers\Settings\PasswordController::class, 'update']);
     });
 });

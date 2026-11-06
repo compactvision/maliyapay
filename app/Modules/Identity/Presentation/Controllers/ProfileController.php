@@ -6,6 +6,7 @@ namespace App\Modules\Identity\Presentation\Controllers;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Validation\Rule;
@@ -89,5 +90,23 @@ class ProfileController extends Controller
         }
 
         return Redirect::back();
+    }
+
+    public function destroy(Request $request): \Illuminate\Http\Response
+    {
+        $request->validate([
+            'password' => ['required', 'string', 'current_password'],
+        ], [
+            'password.current_password' => 'Le mot de passe est incorrect.',
+        ]);
+
+        $user = $request->user();
+
+        DB::transaction(function () use ($user): void {
+            $user->tokens()->delete();
+            $user->delete();
+        });
+
+        return response()->noContent();
     }
 }
