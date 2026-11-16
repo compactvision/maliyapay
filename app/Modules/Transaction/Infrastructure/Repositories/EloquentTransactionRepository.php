@@ -26,6 +26,9 @@ class EloquentTransactionRepository implements TransactionRepositoryInterface
                 'type' => $transaction->type()->value,
                 'description' => $transaction->description(),
                 'date' => $transaction->date(),
+                'converted_amount' => $transaction->convertedAmount(),
+                'to_currency' => $transaction->toCurrency(),
+                'exchange_rate' => $transaction->exchangeRate(),
                 'created_at' => $transaction->createdAt(),
                 'updated_at' => $transaction->updatedAt(),
             ]
@@ -75,6 +78,30 @@ class EloquentTransactionRepository implements TransactionRepositoryInterface
         return $models->map(fn (TransactionModel $model) => $this->toDomain($model))->toArray();
     }
 
+    public function findHistoryByUserAndPeriod(
+        string $userId,
+        DateTimeImmutable $start,
+        DateTimeImmutable $end,
+        DateTimeImmutable $exchangeStart,
+        DateTimeImmutable $exchangeEnd,
+    ): array {
+        $models = TransactionModel::where('user_id', $userId)
+            ->where(function ($period) use ($start, $end, $exchangeStart, $exchangeEnd) {
+                $period->where(fn ($regular) => $regular
+                    ->where('type', '!=', TransactionType::EXCHANGE->value)
+                    ->where('date', '>=', $start)
+                    ->where('date', '<', $end))
+                    ->orWhere(fn ($exchanges) => $exchanges
+                        ->where('type', TransactionType::EXCHANGE->value)
+                        ->where('date', '>=', $exchangeStart)
+                        ->where('date', '<', $exchangeEnd));
+            })
+            ->orderBy('date', 'desc')
+            ->get();
+
+        return $models->map(fn (TransactionModel $model) => $this->toDomain($model))->toArray();
+    }
+
     public function findById(string $id, string $userId): ?Transaction
     {
         $model = TransactionModel::where('id', $id)->where('user_id', $userId)->first();
@@ -103,7 +130,10 @@ class EloquentTransactionRepository implements TransactionRepositoryInterface
             description: $model->description,
             date: new DateTimeImmutable($model->date->toDateTimeString()), // Ensure correct format
             createdAt: new DateTimeImmutable($model->created_at->toDateTimeString()),
-            updatedAt: new DateTimeImmutable($model->updated_at->toDateTimeString())
+            updatedAt: new DateTimeImmutable($model->updated_at->toDateTimeString()),
+            convertedAmount: $model->converted_amount,
+            toCurrency: $model->to_currency,
+            exchangeRate: $model->exchange_rate,
         );
     }
 }

@@ -26,10 +26,15 @@ class Transaction extends Model
         'type',
         'description',
         'date',
+        'converted_amount',
+        'to_currency',
+        'exchange_rate',
     ];
 
     protected $casts = [
         'amount' => 'float',
+        'converted_amount' => 'float',
+        'exchange_rate' => 'float',
         'date' => 'datetime',
     ];
 

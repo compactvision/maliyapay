@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit;
 
+use App\Models\User;
 use App\Modules\Account\Application\Commands\ExchangeCurrencyCommand;
 use App\Modules\Account\Application\Handlers\ExchangeCurrencyHandler;
 use App\Modules\Account\Domain\Entities\Account;
@@ -11,18 +12,23 @@ use App\Modules\Account\Domain\Repositories\AccountRepositoryInterface;
 use App\Modules\Account\Domain\ValueObjects\AccountType;
 use App\Modules\Account\Domain\ValueObjects\Balance;
 use DateTimeImmutable;
-use PHPUnit\Framework\TestCase;
+use App\Modules\Transaction\Domain\Repositories\TransactionRepositoryInterface;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
 
 class ExchangeCurrencyHandlerTest extends TestCase
 {
+    use RefreshDatabase;
+
     public function test_it_debits_source_currency_and_credits_target_currency(): void
     {
         $accountId = Uuid::uuid4();
+        $userId = (string) User::factory()->create()->id;
         $account = Account::reconstitute(
             id: $accountId,
-            userId: '1',
+            userId: $userId,
             name: 'Cash',
             type: AccountType::CASH,
             color: '#10B981',
@@ -35,11 +41,13 @@ class ExchangeCurrencyHandlerTest extends TestCase
             updatedAt: new DateTimeImmutable
         );
         $repository = new InMemoryExchangeAccountRepository($account);
-        $handler = new ExchangeCurrencyHandler($repository);
+        $transactions = $this->mock(TransactionRepositoryInterface::class);
+        $transactions->shouldReceive('save')->once();
+        $handler = new ExchangeCurrencyHandler($repository, $transactions);
 
         $convertedAmount = $handler->handle(new ExchangeCurrencyCommand(
             accountId: $accountId,
-            userId: '1',
+            userId: $userId,
             fromCurrency: 'USD',
             toCurrency: 'CDF',
             amount: 10,
@@ -54,9 +62,10 @@ class ExchangeCurrencyHandlerTest extends TestCase
     public function test_it_divides_by_market_rate_when_exchanging_cdf_to_usd(): void
     {
         $accountId = Uuid::uuid4();
+        $userId = (string) User::factory()->create()->id;
         $account = Account::reconstitute(
             id: $accountId,
-            userId: '1',
+            userId: $userId,
             name: 'Cash',
             type: AccountType::CASH,
             color: '#10B981',
@@ -69,11 +78,13 @@ class ExchangeCurrencyHandlerTest extends TestCase
             updatedAt: new DateTimeImmutable
         );
         $repository = new InMemoryExchangeAccountRepository($account);
-        $handler = new ExchangeCurrencyHandler($repository);
+        $transactions = $this->mock(TransactionRepositoryInterface::class);
+        $transactions->shouldReceive('save')->once();
+        $handler = new ExchangeCurrencyHandler($repository, $transactions);
 
         $convertedAmount = $handler->handle(new ExchangeCurrencyCommand(
             accountId: $accountId,
-            userId: '1',
+            userId: $userId,
             fromCurrency: 'CDF',
             toCurrency: 'USD',
             amount: 24000,

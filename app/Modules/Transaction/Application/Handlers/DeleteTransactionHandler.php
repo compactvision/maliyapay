@@ -8,6 +8,7 @@ use App\Modules\Account\Domain\Repositories\AccountRepositoryInterface;
 use App\Modules\Transaction\Application\Commands\DeleteTransactionCommand;
 use App\Modules\Transaction\Domain\Repositories\TransactionRepositoryInterface;
 use App\Modules\Transaction\Domain\ValueObjects\TransactionType;
+use App\Modules\Transaction\Application\Exceptions\ExchangeIsReadOnly;
 use Exception;
 use Ramsey\Uuid\Uuid;
 
@@ -25,6 +26,10 @@ class DeleteTransactionHandler
 
         if (!$transaction) {
             throw new Exception("Transaction not found");
+        }
+
+        if ($transaction->type() === TransactionType::EXCHANGE) {
+            throw new ExchangeIsReadOnly;
         }
 
         // Logic to reverse the transaction effect on account balance

@@ -10,7 +10,6 @@ use App\Modules\Transaction\Domain\ValueObjects\TransactionType;
 use App\Modules\Category\Application\Queries\GetCategoriesQuery; // Assuming simplified access via model for stats
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use DateTimeImmutable;
 
 class StatisticController extends Controller
 {
@@ -21,7 +20,10 @@ class StatisticController extends Controller
     public function index(Request $request): JsonResponse
     {
         $userId = (string) auth()->id();
-        $transactions = $this->repository->findAllByUser($userId);
+        $transactions = array_filter(
+            $this->repository->findAllByUser($userId),
+            fn ($transaction) => $transaction->type() !== TransactionType::EXCHANGE,
+        );
         
         // Get Distinct Currencies
         $availableCurrencies = [];
@@ -38,7 +40,10 @@ class StatisticController extends Controller
         }
         $requestedCurrency = $requestedCurrency ?? 'CDF';
 
-        $now = new DateTimeImmutable();
+        $now = now()->toDateTimeImmutable();
+        $today = $now->setTime(0, 0);
+        $recentStart = $today->modify('-6 days');
+        $recentEnd = $today->modify('+1 day');
         $currentMonthStart = $now->modify('first day of this month')->setTime(0, 0, 0);
         $currentMonthEnd = $now->modify('last day of this month')->setTime(23, 59, 59);
         
@@ -80,13 +85,12 @@ class StatisticController extends Controller
                          $expensesByCategory[$catId] = 0;
                     }
                     $expensesByCategory[$catId] += $amount;
-
-                    $dayKey = $date->format('Y-m-d');
-                    if (!isset($dailySpending[$dayKey])) {
-                        $dailySpending[$dayKey] = 0;
-                    }
-                    $dailySpending[$dayKey] += $amount;
                 }
+            }
+
+            if ($type === TransactionType::EXPENSE && $date >= $recentStart && $date < $recentEnd) {
+                $dayKey = $date->format('Y-m-d');
+                $dailySpending[$dayKey] = ($dailySpending[$dayKey] ?? 0) + $amount;
             }
 
             // Last Month for Trends

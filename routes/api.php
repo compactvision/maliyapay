@@ -113,6 +113,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
     // Transactions
     Route::middleware('permission:view transactions')->get('transactions', [TransactionController::class, 'index']);
     Route::post('transactions', [TransactionController::class, 'store'])->middleware('permission:create transactions');
+    Route::post('transactions/idempotent', [TransactionController::class, 'store'])
+        ->middleware('permission:create transactions')
+        ->name('api.transactions.idempotent');
     Route::put('transactions/{id}', [TransactionController::class, 'update'])->middleware('permission:edit transactions');
     Route::delete('transactions/{id}', [TransactionController::class, 'destroy'])->middleware('permission:delete transactions');
 

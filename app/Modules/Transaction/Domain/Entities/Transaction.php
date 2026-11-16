@@ -14,14 +14,17 @@ class Transaction
         private UuidInterface $id,
         private string $userId,
         private string $accountId,
-        private string $categoryId,
+        private ?string $categoryId,
         private float $amount,
         private string $currency,
         private TransactionType $type,
         private string $description,
         private DateTimeImmutable $date,
         private DateTimeImmutable $createdAt,
-        private DateTimeImmutable $updatedAt
+        private DateTimeImmutable $updatedAt,
+        private ?float $convertedAmount = null,
+        private ?string $toCurrency = null,
+        private ?float $exchangeRate = null,
     ) {
     }
 
@@ -52,18 +55,50 @@ class Transaction
         );
     }
 
+    public static function recordExchange(
+        UuidInterface $id,
+        string $userId,
+        string $accountId,
+        float $amount,
+        string $currency,
+        float $convertedAmount,
+        string $toCurrency,
+        float $exchangeRate,
+        DateTimeImmutable $date,
+    ): self {
+        return new self(
+            id: $id,
+            userId: $userId,
+            accountId: $accountId,
+            categoryId: null,
+            amount: $amount,
+            currency: $currency,
+            type: TransactionType::EXCHANGE,
+            description: 'Change de devises',
+            date: $date,
+            createdAt: $date,
+            updatedAt: $date,
+            convertedAmount: $convertedAmount,
+            toCurrency: $toCurrency,
+            exchangeRate: $exchangeRate,
+        );
+    }
+
     public static function reconstitute(
         UuidInterface $id,
         string $userId,
         string $accountId,
-        string $categoryId,
+        ?string $categoryId,
         float $amount,
         string $currency,
         TransactionType $type,
         string $description,
         DateTimeImmutable $date,
         DateTimeImmutable $createdAt,
-        DateTimeImmutable $updatedAt
+        DateTimeImmutable $updatedAt,
+        ?float $convertedAmount = null,
+        ?string $toCurrency = null,
+        ?float $exchangeRate = null,
     ): self {
         return new self(
             id: $id,
@@ -76,7 +111,10 @@ class Transaction
             description: $description,
             date: $date,
             createdAt: $createdAt,
-            updatedAt: $updatedAt
+            updatedAt: $updatedAt,
+            convertedAmount: $convertedAmount,
+            toCurrency: $toCurrency,
+            exchangeRate: $exchangeRate,
         );
     }
 
@@ -95,7 +133,7 @@ class Transaction
         return $this->accountId;
     }
 
-    public function categoryId(): string
+    public function categoryId(): ?string
     {
         return $this->categoryId;
     }
@@ -123,6 +161,21 @@ class Transaction
     public function date(): DateTimeImmutable
     {
         return $this->date;
+    }
+
+    public function convertedAmount(): ?float
+    {
+        return $this->convertedAmount;
+    }
+
+    public function toCurrency(): ?string
+    {
+        return $this->toCurrency;
+    }
+
+    public function exchangeRate(): ?float
+    {
+        return $this->exchangeRate;
     }
 
     public function createdAt(): DateTimeImmutable

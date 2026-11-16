@@ -52,6 +52,10 @@ class ForecastService
 
         // Traiter les transactions
         foreach ($transactions as $transaction) {
+            if ($transaction->type() === TransactionType::EXCHANGE) {
+                continue;
+            }
+
             $currency = $transaction->currency();
             if (!isset($dataByCurrency[$currency])) {
                 $dataByCurrency[$currency] = ['transactions' => [], 'balance' => 0.0];

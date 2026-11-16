@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/select';
 import { AppLayout } from '@/layouts/AppLayout';
 import axios from 'axios';
-import { addMonths, format, subMonths } from 'date-fns';
+import { addMonths, format, startOfMonth, subMonths } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight, Plus, Search } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
@@ -79,10 +79,16 @@ export default function TransactionPage() {
     const fetchTransactions = async () => {
         setIsLoading(true);
         try {
-            const monthStr = format(currentMonth, 'yyyy-MM');
-            const response = await axios.get(
-                `/api/transactions?month=${monthStr}`,
-            );
+            const monthStart = startOfMonth(currentMonth);
+            const nextMonthStart = addMonths(monthStart, 1);
+            const monthStr = format(monthStart, 'yyyy-MM');
+            const response = await axios.get('/api/transactions', {
+                params: { month: monthStr },
+                headers: {
+                    'X-Month-Start-Offset': -monthStart.getTimezoneOffset(),
+                    'X-Month-End-Offset': -nextMonthStart.getTimezoneOffset(),
+                },
+            });
             setTransactions(response.data.data);
             setTotals(response.data.meta.totals);
         } catch (error) {
@@ -135,7 +141,11 @@ export default function TransactionPage() {
 
     // --- Derived State (Calculations) ---
     const filteredTransactions = transactions.filter((transaction) => {
-        const matchesSearch = transaction.description
+        const searchableText =
+            transaction.type === 'exchange'
+                ? `${transaction.description} ${transaction.currency} ${transaction.to_currency ?? ''}`
+                : transaction.description;
+        const matchesSearch = searchableText
             .toLowerCase()
             .includes(search.toLowerCase());
         const matchesType =
@@ -275,6 +285,9 @@ export default function TransactionPage() {
                             <SelectItem value="all">Tous les types</SelectItem>
                             <SelectItem value="income">Revenus</SelectItem>
                             <SelectItem value="expense">Dépenses</SelectItem>
+                            <SelectItem value="exchange">
+                                Changes de devises
+                            </SelectItem>
                         </SelectContent>
                     </Select>
                     <Select

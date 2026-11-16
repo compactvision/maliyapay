@@ -7,12 +7,17 @@ namespace App\Modules\Transaction\Presentation\Controllers;
 use App\Http\Controllers\Controller;
 use App\Modules\Transaction\Application\Commands\CreateTransactionCommand;
 use App\Modules\Transaction\Application\Commands\DeleteTransactionCommand;
+use App\Modules\Transaction\Application\Exceptions\ExchangeIsReadOnly;
+use App\Modules\Transaction\Application\Exceptions\TransactionIdempotencyConflict;
 use App\Modules\Transaction\Application\Handlers\CreateTransactionHandler;
 use App\Modules\Transaction\Application\Handlers\DeleteTransactionHandler;
 use App\Modules\Transaction\Domain\Repositories\TransactionRepositoryInterface;
 use App\Modules\Transaction\Domain\ValueObjects\TransactionType;
+use App\Modules\Transaction\Infrastructure\Models\Transaction as TransactionModel;
 use App\Modules\Transaction\Presentation\Requests\CreateTransactionRequest;
+use App\Modules\Transaction\Presentation\Resources\TransactionResource;
 use DateTimeImmutable;
+use DomainException;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -36,18 +41,34 @@ class TransactionController extends Controller
     {
         $month = $request->input('month', date('Y-m')); // Default current month
         $startDate = new DateTimeImmutable($month . '-01 00:00:00');
-        $endDate = $startDate->modify('last day of this month')->setTime(23, 59, 59);
+        $nextMonth = $startDate->modify('first day of next month');
+        $offsetOptions = ['options' => ['min_range' => -840, 'max_range' => 840]];
+        $startOffset = filter_var($request->header('X-Month-Start-Offset'), FILTER_VALIDATE_INT, $offsetOptions);
+        $endOffset = filter_var($request->header('X-Month-End-Offset'), FILTER_VALIDATE_INT, $offsetOptions);
 
-        // Optimized Query: Filter at SQL level
-        $filtered = $this->repository->findByUserAndPeriod(
-            (string) auth()->id(),
-            $startDate,
-            $endDate
-        );
+        if ($startOffset !== false && $endOffset !== false && ($startOffset !== 0 || $endOffset !== 0)) {
+            $filtered = $this->repository->findHistoryByUserAndPeriod(
+                (string) auth()->id(),
+                $startDate,
+                $nextMonth,
+                $startDate->modify(sprintf('%+d minutes', -$startOffset)),
+                $nextMonth->modify(sprintf('%+d minutes', -$endOffset)),
+            );
+        } else {
+            $filtered = $this->repository->findByUserAndPeriod(
+                (string) auth()->id(),
+                $startDate,
+                $nextMonth->modify('-1 second'),
+            );
+        }
 
         // Calculate Totals for this month grouped by currency
         $totals = [];
         foreach ($filtered as $t) {
+            if ($t->type() === TransactionType::EXCHANGE) {
+                continue;
+            }
+
             $currency = $t->currency();
             if (!isset($totals[$currency])) {
                 $totals[$currency] = ['income' => 0, 'expenses' => 0];
@@ -61,17 +82,10 @@ class TransactionController extends Controller
         }
 
         return response()->json([
-            'data' => array_values(array_map(fn ($t) => [
-                'id' => $t->id()->toString(),
-                'user_id' => $t->userId(),
-                'account_id' => $t->accountId(),
-                'category_id' => $t->categoryId(),
-                'amount' => $t->amount(),
-                'currency' => $t->currency(),
-                'type' => $t->type()->value,
-                'description' => $t->description(),
-                'date' => $t->date()->format('Y-m-d H:i:s'),
-            ], $filtered)),
+            'data' => array_map(fn ($transaction) => [
+                ...TransactionResource::make($transaction)->resolve($request),
+                'user_id' => $transaction->userId(),
+            ], $filtered),
             'meta' => [
                 'totals' => $totals,
             ]
@@ -80,60 +94,55 @@ class TransactionController extends Controller
 
     public function store(CreateTransactionRequest $request): JsonResponse
     {
+        $key = $request->validated('idempotency_key');
+
         try {
             $command = new CreateTransactionCommand(
                 userId: (string) auth()->id(),
-                accountId: $request->input('account_id'),
-                categoryId: $request->input('category_id'),
-                amount: (float) $request->input('amount'),
-                currency: $request->input('currency'),
-                type: TransactionType::from($request->input('type')),
-                description: $request->input('description'),
-                date: new DateTimeImmutable($request->input('date'))
+                accountId: strtolower($request->validated('account_id')),
+                categoryId: strtolower($request->validated('category_id')),
+                amount: (float) $request->validated('amount'),
+                currency: $request->validated('currency'),
+                type: TransactionType::from($request->validated('type')),
+                description: $request->validated('description'),
+                date: new DateTimeImmutable($request->validated('date')),
+                idempotencyKey: $key,
             );
 
-            $this->createHandler->handle($command);
+            $transactionId = $this->createHandler->handle($command);
 
             return response()->json([
                 'message' => 'Transaction created successfully',
+                'transaction_id' => $transactionId,
             ], Response::HTTP_CREATED);
-
-        } catch (Exception $e) {
+        } catch (TransactionIdempotencyConflict) {
+            return response()->json([
+                'message' => 'This idempotency key has already been used for a different transaction.',
+            ], Response::HTTP_CONFLICT);
+        } catch (DomainException $e) {
             return response()->json([
                 'message' => $e->getMessage(),
-            ], Response::HTTP_BAD_REQUEST);
+            ], $key === null ? Response::HTTP_BAD_REQUEST : Response::HTTP_UNPROCESSABLE_ENTITY);
         }
     }
 
     public function update(Request $request, string $id): JsonResponse
     {
-        // MVP Update: For now only allowing Metadata updates to avoid complex balance recalc
-        // If amount/type changes, we would need to revert and re-apply.
-        // For "Perfect" User Request: We should implement full update.
-        // Given time constraints and architectural complexity (Handlers), 
-        // I will implement a "Delete then Create" strategy for full update, 
-        // OR just update fields if logic permits. 
-        // Let's do simple field update for now, advising user if they try to change financial data?
-        // No, user wants it to work. 
-        // Strategy: Find, Update Model, Save. 
-        // Warning: Balance will desync if amount changes. 
-        // CORRECT PATH: Create UpdateTransactionHandler. 
-        // SHORTCUT: Direct update.
-        
-        $transaction = \App\Modules\Transaction\Infrastructure\Models\Transaction::findOrFail($id);
-        
-        // Check if amount/type/currency/account changed
-        // If so, we need re-balance logic.
-        // For this task, let's assume Description/Notes/Category update mainly.
-        // If amount changed:
-        if ($request->has('amount') && (float)$request->input('amount') !== $transaction->amount) {
-             // 1. Revert Old
-             // Not implemented safely here without Account Repository Access
-             // Let's just update the record and WARN or TODO: Helper method to sync balance
+        $transaction = TransactionModel::where('user_id', auth()->id())->findOrFail($id);
+
+        if ($transaction->type === TransactionType::EXCHANGE->value) {
+            return response()->json(['message' => ExchangeIsReadOnly::MESSAGE], Response::HTTP_CONFLICT);
         }
 
-        $transaction->update($request->all());
-        
+        $request->validate([
+            'type' => ['sometimes', 'required', 'in:income,expense'],
+            'category_id' => ['sometimes', 'required', 'uuid'],
+        ]);
+
+        $transaction->update($request->only([
+            'account_id', 'category_id', 'amount', 'currency', 'type', 'description', 'date',
+        ]));
+
         return response()->json(['message' => 'Transaction updated']);
     }
 
@@ -149,6 +158,8 @@ class TransactionController extends Controller
 
             return response()->json(['message' => 'Transaction deleted successfully']);
 
+        } catch (ExchangeIsReadOnly $e) {
+            return response()->json(['message' => $e->getMessage()], Response::HTTP_CONFLICT);
         } catch (Exception $e) {
             return response()->json(['message' => $e->getMessage()], 500);
         }

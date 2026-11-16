@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Modules\Account\Domain\Repositories\AccountRepositoryInterface;
 use App\Modules\Transaction\Domain\Repositories\TransactionRepositoryInterface;
 use App\Modules\Transaction\Domain\ValueObjects\TransactionType;
+use App\Modules\Transaction\Presentation\Resources\TransactionResource;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -46,16 +47,7 @@ class DashboardController extends Controller
 
         // Recent 5
         $recent = array_slice($transactions, 0, 5);
-        $recentData = array_map(fn($t) => [
-            'id' => $t->id()->toString(),
-            'account_id' => $t->accountId(),
-            'description' => $t->description(),
-            'amount' => $t->amount(),
-            'currency' => $t->currency(),
-            'type' => $t->type()->value,
-            'date' => $t->date()->format('Y-m-d H:i:s'),
-            'category_id' => $t->categoryId(),
-        ], $recent);
+        $recentData = TransactionResource::collection($recent)->resolve($request);
 
         // Stats for current month
         $currentMonthStart = new \DateTimeImmutable('first day of this month 00:00:00');
@@ -65,6 +57,10 @@ class DashboardController extends Controller
         $expenses = [];
 
         foreach ($transactions as $t) {
+            if ($t->type() === TransactionType::EXCHANGE) {
+                continue;
+            }
+
             if ($t->date() >= $currentMonthStart && $t->date() <= $currentMonthEnd) {
                 $currency = $t->currency();
                 if (!isset($income[$currency])) $income[$currency] = 0;

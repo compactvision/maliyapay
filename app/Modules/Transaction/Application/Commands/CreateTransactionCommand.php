@@ -17,7 +17,8 @@ class CreateTransactionCommand
         public readonly string $currency,
         public readonly TransactionType $type,
         public readonly string $description,
-        public readonly DateTimeImmutable $date
+        public readonly DateTimeImmutable $date,
+        public readonly ?string $idempotencyKey = null,
     ) {
     }
 }

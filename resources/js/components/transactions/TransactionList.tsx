@@ -11,9 +11,15 @@ import {
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { Edit2, Trash2, TrendingDown, TrendingUp } from 'lucide-react';
+import {
+    ArrowLeftRight,
+    Edit2,
+    Trash2,
+    TrendingDown,
+    TrendingUp,
+} from 'lucide-react';
 import { useState } from 'react';
 
 interface Transaction {
@@ -21,9 +27,11 @@ interface Transaction {
     type: string;
     amount: number;
     description: string;
-    category_id: string;
+    category_id: string | null;
     account_id: string;
     currency: string;
+    to_currency?: string | null;
+    converted_amount?: number | null;
     date: string;
 }
 
@@ -46,7 +54,7 @@ export function TransactionList({
 }: TransactionListProps) {
     const [deleteId, setDeleteId] = useState<string | null>(null);
 
-    const getCategoryName = (id: string) => {
+    const getCategoryName = (id: string | null) => {
         return categories.find((c) => c.id === id)?.name || 'Inconnu';
     };
 
@@ -61,6 +69,12 @@ export function TransactionList({
         }).format(amount);
         return type === 'income' ? `+${formatted}` : `-${formatted}`;
     };
+
+    const exchangeNumberFormat = new Intl.NumberFormat('fr-FR', {
+        maximumFractionDigits: 6,
+    });
+    const formatExchangeAmount = (amount: number, currency: string) =>
+        `${exchangeNumberFormat.format(amount)} ${currency}`;
 
     // Group transactions by date
     const groupedTransactions = transactions.reduce(
@@ -120,7 +134,7 @@ export function TransactionList({
                     .map(([dateKey, dayTransactions]) => (
                         <div key={dateKey} className="space-y-2">
                             <h3 className="px-1 text-sm font-medium text-muted-foreground">
-                                {format(new Date(dateKey), 'EEEE d MMMM', {
+                                {format(parseISO(dateKey), 'EEEE d MMMM', {
                                     locale: fr,
                                 })}
                             </h3>
@@ -139,12 +153,18 @@ export function TransactionList({
                                         <div
                                             className={cn(
                                                 'flex h-9 w-9 shrink-0 items-center justify-center rounded-full sm:h-10 sm:w-10',
-                                                transaction.type === 'income'
-                                                    ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400'
-                                                    : 'bg-red-100 text-red-600 dark:bg-red-500/20 dark:text-red-400',
+                                                transaction.type === 'exchange'
+                                                    ? 'bg-muted text-muted-foreground'
+                                                    : transaction.type ===
+                                                        'income'
+                                                      ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400'
+                                                      : 'bg-red-100 text-red-600 dark:bg-red-500/20 dark:text-red-400',
                                             )}
                                         >
-                                            {transaction.type === 'income' ? (
+                                            {transaction.type === 'exchange' ? (
+                                                <ArrowLeftRight className="h-4 w-4 sm:h-5 sm:w-5" />
+                                            ) : transaction.type ===
+                                              'income' ? (
                                                 <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5" />
                                             ) : (
                                                 <TrendingDown className="h-4 w-4 sm:h-5 sm:w-5" />
@@ -162,9 +182,17 @@ export function TransactionList({
                                                         }
                                                     </p>
                                                     <p className="truncate text-xs text-muted-foreground sm:text-sm">
-                                                        {getCategoryName(
-                                                            transaction.category_id,
-                                                        )}
+                                                        {transaction.type ===
+                                                        'exchange'
+                                                            ? format(
+                                                                  new Date(
+                                                                      transaction.date,
+                                                                  ),
+                                                                  'HH:mm',
+                                                              )
+                                                            : getCategoryName(
+                                                                  transaction.category_id,
+                                                              )}
                                                         {' • '}
                                                         {getAccountName(
                                                             transaction.account_id,
@@ -175,23 +203,53 @@ export function TransactionList({
                                                 {/* Montant */}
                                                 <p
                                                     className={cn(
-                                                        'shrink-0 text-sm font-semibold whitespace-nowrap sm:text-base',
+                                                        'shrink-0 whitespace-nowrap text-sm font-semibold sm:text-base',
                                                         transaction.type ===
-                                                            'income'
-                                                            ? 'text-emerald-600 dark:text-emerald-400'
-                                                            : 'text-red-600 dark:text-red-400',
+                                                            'exchange'
+                                                            ? 'text-right'
+                                                            : transaction.type ===
+                                                                'income'
+                                                              ? 'text-emerald-600 dark:text-emerald-400'
+                                                              : 'text-red-600 dark:text-red-400',
                                                     )}
                                                 >
-                                                    {formatAmount(
-                                                        transaction.amount,
-                                                        transaction.type,
-                                                        transaction.currency,
+                                                    {transaction.type ===
+                                                    'exchange' ? (
+                                                        <>
+                                                            {formatExchangeAmount(
+                                                                transaction.amount,
+                                                                transaction.currency,
+                                                            )}
+                                                            {transaction.converted_amount !=
+                                                                null &&
+                                                                transaction.to_currency && (
+                                                                    <span className="block">
+                                                                        →{' '}
+                                                                        {formatExchangeAmount(
+                                                                            transaction.converted_amount,
+                                                                            transaction.to_currency,
+                                                                        )}
+                                                                    </span>
+                                                                )}
+                                                        </>
+                                                    ) : (
+                                                        formatAmount(
+                                                            transaction.amount,
+                                                            transaction.type,
+                                                            transaction.currency,
+                                                        )
                                                     )}
                                                 </p>
                                             </div>
 
                                             {/* Actions en dessous sur mobile */}
-                                            <div className="mt-2 flex gap-1 sm:hidden">
+                                            <div
+                                                className="mt-2 flex gap-1 sm:hidden"
+                                                hidden={
+                                                    transaction.type ===
+                                                    'exchange'
+                                                }
+                                            >
                                                 <Button
                                                     variant="ghost"
                                                     size="icon"
@@ -218,7 +276,12 @@ export function TransactionList({
                                         </div>
 
                                         {/* Actions au hover sur desktop */}
-                                        <div className="hidden gap-1 opacity-0 transition-opacity group-hover:opacity-100 sm:flex">
+                                        <div
+                                            className="hidden gap-1 opacity-0 transition-opacity group-hover:opacity-100 sm:flex"
+                                            hidden={
+                                                transaction.type === 'exchange'
+                                            }
+                                        >
                                             <Button
                                                 variant="ghost"
                                                 size="icon"
